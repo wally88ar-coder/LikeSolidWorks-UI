@@ -16,6 +16,9 @@ Neueste Version oben. / Newest version first.
   startet das Feature nach „Skizze beenden“. Bisher: FreeCADs Dialog mit
   nur den Ursprungsebenen (Flächen nicht wählbar), beim automatisch
   angelegten Körper noch mit FreeCADs Ebenennamen.
+  Auch ein Körper von der Startseite („Plano XY“ …) bekommt beim Öffnen
+  des Panels die SW-Ebenennamen; ein Klick in die Liste brach unter
+  Windows mit „Access violation“ ab.
 - `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
 
 **English**
