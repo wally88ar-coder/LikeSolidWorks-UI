@@ -20,6 +20,12 @@ MENU = "LikeSolidWorks UI"
 def install(workbench=None):
     """Enganchar los agregados del fork. Cada uno protegido por separado."""
     try:
+        from swui.fork import look_sw
+
+        look_sw.install()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Aspecto SW 2018:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import panel_sw
 
         panel_sw.install()

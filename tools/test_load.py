@@ -321,6 +321,15 @@ def _make_stubs():
         def RemFloat(self, key):
             self.d.pop(key, None)
 
+        def GetInt(self, key, default=0):
+            return self.d.get(key, default)
+
+        def SetInt(self, key, value):
+            self.d[key] = int(value)
+
+        def RemInt(self, key):
+            self.d.pop(key, None)
+
         def GetContents(self):
             return [("?", k, v) for k, v in self.d.items()]
 
@@ -4275,32 +4284,38 @@ def run(split_namespace):
     fcp = sys.modules["FreeCAD"]._params
     left, right = fcp.get(op.DOCK_PARAMS + "OverlayLeft", {}), fcp.get(op.DOCK_PARAMS + "OverlayRight", {})
     others = [fcp.get(op.DOCK_PARAMS + g, {}).get("Widgets") for g in ("OverlayTop", "OverlayBottom")]
-    if (left.get("Widgets") != "Model," or left.get("Transparent") is not True or right.get("Widgets") != ""
+    # Fork (look_sw.py): nada superpuesto; el árbol va en un panel fijo con Tareas
+    if (left.get("Widgets") != "" or left.get("Transparent") is not False or right.get("Widgets") != ""
             or others != ["", ""]):
-        print("  FEHLER: Überlagerung (nur Baum links durchsichtig, rechts nichts überlagert)", left, right)
+        print("  FEHLER: fork: nada superpuesto (árbol en panel fijo)", left, right)
         return False
     qt = sys.modules["PySide.QtCore"].Qt
     by = {d.name: d for d in mw.docks}
-    # Fork (swui/fork/panel_sw.py): Tareas a la izquierda, solo con operación abierta;
-    # Vista de informe abajo.
+    # Fork (swui/fork/panel_sw.py): árbol y Tareas en pestañas a la izquierda; informe abajo y oculto
     pnl_sw = sys.modules["swui.fork.panel_sw"]
     if (by["Tasks"].area is not qt.DockWidgetArea.LeftDockWidgetArea
+            or by["Model"].area is not qt.DockWidgetArea.LeftDockWidgetArea
+            or ("Model", "Tasks") not in mw.tabified
             or by["Report view"].area is not qt.DockWidgetArea.BottomDockWidgetArea
-            or by["Tasks"].visible or by["Report view"].visible
-            or by["Report view"].floating or by["Tasks"].floating):
-        print("  FEHLER: Tareas izquierda (oculto sin operación) / informe abajo y oculto", by["Tasks"].area, by["Tasks"].visible)
+            or by["Report view"].visible or by["Report view"].floating or by["Tasks"].floating):
+        print("  FEHLER: fork: árbol + Tareas en pestañas a la izquierda / informe abajo y oculto", mw.tabified)
+        return False
+    sk_view = fcp.get("User parameter:BaseApp/Preferences/Mod/Sketcher/View", {})
+    if (sk_view.get("EdgeWidth"), sk_view.get("ConstructionWidth")) != (2, 1):
+        print("  FEHLER: fork: líneas de croquis como SW (2 px / constructivas 1 px)", sk_view)
         return False
     out_params = fcp.get("User parameter:BaseApp/Preferences/OutputWindow", {})
     if [out_params.get(k_) for k_ in ("checkShowReportViewOnWarning", "checkShowReportViewOnError")] != [False, False]:
         print("  FEHLER: la Vista de informe se sigue abriendo sola", out_params)
         return False
+    del mw.raised[:]
     mw.dialog_open = True
-    pnl_sw._update(by["Tasks"])
-    shown_with_task = by["Tasks"].visible
+    pnl_sw._update(by["Tasks"], by["Model"])
+    pnl_sw._update(by["Tasks"], by["Model"])  # sigue abierta: no vuelve a cambiar de pestaña
     mw.dialog_open = False
-    pnl_sw._update(by["Tasks"])
-    if not shown_with_task or by["Tasks"].visible:
-        print("  FEHLER: Tareas no aparece/desaparece con la operación")
+    pnl_sw._update(by["Tasks"], by["Model"])
+    if mw.raised != ["Tasks", "Model"]:
+        print("  FEHLER: fork: pestaña Tareas al abrir una operación, árbol al cerrarla", mw.raised)
         return False
     # Fork: velocidad de giro (swui/fork/orbit_speed.py)
     osp = sys.modules["swui.fork.orbit_speed"]
@@ -4313,10 +4328,10 @@ def run(split_namespace):
         print("  FEHLER: keine Sicherung der Panel-Einstellungen")
         return False
     model_tree = [d for d in mw.docks if d.name == "Model"][0].trees[0]
-    if op.TREE_TEXT not in model_tree.qss or "transparent" not in model_tree.qss:
-        print("  FEHLER: Baum-Schrift nicht grau / Baum nicht durchsichtig", model_tree.qss)
+    if op.TREE_TEXT not in model_tree.qss or "#f7f7f7" not in model_tree.qss:
+        print("  FEHLER: fork: árbol sobre panel gris claro", model_tree.qss)
         return False
-    print("  Layout   : Baum links durchsichtig + grau; fork: Tareas izquierda (solo con operación), informe abajo")
+    print("  Layout   : fork: árbol y Tareas en pestañas a la izquierda (gris claro), informe abajo oculto")
 
     # --- Farbschema ---------------------------------------------------
     if not mw.qss.startswith(mw.ORIGINAL_QSS) or "SWUI_RibbonTabs" not in mw.qss:
@@ -4374,6 +4389,10 @@ def run(split_namespace):
     if any(k_ in fcp.get("User parameter:BaseApp/Preferences/OutputWindow", {})
            for k_ in ("checkShowReportViewOnWarning", "checkShowReportViewOnError")):
         print("  FEHLER: fork: preferencias de la Vista de informe no devueltas al salir")
+        return False
+    if fcp.get("User parameter:BaseApp/Preferences/Mod/Sketcher/View", {}):
+        print("  FEHLER: fork: preferencias del croquis no devueltas al salir",
+              fcp.get("User parameter:BaseApp/Preferences/Mod/Sketcher/View"))
         return False
     task = [d for d in mw.docks if d.name == "Tasks"][0]
     if task.area != "right":

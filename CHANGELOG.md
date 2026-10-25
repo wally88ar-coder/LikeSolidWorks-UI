@@ -50,8 +50,12 @@ Neueste Version oben. / Newest version first.
 - `tools/test_load.py` also runs on Windows (path comparisons).
 
 **Fork (wally88ar-coder, español)**
-- Panel de tareas (PropertyManager) **a la izquierda**, visible solo mientras hay
-  una operación abierta; sin operación queda el árbol, como en SOLIDWORKS.
+- **Aspecto claro de SOLIDWORKS 2018** (colores medidos en capturas): cinta y paneles
+  #F7F7F7, pestañas #D4D4D4, fondo degradado gris-celeste a blanco; croquis en azul puro
+  (líneas 2 px, constructivas 1 px trazo y punto), resaltado naranja, aristas negras 1 px.
+- Panel izquierdo como en SOLIDWORKS: **Modelo y Tareas en pestañas** sobre fondo gris
+  claro (el árbol ya no flota sobre la vista 3D); al abrir una operación pasa solo a Tareas
+  y al cerrarla vuelve al árbol.
   Vista de informe abajo y **oculta** (se abre con Ver → Paneles → Vista de
   informe); dentro de LikeSolidWorks UI no se abre sola ante avisos/errores.
   Código propio del fork en `swui/fork/`.

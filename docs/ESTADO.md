@@ -56,6 +56,12 @@
   (AutoloadModule, el anterior queda guardado), vuelta automática si algo cambia de banco
   (señal workbenchActivated; la página de Inicio cambia desde C++), selector oculto. Escape:
   menú "Usar siempre LikeSolidWorks UI". `swui/fork/always_swui.py`. Probado en FreeCAD real.
+- Aspecto SW 2018 claro (pedido del usuario, 2026-10-25, con capturas de su SW):
+  `swui/fork/look_sw.py` cambia las tablas del original (theme.COLORS, view_background,
+  overlay_panels) y agrega preferencias del croquis (Mod/Sketcher/View, con copia propia).
+  Panel izquierdo: Modelo y Tareas en pestañas (panel_sw.py), sin títulos repetidos.
+  Probado en FreeCAD real. Pendiente de decidir: la mitad de abajo del panel Modelo (Ver/Datos,
+  propiedades de FreeCAD) no existe en SW; los ejes rojo/verde del croquis tampoco.
 - Estrategia acordada: todo módulo nuevo (chapa, simulación FEM) como pestaña de la cinta dentro
   de LikeSolidWorks UI, con flujo y nombres SW sobre las herramientas nativas.
 
