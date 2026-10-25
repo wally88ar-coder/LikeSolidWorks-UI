@@ -904,6 +904,60 @@ def run(split_namespace):
         return False
     print("  Aufteil. : Zeichenwerkzeuge im 3-Zeilen-Stapel, Skizze/Skizze beenden umschaltend, Offset da")
 
+    # --- Kleine Bildschirme: Reiter verschiebbar, erst nur Symbole, dann Pfeile ---
+    if len(ribbon._scrollers) != len(layout_mod.TABS):
+        print("  FEHLER: nicht jeder Reiter im verschiebbaren Rahmen", len(ribbon._scrollers))
+        return False
+    under = sys.modules["PySide.QtCore"].Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+    icon_only = sys.modules["PySide.QtCore"].Qt.ToolButtonStyle.ToolButtonIconOnly
+
+    class FitBtn:
+        def __init__(self):
+            self.style, self.tip = under, "Tooltip"
+        def toolButtonStyle(self):
+            return self.style
+        def setToolButtonStyle(self, s_):
+            self.style = s_
+        def text(self):
+            return "Linear\naustragen"
+        def toolTip(self):
+            return self.tip
+        def setToolTip(self, t_):
+            self.tip = t_
+
+    fit_btn = FitBtn()
+    widths = {under: 1600, icon_only: 900}
+    fit_lay = types.SimpleNamespace(invalidate=lambda: None, activate=lambda: None,
+                                    minimumSize=lambda: types.SimpleNamespace(width=lambda: widths[fit_btn.style]))
+    fit_page = types.SimpleNamespace(layout=lambda: fit_lay, findChildren=lambda cls_: [fit_btn],
+                                     minimumSizeHint=lambda: types.SimpleNamespace(height=lambda: 70))
+    shown = {}
+
+    def arrow_(side):
+        return types.SimpleNamespace(setVisible=lambda v_: shown.__setitem__(side, v_))
+
+    avail = [1700]
+    sc_t = {"box": types.SimpleNamespace(width=lambda: avail[0]), "area": types.SimpleNamespace(setFixedHeight=lambda h_: None),
+            "page": fit_page, "large": None, "compact": False, "full_w": None, "compact_w": None, "avail": None,
+            "left": arrow_("l"), "right": arrow_("r")}
+    steps = []
+    for a_ in (1700, 1366, 800, 1700):
+        avail[0] = a_
+        ribbon._fit(sc_t)
+        steps.append((sc_t["compact"], shown.get("l"), shown.get("r")))
+    if steps != [(False, False, False), (True, False, False), (True, True, True), (False, False, False)]:
+        print("  FEHLER: Anpassung an die Breite (Text / nur Symbol / Pfeile)", steps)
+        return False
+    if fit_btn.style != under or fit_btn.tip != "Tooltip":
+        print("  FEHLER: Knopf nach dem Vergroessern nicht wieder mit Text", fit_btn.style, fit_btn.tip)
+        return False
+    avail[0] = 1000
+    ribbon._fit(sc_t)
+    if fit_btn.tip != "Linear austragen\nTooltip":
+        print("  FEHLER: Name fehlt im Tooltip des kompakten Knopfes", repr(fit_btn.tip))
+        return False
+    print("  Schmal   : jeder Reiter verschiebbar; zu schmal -> nur Symbole (Name im Tooltip), noch schmaler -> Pfeile")
+
     # --- Direkt aus Skizze austragen -----------------------------------
     fs = sys.modules.get("swui.from_sketch")
     import importlib

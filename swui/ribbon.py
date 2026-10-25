@@ -42,6 +42,7 @@ ICON_SIZE = 32  # grosse Knoepfe (Text darunter)
 SMALL_ICON_SIZE = 20  # kleine Knoepfe in Stapeln (wie im SW-CommandManager)
 STACK_ROWS = 3  # Zeilen je Stapel-Spalte
 REFRESH_MS = 500
+SCROLL_STEP = 120  # Pixel je Klick auf die Pfeile eines zu breiten Reiters
 
 # Modulzustand. Das Ribbon wird einmal gebaut und danach nur noch
 # ein- und ausgeblendet.
@@ -57,6 +58,7 @@ _tab_titles = []  # Reiternamen in Reihenfolge
 _in_sketch = False  # wird gerade eine Skizze bearbeitet?
 _tab_before_sketch = None  # Reiter vor dem Betreten der Skizze
 _on_drawing = False  # ist gerade ein Zeichenblatt das aktive Fenster?
+_scrollers = []  # je Reiter: Rahmen mit Pfeilen, siehe _scroller()
 
 START_TAB = "Features"  # beim Start aufgeschlagen, auch wenn links davon Evaluieren steht
 SKETCH_TAB = "Skizze"
@@ -187,6 +189,10 @@ def _build():
         _tab_titles.append(tab_title)  # intern immer der deutsche Name (Logik)
     if START_TAB in _tab_titles:
         tabs.setCurrentIndex(_tab_titles.index(START_TAB))
+    try:
+        tabs.currentChanged.connect(lambda *_a: _fit_current())
+    except Exception:
+        pass
 
     dock.setWidget(tabs)
     main_window.addDockWidget(QtCore.Qt.DockWidgetArea.TopDockWidgetArea, dock)
@@ -243,7 +249,124 @@ def _build_page(parent, groups, available):
             row.addWidget(w)
 
     row.addStretch(1)
-    return page
+    return _scroller(parent, page)
+
+
+# --- Kleine Bildschirme ----------------------------------------------
+#
+# Ohne Rahmen bestimmt der BREITESTE Reiter die Mindestbreite des ganzen
+# FreeCAD-Fensters (QTabWidget nimmt das Maximum aller Seiten): bei
+# 1366 px Bildschirmbreite und spanischen/deutschen Beschriftungen ragt
+# das Fenster rechts ueber den Rand (Aufgaben-Panel abgeschnitten).
+# Deshalb steckt jeder Reiter in einem waagerecht verschiebbaren Rahmen.
+# Passt er nicht, zuerst wie in SOLIDWORKS ohne "grosse Knoepfe mit
+# Text" (nur Symbol, Name im Tooltip); passt er dann noch nicht, Pfeile
+# links/rechts zum Verschieben.
+
+
+def _scroller(parent, page):
+    """Reiterseite -> Rahmen (Pfeil links, verschiebbarer Bereich, Pfeil rechts)."""
+    box = QtWidgets.QWidget(parent)
+    box.setObjectName("SWUI_RibbonPage")
+    row = QtWidgets.QHBoxLayout(box)
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(0)
+    area = QtWidgets.QScrollArea(box)
+    area.setObjectName("SWUI_RibbonScroll")
+    area.setFrameShape(QtWidgets.QFrame.Shape.NoFrame)
+    area.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    area.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    area.setWidgetResizable(True)
+    area.setWidget(page)
+    sc = {"box": box, "area": area, "page": page, "large": None, "compact": False,
+          "full_w": None, "compact_w": None, "avail": None}
+    sc["left"] = _make_arrow(box, sc, -1)
+    sc["right"] = _make_arrow(box, sc, 1)
+    row.addWidget(sc["left"])
+    row.addWidget(area, 1)
+    row.addWidget(sc["right"])
+    try:
+        area.horizontalScrollBar().rangeChanged.connect(lambda *_a: _fit(sc))
+    except Exception:
+        pass
+    _scrollers.append(sc)
+    return box
+
+
+def _make_arrow(parent, sc, direction):
+    arrow = QtWidgets.QToolButton(parent)
+    arrow.setObjectName("SWUI_RibbonArrow")
+    arrow.setArrowType(QtCore.Qt.ArrowType.LeftArrow if direction < 0 else QtCore.Qt.ArrowType.RightArrow)
+    arrow.setAutoRaise(True)
+    arrow.setAutoRepeat(True)
+    arrow.setSizePolicy(QtWidgets.QSizePolicy.Policy.Fixed, QtWidgets.QSizePolicy.Policy.Expanding)
+    arrow.clicked.connect(functools.partial(_scroll, sc, direction))
+    arrow.hide()
+    return arrow
+
+
+def _scroll(sc, direction, *_args):
+    bar = sc["area"].horizontalScrollBar()
+    bar.setValue(bar.value() + direction * SCROLL_STEP)
+
+
+def _min_width(page):
+    """Mindestbreite der Seite in der aktuellen Knopfart (Layout neu berechnet)."""
+    lay = page.layout()
+    lay.invalidate()
+    lay.activate()
+    return lay.minimumSize().width()
+
+
+def _large_buttons(page):
+    """Grosse Knoepfe (Text unter dem Symbol) einer Seite mit ihrem Tooltip."""
+    under = QtCore.Qt.ToolButtonStyle.ToolButtonTextUnderIcon
+    return [(b, b.toolTip()) for b in page.findChildren(QtWidgets.QToolButton) if b.toolButtonStyle() == under]
+
+
+def _set_compact(sc, compact):
+    """Grosse Knoepfe nur mit Symbol (compact) oder wieder mit Text darunter."""
+    if sc["large"] is None:
+        sc["large"] = _large_buttons(sc["page"])
+    style = (QtCore.Qt.ToolButtonStyle.ToolButtonIconOnly if compact
+             else QtCore.Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
+    for button, tip in sc["large"]:
+        button.setToolButtonStyle(style)
+        name = _menu_text(button.text())
+        button.setToolTip(name + ("\n" + tip if tip and tip != name else "") if compact else tip)
+    sc["compact"] = compact
+
+
+def _fit(sc):
+    """Knopfart und Pfeile der verfuegbaren Breite anpassen (bei Groessenaenderung)."""
+    try:
+        avail = sc["box"].width()
+        if avail <= 0 or avail == sc["avail"]:
+            return
+        sc["avail"] = avail
+        if sc["full_w"] is None:
+            sc["full_w"] = _min_width(sc["page"])
+        compact = sc["full_w"] > avail
+        if compact != sc["compact"]:
+            _set_compact(sc, compact)
+        if compact and sc["compact_w"] is None:
+            sc["compact_w"] = _min_width(sc["page"])
+        need = sc["compact_w"] if compact else sc["full_w"]
+        over = need > avail
+        sc["left"].setVisible(over)
+        sc["right"].setVisible(over)
+        sc["area"].setFixedHeight(sc["page"].minimumSizeHint().height())
+    except Exception:
+        pass
+
+
+def _fit_current():
+    try:
+        index = _tabs.currentIndex()
+        if 0 <= index < len(_scrollers):
+            _fit(_scrollers[index])
+    except Exception:
+        pass
 
 
 def _build_entry(parent, entry, available, small=False, beside=False):
@@ -606,6 +729,7 @@ def rebuild():
     del _toggles[:]
     del _skipped[:]
     del _tab_titles[:]
+    del _scrollers[:]
     # Einzeln abgesichert: Scheitert ein Schritt, wird das alte Dock trotzdem entsorgt
     for step in (lambda: old.hide(),
                  lambda: FreeCADGui.getMainWindow().removeDockWidget(old),
@@ -925,6 +1049,7 @@ def _refresh_enabled():
     Knopf bei FreeCAD nachfragen, ob er gerade anwendbar ist.
     """
     _check_context()
+    _fit_current()
     for key, button in _buttons.items():
         button.setEnabled(_is_active(key.split("#", 1)[0]))
     for fly in _flyouts:
