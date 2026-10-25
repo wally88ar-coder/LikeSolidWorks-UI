@@ -618,6 +618,83 @@ def run(split_namespace):
         return False
     print("  Dialog   : Feature-Dialoge bleiben in LikeSolidWorks UI; Workbench-Auswahl und Makros wechseln weiter")
 
+    # --- Skizze / Feature ohne Auswahl: Ebene oder ebene Flaeche waehlen ---
+    __import__("swui.pick_plane")
+    pp = sys.modules["swui.pick_plane"]
+    cs = sys.modules["swui.context_sketch"] if "swui.context_sketch" in sys.modules else __import__(
+        "swui.context_sketch", fromlist=["x"])
+    plane = types.SimpleNamespace(TypeId="App::Plane", Label="Ebene oben")
+    flat = types.SimpleNamespace(isPlanar=lambda: True)
+    round_ = types.SimpleNamespace(isPlanar=lambda: False)
+    solid = types.SimpleNamespace(TypeId="PartDesign::Pad",
+                                  getSubObject=lambda s_: {"Face1": flat, "Face2": round_}.get(s_.split(".")[-1]))
+    sketch_o = types.SimpleNamespace(TypeId="Sketcher::SketchObject")
+    if (pp.picked_target([(plane, [])]) != (plane, "") or pp.picked_target([(solid, ["Face1"])]) != (solid, "Face1")
+            or pp.picked_target([(solid, ["Face2"])]) is not None or pp.picked_target([(solid, ["Edge1"])]) is not None
+            or pp.picked_target([(sketch_o, [])]) is not None or pp.picked_target([]) is not None):
+        print("  FEHLER: Ebene/ebene Fläche nicht richtig erkannt")
+        return False
+    calls_pp = []
+    saved_pp = (pp._selection, pp._dialog_open, pp.start_sketch, pp.open_panel)
+    fc_pp = sys.modules["FreeCAD"]
+    old_doc_pp = getattr(fc_pp, "ActiveDocument", None)
+    fc_pp.ActiveDocument = types.SimpleNamespace(Objects=[])
+    try:
+        pp._dialog_open = lambda: False
+        pp.start_sketch = lambda c_: calls_pp.append(("skizze", c_))
+        pp.open_panel = lambda c_: calls_pp.append(("panel", c_))
+        results_pp = []
+        for sel_, cmd_ in (([], "PartDesign_NewSketch"), ([], "PartDesign_Pad"), ([(solid, ["Face1"])], "PartDesign_Pocket"),
+                           ([(solid, ["Face1"])], "PartDesign_NewSketch"), ([(sketch_o, [])], "PartDesign_Pad"),
+                           ([], "PartDesign_Fillet")):
+            pp._selection = lambda s_=sel_: s_
+            results_pp.append(pp.handle(cmd_))
+    finally:
+        pp._selection, pp._dialog_open, pp.start_sketch, pp.open_panel = saved_pp
+        fc_pp.ActiveDocument = old_doc_pp
+    if results_pp != [True, True, True, False, False, False] or calls_pp != [
+            ("panel", "PartDesign_NewSketch"), ("panel", "PartDesign_Pad"), ("skizze", "PartDesign_Pocket")]:
+        print("  FEHLER: Ohne Auswahl -> Panel, mit Fläche -> Skizze, sonst FreeCAD", results_pp, calls_pp)
+        return False
+    # Vorgemerktes Feature startet erst nach "Skizze beenden", nur mit Geometrie
+    ran_pp, editing_pp = [], [None]
+    sk_doc = types.SimpleNamespace(Objects=[])
+    sk_pp = types.SimpleNamespace(Name="Sketch", Document=sk_doc, Geometry=[1], InList=[])
+    sk_doc.Objects.append(sk_pp)
+    saved_t = (pp._editing, pp._dialog_open, pp.QtCore)
+    gui_pp = sys.modules["FreeCADGui"]
+    old_run_pp, old_sel_pp = gui_pp.runCommand, getattr(gui_pp, "Selection", None)
+    try:
+        pp._editing = lambda: editing_pp[0]
+        pp._dialog_open = lambda: False
+        gui_pp.runCommand = lambda c_, *a_: ran_pp.append(c_)
+        gui_pp.Selection = types.SimpleNamespace(clearSelection=lambda: None, addSelection=lambda *a_: None)
+        pp.arm("PartDesign_Pad", sk_pp)
+        pp.tick()  # Skizze noch nicht geoeffnet
+        editing_pp[0] = sk_pp
+        pp.tick()
+        pp.tick()  # in Bearbeitung
+        during = list(ran_pp)
+        editing_pp[0] = None
+        pp.tick()  # beendet -> Feature
+        after = list(ran_pp)
+        pp.arm("PartDesign_Pad", sk_pp)
+        editing_pp[0] = sk_pp
+        pp.tick()
+        sk_pp.Geometry = []
+        editing_pp[0] = None
+        pp.tick()  # leer beendet -> nichts
+    finally:
+        pp._editing, pp._dialog_open, pp.QtCore = saved_t
+        gui_pp.runCommand = old_run_pp
+        if old_sel_pp is not None:
+            gui_pp.Selection = old_sel_pp
+        pp._disarm()
+    if during or after != ["PartDesign_Pad"] or ran_pp != ["PartDesign_Pad"] or pp.armed():
+        print("  FEHLER: Feature nach Skizze beenden", during, after, ran_pp)
+        return False
+    print("  Ohne Ausw: Skizze/Austragen ohne Auswahl -> Ebene oder ebene Fläche wählen, Feature nach Skizze beenden")
+
     # --- SOLIDWORKS-Namen fuer neue Features ----------------------------
     fc = sys.modules["FreeCAD"]
     naming = sys.modules["swui.naming"]

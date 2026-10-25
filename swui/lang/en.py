@@ -673,6 +673,12 @@ TEXTS = {
     "Skizze erstellen": "Sketch",
     "[SWUI] Skizze konnte nicht erstellt werden:\n%s\n": "[SWUI] Could not create the sketch:\n%s\n",
     "[SWUI] Symbol „Skizze erstellen“ nicht verfügbar:\n%s\n": "[SWUI] Context symbol \"Sketch\" not available:\n%s\n",
+    # === Skizze ohne Auswahl: Ebene waehlen (pick_plane.py) ==============
+    "Skizze: Ebene wählen": "Sketch: select a plane",
+    "Eine Ebene oder ebene Fläche im Grafikbereich, im Baum oder in der Liste wählen.":
+        "Select a plane or planar face in the graphics area, in the tree or in the list.",
+    "Das ist keine Ebene und keine ebene Fläche.": "That is neither a plane nor a planar face.",
+    "[SWUI] Ebene wählen: %s\n": "[SWUI] Select plane: %s\n",
     # === Linieneigenschaften (line_format.py) ===========================
     'Erst Linien in einer Ansicht wählen, dann „Linieneigenschaften“ klicken.': 'Select lines in a view first, then click "Line Format".',
     'Ja': 'Yes',

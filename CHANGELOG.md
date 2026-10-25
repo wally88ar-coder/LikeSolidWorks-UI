@@ -10,6 +10,12 @@ Neueste Version oben. / Newest version first.
   SW-Begriffe. Sie bleiben jetzt in LikeSolidWorks UI.
 - SW-Begriffe in den Dialogen auch unter Windows (Objektname dort
   `PartDesignGui__…` statt `PartDesignGui::…`).
+- **Skizze / Linear austragen / Linearer Schnitt ohne Auswahl** wie in
+  SOLIDWORKS: Ebene oder ebene Fläche im Grafikbereich, im Baum oder in
+  der Liste wählen, die Skizze öffnet sich darauf; bei Austragen/Schnitt
+  startet das Feature nach „Skizze beenden“. Bisher: FreeCADs Dialog mit
+  nur den Ursprungsebenen (Flächen nicht wählbar), beim automatisch
+  angelegten Körper noch mit FreeCADs Ebenennamen.
 - `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
 
 **English**
@@ -18,6 +24,11 @@ Neueste Version oben. / Newest version first.
   now stay in LikeSolidWorks UI.
 - SW terms in the dialogs also on Windows (object name `PartDesignGui__…`
   there instead of `PartDesignGui::…`).
+- **Sketch / Extruded Boss / Extruded Cut without a selection** as in
+  SOLIDWORKS: pick a plane or planar face in the graphics area, the tree or
+  the list, the sketch opens on it; for boss/cut the feature starts after
+  "Exit Sketch". Before: FreeCAD's dialog with only the origin planes (faces
+  not selectable).
 - `tools/test_load.py` also runs on Windows (path comparisons).
 
 ## 0.10.0 — 2026-10-18
