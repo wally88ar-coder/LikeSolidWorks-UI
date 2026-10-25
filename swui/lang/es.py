@@ -675,6 +675,12 @@ TEXTS = {
     "Skizze erstellen": "Croquis",
     "[SWUI] Skizze konnte nicht erstellt werden:\n%s\n": "[SWUI] No se pudo crear el croquis:\n%s\n",
     "[SWUI] Symbol „Skizze erstellen“ nicht verfügbar:\n%s\n": "[SWUI] Ícono contextual \"Croquis\" no disponible:\n%s\n",
+    # === Skizze ohne Auswahl: Ebene waehlen (pick_plane.py) ==============
+    "Skizze: Ebene wählen": "Croquis: seleccionar un plano",
+    "Eine Ebene oder ebene Fläche im Grafikbereich, im Baum oder in der Liste wählen.":
+        "Seleccioná un plano o una cara plana en la zona de gráficos, en el árbol o en la lista.",
+    "Das ist keine Ebene und keine ebene Fläche.": "Eso no es un plano ni una cara plana.",
+    "[SWUI] Ebene wählen: %s\n": "[SWUI] Seleccionar plano: %s\n",
     # === Linieneigenschaften (line_format.py) ===========================
     'Erst Linien in einer Ansicht wählen, dann „Linieneigenschaften“ klicken.': 'Primero seleccioná líneas en una vista y después hacé clic en "Formato de línea".',
     'Ja': 'Sí',

@@ -3,7 +3,7 @@
 Última actualización: 2026-10-25
 
 ## Fase actual
-**Fase 0 — Puesta en marcha** (en curso)
+**Fase 0 — Puesta en marcha**: todo implementado, falta que el usuario lo pruebe.
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 instalado en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`).
@@ -36,13 +36,19 @@
   Además los términos SW de los diálogos no andaban en Windows (nombre `PartDesignGui__...`).
   Rama `fix/feature-dialog-bleibt`. Probado en FreeCAD real.
 
+- Croquis / Extruir / Extruir corte / Revolución sin selección: panel propio "Croquis:
+  seleccionar un plano" (lista + clic en pantalla o árbol, acepta caras planas); se abre el
+  croquis ahí y, para operaciones, al salir del croquis se lanza la operación. El cuerpo se crea
+  antes y ya con Planta/Alzado/Vista lateral. `swui/pick_plane.py`, rama
+  `feat/skizze-ohne-auswahl`. Probado en FreeCAD real (extruir en Planta + corte en cara).
+
 ## Falta (fase 0)
-- [ ] Extruir / extruir corte sin croquis: elegir cara plana o plano, abrir croquis, lanzar al salir.
+- [ ] Prueba del usuario de todo lo anterior.
 
 ## Problemas reportados por el usuario
 - 2026-10-25: al extruir un croquis saltaba a Part Design y el diálogo quedaba nativo. **Arreglado.**
-- 2026-10-25: Croquis sin selección cae en "Seleccione un plano" (solo planos base, no acepta
-  caras). Pendiente: es el punto "extruir/cortar/croquis sin croquis previo" de la fase 0.
+- 2026-10-25: Croquis sin selección caía en "Seleccione un plano" (solo planos base con nombres
+  de FreeCAD, no acepta caras). **Reemplazado por el panel propio.**
 - 2026-10-25: con la cinta en español Windows avisa "Unable to set geometry 1614x705": la
   ventana no entra en 1366 px y se corta el borde derecho (Tareas y Vista de informe).
 
@@ -59,4 +65,5 @@
 | `fix/test-windows-pfade` | Test pasa en Windows | lista, sin proponer (consultar al usuario) |
 | `feat/ribbon-schmal` | Cinta para pantallas chicas (incluye `fix/test-windows-pfade`) | lista, sin proponer |
 | `fix/feature-dialog-bleibt` | Diálogos no saltan a Part Design; términos SW en Windows (incluye `fix/test-windows-pfade`) | lista, sin proponer |
+| `feat/skizze-ohne-auswahl` | Croquis/extruir sin selección (incluye `fix/feature-dialog-bleibt`); textos es se agregan en master | lista, sin proponer |
 | `feat/sprache-es` | Idioma español + Automático según FreeCAD | lista, sin proponer; el test de esa rama sola necesita también `fix/test-windows-pfade` en Windows |
