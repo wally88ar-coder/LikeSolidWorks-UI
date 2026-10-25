@@ -28,6 +28,11 @@ Neueste Version oben. / Newest version first.
   (name in the tooltip); if that is still too wide, arrows appear to scroll.
 - `tools/test_load.py` also runs on Windows (path comparisons).
 
+**Fork (wally88ar-coder, español)**
+- Panel de tareas (PropertyManager) **a la izquierda**, visible solo mientras hay
+  una operación abierta; sin operación queda el árbol, como en SOLIDWORKS.
+  Vista de informe abajo. Código propio del fork en `swui/fork/`.
+
 ## 0.10.0 — 2026-10-18
 
 **Deutsch**

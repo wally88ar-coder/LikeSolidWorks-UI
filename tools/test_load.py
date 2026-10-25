@@ -4151,12 +4151,22 @@ def run(split_namespace):
         return False
     qt = sys.modules["PySide.QtCore"].Qt
     by = {d.name: d for d in mw.docks}
-    if (by["Tasks"].area is not qt.DockWidgetArea.RightDockWidgetArea
-            or by["Report view"].area is not qt.DockWidgetArea.RightDockWidgetArea
-            or ("Tasks", "Report view", qt.Orientation.Vertical) not in mw.split
-            or not by["Tasks"].visible or not by["Report view"].visible
+    # Fork (swui/fork/panel_sw.py): Tareas a la izquierda, solo con operación abierta;
+    # Vista de informe abajo.
+    pnl_sw = sys.modules["swui.fork.panel_sw"]
+    if (by["Tasks"].area is not qt.DockWidgetArea.LeftDockWidgetArea
+            or by["Report view"].area is not qt.DockWidgetArea.BottomDockWidgetArea
+            or by["Tasks"].visible or not by["Report view"].visible
             or by["Report view"].floating or by["Tasks"].floating):
-        print("  FEHLER: Aufgaben/Ausgabe nicht rechts untereinander angedockt", mw.split)
+        print("  FEHLER: Tareas izquierda (oculto sin operación) / informe abajo", by["Tasks"].area, by["Tasks"].visible)
+        return False
+    mw.dialog_open = True
+    pnl_sw._update(by["Tasks"])
+    shown_with_task = by["Tasks"].visible
+    mw.dialog_open = False
+    pnl_sw._update(by["Tasks"])
+    if not shown_with_task or by["Tasks"].visible:
+        print("  FEHLER: Tareas no aparece/desaparece con la operación")
         return False
     if not fcp[op.OWN_PARAMS].get(op.BACKUP_KEY):
         print("  FEHLER: keine Sicherung der Panel-Einstellungen")
@@ -4165,7 +4175,7 @@ def run(split_namespace):
     if op.TREE_TEXT not in model_tree.qss or "transparent" not in model_tree.qss:
         print("  FEHLER: Baum-Schrift nicht grau / Baum nicht durchsichtig", model_tree.qss)
         return False
-    print("  Layout   : Baum links durchsichtig + grau, Aufgaben oben + Ausgabe unten rechts fest angedockt")
+    print("  Layout   : Baum links durchsichtig + grau; fork: Tareas izquierda (solo con operación), informe abajo")
 
     # --- Farbschema ---------------------------------------------------
     if not mw.qss.startswith(mw.ORIGINAL_QSS) or "SWUI_RibbonTabs" not in mw.qss:

@@ -23,10 +23,15 @@
   Rama `feat/sprache-es`, unida a `master`. Probado por el usuario el 2026-10-25: carga bien y
   se ve en español.
 
+- Cinta para pantallas chicas: cada pestaña se puede desplazar; si no entra, los botones grandes
+  quedan solo con ícono (nombre en el tooltip); si aun así no entra, flechas ‹ ›. Probado en
+  FreeCAD real a 1366 px: ancho mínimo de ventana 418 px (antes 1614). Rama `feat/ribbon-schmal`.
+- Panel de tareas a la izquierda, solo con operación abierta; Vista de informe abajo (110 px).
+  Propio del fork: `swui/fork/panel_sw.py`, enganchado desde `swui/fork/__init__.py`
+  (una línea en `InitGui.Initialize`). Probado en FreeCAD real con un croquis.
+  El test del original se adaptó en `master` para verificar este comportamiento.
+
 ## Falta (fase 0)
-- [ ] Pantallas chicas (1366 px): cinta que se compacte o desplace. En español la cinta pide
-      1614 px de ancho mínimo (en inglés 1458): la ventana queda cortada a la derecha.
-- [ ] Panel de tareas a la izquierda (decidido), como opción.
 - [ ] Extruir / extruir corte sin croquis: elegir cara plana o plano, abrir croquis, lanzar al salir.
 
 ## Problemas reportados por el usuario
@@ -36,11 +41,13 @@
 ## Decisiones
 - Pendiente para más adelante: plantillas de rótulo en español (hoy un dibujo nuevo en español
   usa la plantilla en inglés). Decimales con coma en "Formato de línea" (hoy solo en alemán).
-- Panel de tareas: **a la izquierda**, como el PropertyManager de SW (usuario, 2026-10-25).
-  Hacerlo como opción para poder proponerlo al original sin cambiar su comportamiento.
+- Panel de tareas: **solo a la izquierda, sin opción a la derecha**: se busca similitud total
+  con SW (usuario, 2026-10-25). Es propio del fork, no se propone al original.
+- Código propio del fork: en `swui/fork/`, comentarios en español, mensajes sin tr().
 
 ## PR al original
 | Rama | Contenido | Estado |
 |---|---|---|
 | `fix/test-windows-pfade` | Test pasa en Windows | lista, sin proponer (consultar al usuario) |
+| `feat/ribbon-schmal` | Cinta para pantallas chicas (incluye `fix/test-windows-pfade`) | lista, sin proponer |
 | `feat/sprache-es` | Idioma español + Automático según FreeCAD | lista, sin proponer; el test de esa rama sola necesita también `fix/test-windows-pfade` en Windows |

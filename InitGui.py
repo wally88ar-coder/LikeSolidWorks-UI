@@ -111,6 +111,11 @@ class LikeSolidWorksUIWorkbench(FreeCADGui.Workbench):
 
             weld_symbol.install()
 
+            # Agregados propios del fork (swui/fork/), enganchados en un solo lugar.
+            from swui import fork
+
+            fork.install()
+
             # Keine eigene Toolbar: Alles Sichtbare lebt im Ribbon.
             # Die Diagnose bleibt im Menue "LikeSolidWorks UI" erreichbar.
             self.appendMenu("LikeSolidWorks UI", ["SWUI_Diagnostics"])
