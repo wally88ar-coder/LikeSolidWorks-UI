@@ -63,6 +63,8 @@
   Probado en FreeCAD real. Pendiente de decidir: la mitad de abajo del panel Modelo (Ver/Datos,
   propiedades de FreeCAD) no existe en SW; los ejes rojo/verde del croquis tampoco.
 - Barras Archivo y Editar ocultas en LikeSolidWorks UI (pedido del usuario, 2026-10-25).
+  En su lugar, íconos Nuevo/Abrir/Guardar/Deshacer/Recalcular a la derecha de la barra de menú
+  (`swui/fork/quick_access.py`, área "MenuBarRightArea" de FreeCAD 1.1). Probado en FreeCAD real.
   Panel Ver/Datos: se deja por ahora, el usuario va a ver si le sirve.
 - Estrategia acordada: todo módulo nuevo (chapa, simulación FEM) como pestaña de la cinta dentro
   de LikeSolidWorks UI, con flujo y nombres SW sobre las herramientas nativas.

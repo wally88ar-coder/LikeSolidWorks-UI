@@ -4265,6 +4265,22 @@ def run(split_namespace):
         print("  FEHLER: sichtbare Leisten", mw.visible_bars(), "erwartet", keep)
         return False
     print("  Layout   : sichtbar bleiben", mw.visible_bars())
+    # Fork: íconos de acceso rápido en la barra de menú (quick_access.py)
+    qa = sys.modules["swui.fork.quick_access"]
+
+    def hooked(fn_, flag_):
+        """¿Algún enganche de la cadena (cada uno guarda el anterior en _original) tiene la marca?"""
+        while fn_ is not None:
+            if getattr(fn_, flag_, False):
+                return True
+            fn_ = (fn_.__defaults__ or (None,))[0] if callable(fn_) else None
+            fn_ = fn_ if callable(fn_) else None
+        return False
+
+    if (qa.COMMANDS != ("Std_New", "Std_Open", "Std_Save", "Std_Undo", "Std_Refresh")
+            or not hooked(layout.enter, "_swui_quick") or not hooked(layout.leave, "_swui_quick")):
+        print("  FEHLER: fork: acceso rápido (comandos / enganche a entrar y salir)")
+        return False
     # Fork: usar siempre LikeSolidWorks UI
     asw = sys.modules["swui.fork.always_swui"]
     gen_p = sys.modules["FreeCAD"]._params.get("User parameter:BaseApp/Preferences/General", {})
