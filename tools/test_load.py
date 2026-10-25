@@ -4260,7 +4260,7 @@ def run(split_namespace):
         print("  FEHLER: Activated() hat swui.layout nicht geladen")
         return False
 
-    keep = ["Edit", "File", "InnerPanelBar"]  # fork: selector de bancos oculto (always_swui)
+    keep = ["InnerPanelBar"]  # fork: sin Archivo/Editar (look_sw), selector oculto (always_swui)
     if mw.visible_bars() != keep:
         print("  FEHLER: sichtbare Leisten", mw.visible_bars(), "erwartet", keep)
         return False

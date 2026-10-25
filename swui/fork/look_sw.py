@@ -65,7 +65,9 @@ EXTRA_VIEW = [
     ("Int", "DefaultShapeLineWidth", 1),
 ]
 
-SKETCH_PARAMS = "User parameter:BaseApp/Preferences/Mod/Sketcher/View"
+KEEP_TOOLBARS = ("Workbench",)  # el original deja también "File" y "Edit"
+
+SKETCH_PARAMS ="User parameter:BaseApp/Preferences/Mod/Sketcher/View"
 SKETCH_BACKUP_KEY = "SketcherViewBackup"
 DASH_DOT = 0xFFC6  # trazo largo, hueco, punto, hueco (16 bits)
 SKETCH_VALUES = [
@@ -117,8 +119,12 @@ QStatusBar {
 
 def install():
     """Cambiar las tablas del original antes de que layout.enter() las aplique."""
-    from swui import overlay_panels, theme, view_background
+    from swui import layout, overlay_panels, theme, view_background
 
+    # Sin las barras Archivo (nuevo/abrir/guardar) y Editar (deshacer/rehacer/recalcular):
+    # quedan los menús y los atajos (Ctrl+N/O/S/Z/Y, F5... ). Solo el selector de bancos se
+    # conserva como salida (always_swui.py lo oculta mientras está activo).
+    layout.KEEP_TOOLBARS = KEEP_TOOLBARS
     theme.COLORS.update(COLORS)
     if not getattr(theme.build_qss, "_swui_look", False):
         original_qss = theme.build_qss
