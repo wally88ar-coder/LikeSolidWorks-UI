@@ -2,6 +2,23 @@
 
 Neueste Version oben. / Newest version first.
 
+## Unveröffentlicht / Unreleased
+
+**Deutsch**
+- Oberfläche auch auf **Spanisch** (`swui/lang/es.py`), Begriffe wie im
+  spanischen SOLIDWORKS (Croquis, Extruir saliente/base, Relaciones de
+  posición, Planta/Alzado/Vista lateral …).
+- *Automatisch* nimmt FreeCADs Sprache, wenn es dafür eine Sprachdatei gibt
+  (bisher nur Deutsch, sonst Englisch); erkennt auch „Spanish (Argentina)“.
+- `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
+
+**English**
+- Interface also in **Spanish** (`swui/lang/es.py`), terms as in the
+  Spanish SOLIDWORKS.
+- *Automatic* uses FreeCAD's language whenever there is a language file for
+  it (before: German, otherwise English); also recognises "Spanish (Argentina)".
+- `tools/test_load.py` also runs on Windows (path comparisons).
+
 ## 0.10.0 — 2026-10-18
 
 **Deutsch**
