@@ -194,6 +194,14 @@ class _FakeMainWindow:
         self.restore_count = 0
         self.filters = 0
         self.dialog_open = False
+        self.actions = []  # fork: teclas N y F (view_keys.py)
+
+    def addAction(self, action):
+        self.actions.append(action)
+
+    def removeAction(self, action):
+        if action in self.actions:
+            self.actions.remove(action)
 
     def findChildren(self, cls, name=None):
         qtw = sys.modules["PySide"].QtWidgets
@@ -4346,6 +4354,25 @@ def run(split_namespace):
             or osp.choice_text(1.5) != "x1,5" or osp.choice_text(1.0) != "x1 (como FreeCAD)"
             or "SWUI_OrbitSpeed" not in commands):
         print("  FEHLER: velocidad de giro (x1,5 de fábrica, movimiento agrandado, comando)")
+        return False
+    # Fork: teclas N y F (swui/fork/view_keys.py)
+    vk = sys.modules["swui.fork.view_keys"]
+    c30 = (0.0, -math.sin(math.radians(30)), -math.cos(math.radians(30)))  # mirando casi desde arriba
+    near = vk.nearest_axis(c30)
+    up_top = vk.straight_up((0, 0, -1), (0.2, 0.98, 0))  # vista superior, pantalla algo torcida
+    flip = vk.face_direction((0, 0, 1), (0, 0, -1))  # ya de frente a la cara -> del otro lado
+    front = vk.face_direction((0, -1, 0), c30)
+    if vk.face_direction((0, 0, 1), (0, 0, -1), again=False) != (0.0, 0.0, -1.0):  # otra cara paralela: no dar vuelta
+        print("  FEHLER: fork: N sobre otra cara ya de frente no debe darla vuelta")
+        return False
+    right_, up_, back_ = vk.camera_axes((0, 1, 0), (0, 0, 1))
+    if (near != (0, 0, -1) or up_top != (0.0, 1.0, 0.0) or flip != (0.0, 0.0, 1.0) or front != (0.0, 1.0, 0.0)
+            or vk.straight_up((0, 1, 0), (0, 0, 1)) != (0.0, 0.0, 1.0)
+            or tuple(round(x, 9) for x in right_) != (1.0, 0.0, 0.0) or back_ != (0, -1, 0)
+            or "SWUI_NormalTo" not in commands or len(mw.actions) != 2
+            or not hooked(layout.enter, "_swui_keys") or not hooked(layout.leave, "_swui_keys")):
+        print("  FEHLER: fork: teclas N y F (vista más cercana, arriba derecho, dar vuelta, comando)",
+              near, up_top, flip, front, right_)
         return False
     if not fcp[op.OWN_PARAMS].get(op.BACKUP_KEY):
         print("  FEHLER: keine Sicherung der Panel-Einstellungen")

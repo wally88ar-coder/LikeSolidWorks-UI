@@ -73,6 +73,13 @@ Neueste Version oben. / Newest version first.
 - **Velocidad de giro** con la ruedita del mouse (menú *LikeSolidWorks UI →
   Velocidad de giro…*): x1 (como FreeCAD), x1,5 (de fábrica), x2, x2,5. Medido a
   1366 px: x1 = 16°, x1,5 = 25°, x2 = 35° por cada 100 px de arrastre.
+- **Teclas N y F** como en SOLIDWORKS: **F** ajusta y centra todo; **N** = *Normal a*:
+  con una cara plana o un plano seleccionado lo mira de frente (otra vez N: del otro
+  lado), editando un croquis mira el croquis de frente, y sin selección gira a la vista
+  estándar más cercana. El "arriba" queda derecho. En un campo de texto la letra se
+  escribe normalmente. Solo dentro de LikeSolidWorks UI (`swui/fork/view_keys.py`).
+- Panel para elegir plano: los planos de un cuerpo creado desde la página de Inicio
+  también se llaman Planta / Alzado / Vista lateral.
 
 ## 0.10.0 — 2026-10-18
 

@@ -47,3 +47,12 @@
   `overlay_panels.TARGET`), marcando cada envoltura con un atributo `_swui_*` para no envolver dos
   veces. Toda preferencia que se cambie se guarda antes y se devuelve al salir del banco.
 - `tools/test_load.py` (del original) tiene chequeos agregados del fork, marcados "fork".
+- Selección: `getSelectionEx()` (resuelta) da las formas en coordenadas LOCALES del objeto;
+  para la posición real (cuerpo girado, ensamblaje) usar `getSelectionEx("", 0)` y
+  `raiz.getSubObject(sub)`; un `App::Plane` no tiene forma: `getSubObject(sub, retType=3)`
+  da su Placement global.
+- Cámara: `view.getCameraOrientation()` / `setCameraOrientation(Rotation)` (anima). Una
+  animación en curso (p. ej. `viewIsometric()`) pisa un giro pedido enseguida: en pruebas,
+  esperar ~1,5 s entre pasos.
+- Atajos: `QTest.keyClick` dispara atajos de verdad (sendEvent no). Editando un croquis la
+  vista 3D se queda con las teclas sueltas: los atajos de la ventana no llegan.

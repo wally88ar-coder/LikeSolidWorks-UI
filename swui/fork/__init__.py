@@ -46,6 +46,12 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Velocidad de giro:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import view_keys
+
+        view_keys.install()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Teclas N y F:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

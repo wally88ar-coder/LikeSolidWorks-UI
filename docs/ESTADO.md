@@ -45,6 +45,12 @@ Propios del fork (en `swui/fork/`, enganchados en `swui/fork/__init__.py`, una l
   fábrica). FreeCAD no tiene ese ajuste: se agranda el arrastre en la vista 3D.
 - `always_swui.py`: **usar siempre LikeSolidWorks UI** (arranque, vuelta automática si algo
   cambia de banco, selector oculto); se apaga en el menú "Usar siempre LikeSolidWorks UI".
+- `view_keys.py`: **teclas N (normal a) y F (ajustar)** como SW. N: cara plana/plano
+  seleccionado (repetida sobre la misma cara: del otro lado), croquis en edición, o vista
+  estándar más cercana sin selección; "arriba" derecho. Acciones propias en la ventana +
+  filtro en la vista 3D (en croquis la vista se queda con las teclas). Probado en FreeCAD
+  real; falta que lo pruebe el usuario. Pendiente que confirme en su SW cómo se comporta N
+  sin selección (supuesto: vista estándar más cercana).
 
 ## Falta / ideas pendientes
 - Fase 1: chapa metálica + DXF (cajoneada). Pedir al usuario piezas STEP de chapa cuando se retome.
