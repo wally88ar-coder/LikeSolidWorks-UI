@@ -15,6 +15,11 @@ Neueste Version oben. / Newest version first.
   über den Rand). Passt ein Reiter nicht, zeigen die großen Knöpfe nur das
   Symbol (Name im Tooltip, wie in SOLIDWORKS ohne „große Knöpfe mit
   Text“); reicht das nicht, erscheinen Pfeile zum Verschieben.
+- Feature-Dialoge (Linear austragen, Verrundung …) wechselten in FreeCAD
+  1.1.4 selbst zur Workbench Part Design – Ribbon weg, Dialog ohne
+  SW-Begriffe. Sie bleiben jetzt in LikeSolidWorks UI.
+- SW-Begriffe in den Dialogen auch unter Windows (Objektname dort
+  `PartDesignGui__…` statt `PartDesignGui::…`).
 - `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
 
 **English**
@@ -26,6 +31,11 @@ Neueste Version oben. / Newest version first.
   (before ~1460 px – on 1366 px screens the window was cut off on the
   right). If a tab does not fit, the large buttons show only their icon
   (name in the tooltip); if that is still too wide, arrows appear to scroll.
+- Feature dialogs (Extruded Boss/Base, Fillet …) switched to the Part Design
+  workbench by themselves in FreeCAD 1.1.4 – ribbon gone, no SW terms. They
+  now stay in LikeSolidWorks UI.
+- SW terms in the dialogs also on Windows (object name `PartDesignGui__…`
+  there instead of `PartDesignGui::…`).
 - `tools/test_load.py` also runs on Windows (path comparisons).
 
 **Fork (wally88ar-coder, español)**

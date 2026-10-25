@@ -23,7 +23,19 @@ jeder anderen Workbench (z.B. Part Design) laeuft alles wie gewohnt.
 Warum nicht EditingWorkbench der Skizzen aendern: Das ist eine
 gespeicherte Eigenschaft - sie wuerde Dominiks Dateien veraendern und
 auch das Verhalten in Part Design.
+
+Feature-Dialoge (Linear austragen, Verrundung, ...): Part Design wechselt
+beim Oeffnen JEDES Feature-Dialogs selbst zur Workbench Part Design
+(FreeCAD 1.1.4: Gui::Command::assureWorkbench -> doCommand
+"Gui.activateWorkbench('PartDesignWorkbench')") und beim Schliessen
+zurueck - mitten in LikeSolidWorks UI verschwand dann das Ribbon und der
+Dialog kam ohne SW-Begriffe (unter Windows gemeldet, 25.10.). Diese
+Aufrufe kommen als Python-Text aus FreeCADs C++ (Dateiname "<string>");
+nur sie werden in LikeSolidWorks UI uebersprungen. Die Workbench-Auswahl
+in der Leiste und Makros wechseln weiter wie gewohnt.
 """
+
+import sys
 
 import FreeCAD
 import FreeCADGui
@@ -34,6 +46,7 @@ WB_NAME = "LikeSolidWorksUIWorkbench"
 
 def install():
     """Einhaken. Mehrfacher Aufruf ist unschaedlich."""
+    _hook_feature_dialogs()  # unabhaengig vom Show-Modul
     try:
         from Show import mTempoVis
     except Exception as exc:
@@ -62,6 +75,34 @@ def install():
     return True
 
 
+# Workbenches, zu denen FreeCAD beim Oeffnen eines Feature-Dialogs selbst wechselt
+FEATURE_WORKBENCHES = ("PartDesignWorkbench",)
+
+
+def _hook_feature_dialogs():
+    """FreeCADGui.activateWorkbench einhaken (siehe Modulkopf: Feature-Dialoge)."""
+    current = getattr(FreeCADGui, "activateWorkbench", None)
+    if current is None or getattr(current, "_swui_original", None) is not None:
+        return
+
+    def activateWorkbench(name, *args, _original=current):
+        if name in FEATURE_WORKBENCHES and _swui_active() and _from_freecad():
+            FreeCAD.Console.PrintLog("[SWUI] Feature-Dialog bleibt in LikeSolidWorks UI (statt %s).\n" % name)
+            return True
+        return _original(name, *args)
+
+    activateWorkbench._swui_original = current
+    FreeCADGui.activateWorkbench = activateWorkbench
+
+
+def _from_freecad(depth=2):
+    """Kommt der Aufruf als Python-Text aus FreeCADs C++ (doCommand)? depth 2 = Aufrufer des Hakens."""
+    try:
+        return sys._getframe(depth).f_code.co_filename == "<string>"
+    except ValueError:
+        return False
+
+
 def uninstall():
     """Originalverhalten wiederherstellen (fuer Tests und Notfaelle)."""
     try:
@@ -72,6 +113,9 @@ def uninstall():
     original = getattr(cls.activateWorkbench, "_swui_original", None)
     if original is not None:
         cls.activateWorkbench = original
+    original = getattr(getattr(FreeCADGui, "activateWorkbench", None), "_swui_original", None)
+    if original is not None:
+        FreeCADGui.activateWorkbench = original
 
 
 def _swui_active():
