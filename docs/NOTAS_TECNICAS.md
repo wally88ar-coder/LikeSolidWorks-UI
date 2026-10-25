@@ -56,3 +56,6 @@
   esperar ~1,5 s entre pasos.
 - Atajos: `QTest.keyClick` dispara atajos de verdad (sendEvent no). Editando un croquis la
   vista 3D se queda con las teclas sueltas: los atajos de la ventana no llegan.
+- `Std_ViewFitAll` (tecla F) NO anima en 1.1.4: posición y zoom de la cámara quedan finales
+  en el mismo instante (medido con "UseNavigationAnimations" prendido). Lo que sí anima es
+  `setCameraOrientation` (tecla N), a propósito.
