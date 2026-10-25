@@ -31,10 +31,18 @@
   (una línea en `InitGui.Initialize`). Probado en FreeCAD real con un croquis.
   El test del original se adaptó en `master` para verificar este comportamiento.
 
+- Arreglado (reporte del usuario): al extruir, FreeCAD saltaba al banco Part Design (Part Design
+  lo hace solo al abrir cualquier diálogo de operación). Ahora se queda en LikeSolidWorks UI.
+  Además los términos SW de los diálogos no andaban en Windows (nombre `PartDesignGui__...`).
+  Rama `fix/feature-dialog-bleibt`. Probado en FreeCAD real.
+
 ## Falta (fase 0)
 - [ ] Extruir / extruir corte sin croquis: elegir cara plana o plano, abrir croquis, lanzar al salir.
 
 ## Problemas reportados por el usuario
+- 2026-10-25: al extruir un croquis saltaba a Part Design y el diálogo quedaba nativo. **Arreglado.**
+- 2026-10-25: Croquis sin selección cae en "Seleccione un plano" (solo planos base, no acepta
+  caras). Pendiente: es el punto "extruir/cortar/croquis sin croquis previo" de la fase 0.
 - 2026-10-25: con la cinta en español Windows avisa "Unable to set geometry 1614x705": la
   ventana no entra en 1366 px y se corta el borde derecho (Tareas y Vista de informe).
 
@@ -50,4 +58,5 @@
 |---|---|---|
 | `fix/test-windows-pfade` | Test pasa en Windows | lista, sin proponer (consultar al usuario) |
 | `feat/ribbon-schmal` | Cinta para pantallas chicas (incluye `fix/test-windows-pfade`) | lista, sin proponer |
+| `fix/feature-dialog-bleibt` | Diálogos no saltan a Part Design; términos SW en Windows (incluye `fix/test-windows-pfade`) | lista, sin proponer |
 | `feat/sprache-es` | Idioma español + Automático según FreeCAD | lista, sin proponer; el test de esa rama sola necesita también `fix/test-windows-pfade` en Windows |
