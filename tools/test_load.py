@@ -4251,11 +4251,25 @@ def run(split_namespace):
         print("  FEHLER: Activated() hat swui.layout nicht geladen")
         return False
 
-    keep = ["Edit", "File", "InnerPanelBar", "Workbench"]
+    keep = ["Edit", "File", "InnerPanelBar"]  # fork: selector de bancos oculto (always_swui)
     if mw.visible_bars() != keep:
         print("  FEHLER: sichtbare Leisten", mw.visible_bars(), "erwartet", keep)
         return False
     print("  Layout   : sichtbar bleiben", mw.visible_bars())
+    # Fork: usar siempre LikeSolidWorks UI
+    asw = sys.modules["swui.fork.always_swui"]
+    gen_p = sys.modules["FreeCAD"]._params.get("User parameter:BaseApp/Preferences/General", {})
+    if (gen_p.get("AutoloadModule") != "LikeSolidWorksUIWorkbench" or not asw.should_return("PartDesignWorkbench")
+            or asw.should_return("LikeSolidWorksUIWorkbench") or "SWUI_AlwaysSWUI" not in commands):
+        print("  FEHLER: fork: usar siempre LikeSolidWorks UI (arranque / volver / comando)", gen_p.get("AutoloadModule"))
+        return False
+    commands["SWUI_AlwaysSWUI"].Activated(False)  # apagado: arranque anterior, selector visible
+    off_ok = (gen_p.get("AutoloadModule") != "LikeSolidWorksUIWorkbench" and not asw.should_return("PartDesignWorkbench")
+              and "Workbench" in mw.visible_bars())
+    commands["SWUI_AlwaysSWUI"].Activated(True)
+    if not off_ok or "Workbench" in mw.visible_bars() or gen_p.get("AutoloadModule") != "LikeSolidWorksUIWorkbench":
+        print("  FEHLER: fork: apagar/prender 'usar siempre' desde el menú", off_ok, mw.visible_bars())
+        return False
 
     op = sys.modules.get("swui.overlay_panels")
     fcp = sys.modules["FreeCAD"]._params

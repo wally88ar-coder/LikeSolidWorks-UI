@@ -52,8 +52,12 @@
   Ver → Paneles → Vista de informe cuando haga falta mirar errores. Mientras está en
   LikeSolidWorks UI tampoco se abre sola (preferencias OutputWindow, se devuelven al salir).
   Probado en FreeCAD real.
-- Pendiente de OK del usuario: "usar siempre LikeSolidWorks UI" (arranque, volver si algo cambia
-  de banco, ocultar selector, opción en el menú para apagarlo).
+- Usar siempre LikeSolidWorks UI (pedido del usuario, 2026-10-25): arranque en el banco
+  (AutoloadModule, el anterior queda guardado), vuelta automática si algo cambia de banco
+  (señal workbenchActivated; la página de Inicio cambia desde C++), selector oculto. Escape:
+  menú "Usar siempre LikeSolidWorks UI". `swui/fork/always_swui.py`. Probado en FreeCAD real.
+- Estrategia acordada: todo módulo nuevo (chapa, simulación FEM) como pestaña de la cinta dentro
+  de LikeSolidWorks UI, con flujo y nombres SW sobre las herramientas nativas.
 
 ## Falta (fase 0)
 - [x] Prueba del usuario (2026-10-25): conforme, "ahora sí se parece más a SW".

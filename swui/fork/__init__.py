@@ -33,3 +33,11 @@ def install(workbench=None):
             workbench.appendMenu(MENU, [orbit_speed.COMMAND])
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Velocidad de giro:\n%s\n" % traceback.format_exc())
+    try:
+        from swui.fork import always_swui
+
+        always_swui.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [always_swui.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Usar siempre LikeSolidWorks UI:\n%s\n" % traceback.format_exc())

@@ -55,6 +55,10 @@ Neueste Version oben. / Newest version first.
   Vista de informe abajo y **oculta** (se abre con Ver → Paneles → Vista de
   informe); dentro de LikeSolidWorks UI no se abre sola ante avisos/errores.
   Código propio del fork en `swui/fork/`.
+- **Usar siempre LikeSolidWorks UI** (menú *LikeSolidWorks UI*, con tilde): FreeCAD
+  arranca en LikeSolidWorks UI, vuelve a él si algo cambia de banco (por ejemplo
+  "Cuerpo paramétrico" o "Ensamblaje" en la página de Inicio) y oculta el selector de
+  bancos. Desmarcado, todo vuelve a ser como en FreeCAD.
 - **Velocidad de giro** con la ruedita del mouse (menú *LikeSolidWorks UI →
   Velocidad de giro…*): x1 (como FreeCAD), x1,5 (de fábrica), x2, x2,5. Medido a
   1366 px: x1 = 16°, x1,5 = 25°, x2 = 35° por cada 100 px de arrastre.
