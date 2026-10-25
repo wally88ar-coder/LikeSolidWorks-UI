@@ -57,6 +57,10 @@ Propios del fork (en `swui/fork/`, enganchados en `swui/fork/__init__.py`, una l
 - Color de las piezas (gris de SW): no se tocó; pedir captura si el usuario lo quiere.
 
 ## Problemas reportados por el usuario (todos resueltos)
+- 2026-10-25: panel "Croquis: seleccionar un plano" mostraba "Plano XY/XZ/YZ" (cuerpo creado
+  desde la página de Inicio, en Part Design) y al hacer clic en la lista daba "Access violation"
+  (el panel se cerraba durante el propio clic). Resuelto en `feat/skizze-ohne-auswahl` (+ master);
+  en el fork, `always_swui` renombra los planos al volver de otro banco. Falta que lo pruebe él.
 - 2026-10-25: cinta cortaba la ventana a 1366 px (pedía 1614 px). Resuelto.
 - 2026-10-25: al extruir un croquis saltaba a Part Design y el diálogo quedaba nativo. Resuelto.
 - 2026-10-25: Croquis sin selección caía en "Seleccione un plano" (solo planos base, nombres de

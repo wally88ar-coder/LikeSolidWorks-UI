@@ -37,6 +37,7 @@ SELECTOR_TOOLBAR = "Workbench"
 COMMAND = "SWUI_AlwaysSWUI"
 MAX_RETURNS = 5  # vueltas seguidas en RETURN_WINDOW s; más = algo pelea, se deja de insistir
 RETURN_WINDOW = 3.0
+PLANES_MS = 300  # el cuerpo de la página de Inicio puede aparecer recién después de volver
 
 _connected = False
 _returns = []
@@ -107,8 +108,22 @@ def _go_back():
     try:
         if should_return(FreeCADGui.activeWorkbench().name()):
             FreeCADGui.activateWorkbench(WB_NAME)
+            # La página de Inicio crea el cuerpo en Part Design: sus planos quedan "Plano XY"
+            QtCore.QTimer.singleShot(PLANES_MS, _sw_plane_names)
     except Exception:
         FreeCAD.Console.PrintLog("[SWUI fork] No se pudo volver a LikeSolidWorks UI.\n")
+
+
+def _sw_plane_names():
+    """Planos de origen con nombre de FreeCAD -> Planta, Alzado, Vista lateral."""
+    try:
+        from swui import pick_plane
+
+        doc = FreeCAD.ActiveDocument
+        if doc is not None:
+            pick_plane.rename_default_planes(list(doc.Objects))
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] No se pudieron renombrar los planos.\n")
 
 
 # --- Selector de bancos ----------------------------------------------
