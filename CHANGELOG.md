@@ -2,6 +2,23 @@
 
 Neueste Version oben. / Newest version first.
 
+## Unveröffentlicht / Unreleased
+
+**Deutsch**
+- **Kleine Bildschirme:** Das Ribbon erzwingt keine Mindestbreite des
+  Fensters mehr (bisher ~1460 px – bei 1366 px ragte das Fenster rechts
+  über den Rand). Passt ein Reiter nicht, zeigen die großen Knöpfe nur das
+  Symbol (Name im Tooltip, wie in SOLIDWORKS ohne „große Knöpfe mit
+  Text“); reicht das nicht, erscheinen Pfeile zum Verschieben.
+- `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
+
+**English**
+- **Small screens:** the ribbon no longer forces a minimum window width
+  (before ~1460 px – on 1366 px screens the window was cut off on the
+  right). If a tab does not fit, the large buttons show only their icon
+  (name in the tooltip); if that is still too wide, arrows appear to scroll.
+- `tools/test_load.py` also runs on Windows (path comparisons).
+
 ## 0.10.0 — 2026-10-18
 
 **Deutsch**
