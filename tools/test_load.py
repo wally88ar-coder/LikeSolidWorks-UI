@@ -4365,6 +4365,36 @@ def run(split_namespace):
     if vk.face_direction((0, 0, 1), (0, 0, -1), again=False) != (0.0, 0.0, -1.0):  # otra cara paralela: no dar vuelta
         print("  FEHLER: fork: N sobre otra cara ya de frente no debe darla vuelta")
         return False
+    # F: ajuste de FreeCAD con la animación apagada solo mientras dura
+    gui_vk = sys.modules["FreeCADGui"]
+    view_p = sys.modules["FreeCAD"].ParamGet(vk.VIEW_PARAMS)
+    seen_vk, old_msg_vk = [], getattr(gui_vk, "SendMsgToActiveView", None)
+    view_d = sys.modules["FreeCAD"]._params.setdefault(vk.VIEW_PARAMS, {})
+    view_saved = dict(view_d)
+    try:
+        gui_vk.SendMsgToActiveView = lambda m_: seen_vk.append((m_, view_p.GetBool(vk.ANIMATIONS, True)))
+        view_p.SetBool(vk.ANIMATIONS, True)
+        vk.fit_all()
+        on_after = view_p.GetBool(vk.ANIMATIONS, False)
+        view_p.SetBool(vk.ANIMATIONS, False)
+        vk.fit_all()
+        off_after = view_p.GetBool(vk.ANIMATIONS, True)
+    finally:
+        if old_msg_vk is None:
+            del gui_vk.SendMsgToActiveView
+        else:
+            gui_vk.SendMsgToActiveView = old_msg_vk
+        view_d.clear()
+        view_d.update(view_saved)  # sin rastros: el test de salir del banco compara las preferencias
+    if (seen_vk != [("ViewFit", False), ("ViewFit", False)] or not on_after or off_after
+            or "SWUI_FitAll" not in commands or dict(vk.KEYS).get("F") != "SWUI_FitAll"):
+        print("  FEHLER: fork: F sin animación (y preferencia devuelta)", seen_vk, on_after, off_after)
+        return False
+    # Atajos de FreeCAD que empiezan con F o N demoran la tecla suelta ~0,3 s
+    if (not vk.clashes("F, S") or not vk.clashes("N, X") or vk.clashes("F") or vk.clashes("F3")
+            or vk.clashes("V, F") or vk.clashes("Ctrl+F")):
+        print("  FEHLER: fork: atajos que empiezan con F/N mal detectados")
+        return False
     right_, up_, back_ = vk.camera_axes((0, 1, 0), (0, 0, 1))
     if (near != (0, 0, -1) or up_top != (0.0, 1.0, 0.0) or flip != (0.0, 0.0, 1.0) or front != (0.0, 1.0, 0.0)
             or vk.straight_up((0, 1, 0), (0, 0, 1)) != (0.0, 0.0, 1.0)

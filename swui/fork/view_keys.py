@@ -4,7 +4,11 @@
 """
 Teclas N (normal a) y F (ajustar a la ventana), como en SOLIDWORKS.
 
-- F: encuadra y centra todo (Std_ViewFitAll de FreeCAD, que trae "V, F").
+- F: encuadra y centra todo (Std_ViewFitAll de FreeCAD, que trae "V, F"),
+  SIN animación, como SW. Con "animaciones de navegación" prendidas, FreeCAD
+  1.1 anima el ajuste (animatedViewAll: 10 pasos de 20 ms, ~0,4 s, todo
+  dentro del comando); la preferencia se apaga solo durante el ajuste.
+  La N sí anima (ayuda a ver hacia dónde giró la pieza).
 - N: "Normal a".
   * Cara plana o plano seleccionado: mira la cara de frente. Apretada otra
     vez, la mira desde el otro lado.
@@ -21,6 +25,10 @@ atajos de FreeCAD) y existen solo dentro de LikeSolidWorks UI. Cuando el
 cursor está en un campo de texto, la letra va al campo, no a la vista.
 Editando un croquis la vista 3D se queda con las teclas: ahí las atiende un
 filtro de eventos en la propia vista.
+Un atajo de varias teclas que empieza igual ("F, S" = filtro de selección de
+caras de Part) hace que FreeCAD espere ~0,3 s la segunda tecla antes de
+ejecutar la F: mientras se está en LikeSolidWorks UI esos atajos se quitan
+y al salir se devuelven.
 """
 
 import math
@@ -32,14 +40,18 @@ import FreeCADGui
 from swui.compat import QtCore, QtGui, QtWidgets
 
 COMMAND = "SWUI_NormalTo"
+FIT_COMMAND = "SWUI_FitAll"
 VIEW_CLASS = "Gui::View3DInventor"
-FIT_COMMAND = "Std_ViewFitAll"
+FIT_MESSAGE = "ViewFit"  # mensaje de Std_ViewFitAll a la vista (3D u hoja de dibujo)
+VIEW_PARAMS = "User parameter:BaseApp/Preferences/View"
+ANIMATIONS = "UseNavigationAnimations"
 KEYS = (("N", COMMAND), ("F", FIT_COMMAND))
 AXES = ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1))
 SAME = 0.999  # coseno: ya se mira la cara de frente -> darla vuelta
 MIN_UP = 0.1  # un eje casi paralelo a la mirada no sirve de "arriba"
 
 _actions = []
+_hidden = []  # (QAction, atajos) de FreeCAD que empiezan con N o F, quitados mientras tanto
 _filter = None
 _last = None  # última cara/plano de "Normal a" (para darla vuelta si se repite)
 
@@ -203,6 +215,38 @@ def normal_to():
     view.setCameraOrientation(_rotation(direction, up))
 
 
+def fit_all():
+    """Ajustar a la ventana sin animación (en hojas de dibujo, el ajuste de FreeCAD tal cual)."""
+    params = FreeCAD.ParamGet(VIEW_PARAMS)
+    was = params.GetBool(ANIMATIONS, True)
+    if was:
+        params.SetBool(ANIMATIONS, False)  # FreeCAD lo aplica en el acto a las vistas abiertas
+    try:
+        # Lo mismo que hace Std_ViewFitAll, pero en el acto: un runCommand desde otro
+        # comando queda para después y correría ya con la animación prendida de nuevo
+        FreeCADGui.SendMsgToActiveView(FIT_MESSAGE)
+    finally:
+        if was:
+            params.SetBool(ANIMATIONS, True)
+
+
+class _FitAllCommand:
+    def GetResources(self):
+        return {
+            "MenuText": "Ajustar a la ventana",
+            "ToolTip": "Encuadra y centra todo, sin animación (tecla F)",
+        }
+
+    def IsActive(self):
+        return FreeCADGui.ActiveDocument is not None
+
+    def Activated(self):
+        try:
+            fit_all()
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Ajustar a la ventana:\n%s\n" % traceback.format_exc())
+
+
 class _NormalToCommand:
     def GetResources(self):
         return {
@@ -228,10 +272,11 @@ def install():
     """Comando "Normal a" y teclas mientras se está en LikeSolidWorks UI."""
     from swui import layout
 
-    try:
-        FreeCADGui.addCommand(COMMAND, _NormalToCommand())
-    except Exception:
-        pass  # ya registrado
+    for name, command in ((COMMAND, _NormalToCommand()), (FIT_COMMAND, _FitAllCommand())):
+        try:
+            FreeCADGui.addCommand(name, command)
+        except Exception:
+            pass  # ya registrado
     if getattr(layout.enter, "_swui_keys", False):
         return
     original_enter, original_leave = layout.enter, layout.leave
@@ -294,6 +339,34 @@ def _attach_all():
         pass
 
 
+def clashes(sequence):
+    """¿El atajo empieza con una de nuestras teclas sueltas? ('F, S' sí; 'F', 'F3', 'V, F' no)."""
+    return any(sequence.startswith(key + ",") for key, _c in KEYS)
+
+
+def _action_class():
+    return QtGui.QAction if hasattr(QtGui, "QAction") else QtWidgets.QAction  # Qt6 / Qt5
+
+
+def _hide_clashes(mw):
+    for action in mw.findChildren(_action_class()):
+        if action in _actions:
+            continue
+        shortcuts = list(action.shortcuts())
+        if any(clashes(s.toString()) for s in shortcuts):
+            _hidden.append((action, shortcuts))
+            action.setShortcuts([s for s in shortcuts if not clashes(s.toString())])
+
+
+def _restore_clashes():
+    for action, shortcuts in _hidden:
+        try:
+            action.setShortcuts(shortcuts)
+        except Exception:
+            pass  # la acción ya no existe
+    del _hidden[:]
+
+
 def add_keys():
     global _filter
     if _actions:
@@ -308,8 +381,9 @@ def add_keys():
     _attach_all()
     try:
         mw = FreeCADGui.getMainWindow()
+        _hide_clashes(mw)
         for key, command in KEYS:
-            action = QtGui.QAction(mw) if hasattr(QtGui, "QAction") else QtWidgets.QAction(mw)  # Qt6 / Qt5
+            action = _action_class()(mw)
             action.setObjectName("SWUI_Key_" + key)
             action.setShortcut(QtGui.QKeySequence(key))
             action.triggered.connect(lambda *_a, c=command: _run(c))
@@ -332,3 +406,4 @@ def remove_keys():
         except Exception:
             pass
     del _actions[:]
+    _restore_clashes()

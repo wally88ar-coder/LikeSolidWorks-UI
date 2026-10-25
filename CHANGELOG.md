@@ -73,7 +73,9 @@ Neueste Version oben. / Newest version first.
 - **Velocidad de giro** con la ruedita del mouse (menú *LikeSolidWorks UI →
   Velocidad de giro…*): x1 (como FreeCAD), x1,5 (de fábrica), x2, x2,5. Medido a
   1366 px: x1 = 16°, x1,5 = 25°, x2 = 35° por cada 100 px de arrastre.
-- **Teclas N y F** como en SOLIDWORKS: **F** ajusta y centra todo; **N** = *Normal a*:
+- **Teclas N y F** como en SOLIDWORKS: **F** ajusta y centra todo, al instante (sin la
+  animación de FreeCAD ni la espera por el atajo "F, S" del filtro de caras, que se quita
+  dentro de LikeSolidWorks UI); **N** = *Normal a*, con animación:
   con una cara plana o un plano seleccionado lo mira de frente (otra vez N: del otro
   lado), editando un croquis mira el croquis de frente, y sin selección gira a la vista
   estándar más cercana. El "arriba" queda derecho. En un campo de texto la letra se

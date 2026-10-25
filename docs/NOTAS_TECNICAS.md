@@ -56,9 +56,18 @@
   esperar ~1,5 s entre pasos.
 - Atajos: `QTest.keyClick` dispara atajos de verdad (sendEvent no). Editando un croquis la
   vista 3D se queda con las teclas sueltas: los atajos de la ventana no llegan.
-- `Std_ViewFitAll` (tecla F) NO anima en 1.1.4: posición y zoom de la cámara quedan finales
-  en el mismo instante (medido con "UseNavigationAnimations" prendido). Lo que sí anima es
-  `setCameraOrientation` (tecla N), a propósito.
+- `Std_ViewFitAll` SÍ anima (con "UseNavigationAnimations"): `animatedViewAll(10, 20)` corre
+  los pasos DENTRO de la llamada (~0,35 s bloqueando) y recién después vuelve; por eso leer la
+  cámara justo después la da final y parece instantáneo (error mío del 25/10, lo destapó un
+  video del usuario). Medir el TIEMPO de la llamada, no la cámara. Sin animación: apagar la
+  preferencia, `SendMsgToActiveView("ViewFit")`, prenderla (FreeCAD la aplica en el acto).
+- `runCommand` desde dentro de otro comando queda para después (no correr un comando de
+  FreeCAD desde el Activated de otro si importa el momento).
+- Un atajo de varias teclas que empieza con la tecla suelta ("F, S" de Part_SelectFilter,
+  acción [2] del grupo, invisible para `Command.get(...).getShortcut()`) hace esperar ~0,3 s
+  a la tecla suelta. Buscar con `mw.findChildren(QAction)` y `shortcuts()`.
+- Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles
+  oscuros de la pieza por cuadro); las hojas de miniaturas no alcanzan para ver animaciones.
 - Videos del usuario: ffmpeg 9.0.2 instalado con winget (Gyan.FFmpeg, solo su usuario) en
   `%LOCALAPPDATA%/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/`
   (alias `ffmpeg` en consolas nuevas). Sacar cuadros: `ffmpeg -i video.mp4 -vf fps=2 <scratch>/c_%03d.png`.
