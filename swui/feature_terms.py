@@ -443,6 +443,16 @@ def is_installed():
     return _installed
 
 
+def root_names(name):
+    """
+    Objektname des Formulars in beiden Schreibweisen: unter Linux heisst es
+    "PartDesignGui::TaskPadPocketParameters", unter Windows (FreeCAD 1.1.4,
+    gemeldet 25.10.) "PartDesignGui__TaskPadPocketParameters".
+    """
+    other = name.replace("::", "__")
+    return (name, other) if other != name else (name,)
+
+
 def tick():
     """Laeuft regelmaessig: nur wenn ein Aufgaben-Dialog offen ist."""
     try:
@@ -450,8 +460,9 @@ def tick():
             return
         mw = FreeCADGui.getMainWindow()
         for spec in SPECS:
-            for root in mw.findChildren(QtWidgets.QWidget, spec["root"]):
-                apply(root, spec)
+            for name in root_names(spec["root"]):
+                for root in mw.findChildren(QtWidgets.QWidget, name):
+                    apply(root, spec)
     except Exception:
         FreeCAD.Console.PrintLog("[SWUI] Dialog-Begriffe: %s\n" % traceback.format_exc())
 

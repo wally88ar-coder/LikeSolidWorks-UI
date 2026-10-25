@@ -2,6 +2,24 @@
 
 Neueste Version oben. / Newest version first.
 
+## Unveröffentlicht / Unreleased
+
+**Deutsch**
+- Feature-Dialoge (Linear austragen, Verrundung …) wechselten in FreeCAD
+  1.1.4 selbst zur Workbench Part Design – Ribbon weg, Dialog ohne
+  SW-Begriffe. Sie bleiben jetzt in LikeSolidWorks UI.
+- SW-Begriffe in den Dialogen auch unter Windows (Objektname dort
+  `PartDesignGui__…` statt `PartDesignGui::…`).
+- `tools/test_load.py` läuft auch unter Windows (Pfadvergleiche).
+
+**English**
+- Feature dialogs (Extruded Boss/Base, Fillet …) switched to the Part Design
+  workbench by themselves in FreeCAD 1.1.4 – ribbon gone, no SW terms. They
+  now stay in LikeSolidWorks UI.
+- SW terms in the dialogs also on Windows (object name `PartDesignGui__…`
+  there instead of `PartDesignGui::…`).
+- `tools/test_load.py` also runs on Windows (path comparisons).
+
 ## 0.10.0 — 2026-10-18
 
 **Deutsch**

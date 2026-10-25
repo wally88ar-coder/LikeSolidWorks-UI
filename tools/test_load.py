@@ -589,6 +589,35 @@ def run(split_namespace):
         return False
     print("  Skizze   : bleibt in LikeSolidWorks UI; Part Design wechselt weiter zum Sketcher")
 
+    # Feature-Dialoge: FreeCADs eigenes "Gui.activateWorkbench('PartDesignWorkbench')" (doCommand,
+    # Dateiname "<string>") wird in LikeSolidWorks UI uebersprungen, Auswahl/Makros nicht
+    se = sys.modules["swui.sketch_edit"]
+    old_act = getattr(gui, "activateWorkbench", None)
+    switched_wb = []
+    gui.activateWorkbench = lambda name_, *a_: switched_wb.append(name_) or True
+    try:
+        se._hook_feature_dialogs()
+        se._hook_feature_dialogs()  # zweites Einhaken: nichts doppelt
+        exec(compile("Gui.activateWorkbench('PartDesignWorkbench')", "<string>", "exec"), {"Gui": gui})
+        from_cpp = list(switched_wb)
+        gui.activateWorkbench("PartDesignWorkbench")  # Makro / Add-on
+        gui._active_wb = "PartDesignWorkbench"
+        exec(compile("Gui.activateWorkbench('PartDesignWorkbench')", "<string>", "exec"), {"Gui": gui})
+        gui._active_wb = "LikeSolidWorksUIWorkbench"
+        se.uninstall()
+        restored = not hasattr(gui.activateWorkbench, "_swui_original")
+    finally:
+        gui._active_wb = "LikeSolidWorksUIWorkbench"
+        if old_act is None:
+            del gui.activateWorkbench
+        else:
+            gui.activateWorkbench = old_act
+        se.install()
+    if from_cpp or switched_wb != ["PartDesignWorkbench", "PartDesignWorkbench"] or not restored:
+        print("  FEHLER: Feature-Dialog wechselt zu Part Design / Makro blockiert", from_cpp, switched_wb, restored)
+        return False
+    print("  Dialog   : Feature-Dialoge bleiben in LikeSolidWorks UI; Workbench-Auswahl und Makros wechseln weiter")
+
     # --- SOLIDWORKS-Namen fuer neue Features ----------------------------
     fc = sys.modules["FreeCAD"]
     naming = sys.modules["swui.naming"]
@@ -1406,6 +1435,16 @@ def run(split_namespace):
     mwf.dialog_roots = {}
     if closed_text != "Seite 1" or pad2.kids["side1Label"].t != "Richtung 1":
         print("  FEHLER: Takt findet offenen Dialog nicht / arbeitet ohne Dialog", closed_text, pad2.kids["side1Label"].t)
+        return False
+    # Windows (FreeCAD 1.1.4): Objektname mit "__" statt "::"
+    pad_win = FRoot({"side1Label": FLabel("Seite 1")})
+    mwf.dialog_roots = {"PartDesignGui__TaskPadPocketParameters": [pad_win]}
+    mwf.dialog_open = True
+    ft.tick()
+    mwf.dialog_open = False
+    mwf.dialog_roots = {}
+    if pad_win.kids["side1Label"].t != "Richtung 1":
+        print("  FEHLER: Dialog mit Windows-Objektnamen (PartDesignGui__...) nicht erkannt")
         return False
     jroot = FRoot({
         "jointType": FCombo(["Fest", "Drehgelenk", "Zylindrisch", "Schieber", "Kugel", "Abstand", "Parallel",
