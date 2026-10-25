@@ -1228,7 +1228,9 @@ def run(split_namespace):
     if declined or len(asks) != 2 or len(ins) != 2:
         print("  FEHLER: ungespeicherte Baugruppe nicht erst gespeichert", declined, asks, ins)
         return False
-    if ad.suggested_path(types.SimpleNamespace(Label="Baugruppe1"), "/h/a/Welle.FCStd") != "/h/a/Baugruppe1.FCStd":
+    # normpath: unter Windows setzt os.path.join einen Rueckstrich ein
+    vorschlag = ad.suggested_path(types.SimpleNamespace(Label="Baugruppe1"), "/h/a/Welle.FCStd")
+    if os.path.normpath(vorschlag) != os.path.normpath("/h/a/Baugruppe1.FCStd"):
         print("  FEHLER: Speicher-Vorschlag")
         return False
 
@@ -2648,7 +2650,8 @@ def run(split_namespace):
     if nd.suggest_format([solid(40, 30, 20)]) != "A4 hoch" or nd.suggest_format([solid(40, 220, 20)]) != "A3 quer":
         print("  FEHLER: Vorschlag Blattformat nach Teilgröße")
         return False
-    if nd.suggested_path(types.SimpleNamespace(FileName="/h/a/Welle.FCStd", Label="Welle")) != "/h/a/Welle_Zeichnung.FCStd":
+    vorschlag = nd.suggested_path(types.SimpleNamespace(FileName="/h/a/Welle.FCStd", Label="Welle"))
+    if os.path.normpath(vorschlag) != os.path.normpath("/h/a/Welle_Zeichnung.FCStd"):
         print("  FEHLER: Vorschlag Speicherort der Zeichnung")
         return False
     fcz = sys.modules["FreeCAD"]
@@ -4008,11 +4011,11 @@ def run(split_namespace):
     xdoc = types.SimpleNamespace(Objects=[pg1, types.SimpleNamespace(TypeId="TechDraw::DrawViewPart"), pg2],
                                  FileName="/h/z/Tisch_Zeichnung.FCStd", Label="Tisch_Zeichnung", Name="Tisch")
     pgs = de.pages_of(xdoc)
-    if pgs != [pg1, pg2] or de.suggested_path(xdoc, pgs, ".pdf") != "/h/z/TZ-001_A.pdf":
+    if pgs != [pg1, pg2] or os.path.normpath(de.suggested_path(xdoc, pgs, ".pdf")) != os.path.normpath("/h/z/TZ-001_A.pdf"):
         print("  FEHLER: Blätter/Dateiname aus Zeichnungsnummer", de.suggested_path(xdoc, pgs, ".pdf"))
         return False
     tplx.EditableTexts = {"drawing_number": ""}
-    if de.suggested_path(xdoc, pgs, ".dxf") != "/h/z/Tisch_Zeichnung.dxf":
+    if os.path.normpath(de.suggested_path(xdoc, pgs, ".dxf")) != os.path.normpath("/h/z/Tisch_Zeichnung.dxf"):
         print("  FEHLER: Dateiname ohne Zeichnungsnummer")
         return False
     if de.sheet_paths("/o/T.dxf", pgs, ".dxf") != ["/o/T_Blatt1.dxf", "/o/T_Blatt2.dxf"] or de.sheet_paths("/o/T.dxf", [pg1], ".dxf") != ["/o/T.dxf"]:
