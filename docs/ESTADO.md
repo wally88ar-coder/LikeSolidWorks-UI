@@ -6,6 +6,7 @@
 **Fase 0 — Puesta en marcha: terminada y probada por el usuario** ("ahora sí se parece más a SW").
 Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
 **Fase 1 (chapa) cajoneada por un tiempo** a pedido del usuario. Próximo trabajo: lo que él pida.
+Analizado y anotado (sin empezar): plan del árbol de operaciones estilo SW (sección "Plan" abajo).
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`). Hay además un FreeCAD
@@ -54,6 +55,63 @@ Propios del fork (en `swui/fork/`, enganchados en `swui/fork/__init__.py`, una l
   anima, a propósito) y sin la espera de ~0,3 s del atajo "F, S" (filtro de caras de Part,
   quitado dentro de LikeSolidWorks UI y devuelto al salir).
 
+## Plan: árbol de operaciones como el FeatureManager de SW (analizado, sin empezar)
+Analizado con el usuario el 2026-10-25, sin código todavía. Se hace para FreeCAD 1.1.4, porque el
+usuario se va a quedar unos 2 años en esa versión. Cada función revisa si FreeCAD ya lo hace y, si
+lo hace, usa lo nativo (así no choca con la 26.3 ni con las que vengan). Verificado en la 1.1.4 sin
+GUI: ya trae `Suppressed` en las operaciones, `Tip` y `AllowCompound` en el Body, y
+`Shape.getElementHistory` (registro de caras).
+
+Puntos (qué hace el addon / qué pasa con la 26.3):
+1. Estructura: franja propia arriba de la pestaña Modelo con Material / Ecuaciones / Sólidos (n)
+   (va con la fase 3; el árbol de FreeCAD no acepta renglones inventados); Origen abierto al crear
+   la pieza. Propiedades físicas: propias en 1.1.4; en 26.3+ usar `Std_MassProperties` nativo.
+2. Barra de retroceso: menú "Retroceder / Avanzar uno / Avanzar hasta el final" sobre la `Tip`
+   nativa y aviso al guardar con la pieza retrocedida; después, barra arrastrable dibujada sobre el
+   árbol (lo más frágil del plan, siempre con el menú como respaldo). La 26.3 no trae nada de esto.
+3. Reconstrucción y errores: Ctrl+B / Ctrl+Q; diálogo "¿Qué es incorrecto?" (sumar la info nueva de
+   la 26.3: referencias rotas marcadas en el árbol, notificaciones de redondeos); "Reparar
+   referencias" sobre el registro de caras. Seguir reconstruyendo tras un error: imposible (límite
+   de FreeCAD).
+4. Editar: menú "Editar operación / Editar croquis"; clic en una cara que marque en el árbol la
+   operación que la creó (registro de caras); cotas con doble clic tipo Instant3D en versión
+   liviana (cajita "Modificar"; sin arrastre).
+5. Reordenar / suprimir / padre-hijo: suprimir con menú SW sobre lo nativo, gris propio solo en
+   1.1.4 (la 26.3 tacha sola); mover arriba/abajo revisando dependencias; diálogo Padre/Hijo con
+   InList/OutList. Carpetas: descartado (el Body no admite grupos). Configuraciones: mucho después,
+   sobre la tabla de configuraciones de Spreadsheet.
+6. Mostrar/ocultar: barra espaciadora sobre una cara oculta el Body entero, solo en 1.1.4 (la 26.3
+   ya lo hace).
+7. Ensamblajes: nombres ya hechos por el original; "Fijar / Flotar" en el clic derecho (con la
+   fase 5). La 26.3 ya no exige pieza fija para arrastrar.
+8. Archivos a futuro: regla de nombres internos estables (ver Decisiones); opción "Guardar también
+   STEP" al guardar; herramienta "Chequear carpeta" (abre y recalcula todas las piezas de una carpeta
+   y lista las que dan error), para el día que el usuario salte de versión.
+
+Etapas:
+- A (rápida): menú contextual SW (editar, retroceder/avanzar, suprimir, Padre/Hijo), Ctrl+B /
+  Ctrl+Q, "¿Qué es incorrecto?", Origen abierto, aviso de pieza retrocedida, ocultar Body con la
+  barra espaciadora, regla de nombres estables.
+- B (media): barra arrastrable, gris en lo suprimido y lo retrocedido, mover arriba/abajo, cara →
+  operación en el árbol, "Guardar también STEP".
+- C (grande): cotas con doble clic, "Reparar referencias", franja (con fase 3), "Chequear carpeta".
+- Descartado: carpetas, reconstruir tras un error. Configuraciones: mucho después.
+
+## FreeCAD 26.3 (la que antes se iba a llamar 1.2)
+- FreeCAD pasó a numerar por calendario (año.número): 26.3, 27.1 (rama 31/1/2027), 27.2, 27.3...
+  Tres versiones por año.
+- Al 2026-10-25: versión de prueba RC2 (18/10), 4 errores que frenan la salida y varios errores
+  nuevos abiertos (STEP que no importa, cierre con redondeos imposibles, cotas en croquis). Final
+  esperada para alrededor de noviembre. No se usa todavía.
+- Archivos: las versiones nuevas abren los de la 1.1.4. El riesgo es que alguna operación se
+  recalcule distinto (cambio de nombres de caras en 1.0, OpenCASCADE 8 en 26.3), y que los objetos
+  de addons (SheetMetal, los del fork) necesitan su addon instalado.
+- Revisar al actualizar (no antes): "Nuevo croquis" sin selección abre un diálogo nativo de
+  ubicación (puede chocar con `pick_plane.py`); Ctrl+0 / botón para los paneles de abajo (el fork
+  oculta la Vista de informe); varios documentos editándose a la vez (cambio Modelo/Tareas de
+  `panel_sw.py`). Roadmap oficial: menciona una "barra de cinta" propia (podría competir con la
+  cinta del addon; sin fecha).
+
 ## Falta / ideas pendientes
 - Fase 1: chapa metálica + DXF (cajoneada). Pedir al usuario piezas STEP de chapa cuando se retome.
 - Simulación FEM como pestaña "Simulación" con flujo SW (estudio, material, sujeciones, cargas,
@@ -82,6 +140,12 @@ Propios del fork (en `swui/fork/`, enganchados en `swui/fork/__init__.py`, una l
   tablas/funciones del original desde afuera (sin editar sus archivos) para no generar
   conflictos al traer novedades de upstream.
 - Lo que sirve a todos va en ramas limpias para PR; antes de abrir PR/issue, consultar al usuario.
+- **Nombres internos estables (2026-10-25):** el nombre de clase/módulo con que se guarda en el
+  archivo cada objeto propio del fork (p. ej. mover/rotar cara, FeaturePython) no cambia nunca. Si
+  algún día hay que cambiarlo, dejar un alias y convertir los objetos viejos al abrir el archivo.
+  Motivo: el usuario actualiza poco (~2 años por versión) y sus archivos tienen que abrir siempre.
+- Desarrollar para la 1.1.4 aunque una versión nueva ya traiga la función (el usuario no la va a
+  tener); cada función cede a lo nativo si la versión de FreeCAD lo trae.
 
 ## Git
 - `origin` = fork del usuario (todo subido al 2026-10-25), `upstream` = Schlauminik/LikeSolidWorks-UI.
