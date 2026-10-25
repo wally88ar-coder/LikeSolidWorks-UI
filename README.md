@@ -211,8 +211,8 @@ möchte: Parameter `BaseApp/Preferences/Mod/SWUI` → neuer Bool-Eintrag
 `ContextSketch` mit Wert `false` (wirkt sofort).
 
 **Sprache.** Reiter *Evaluieren* → Knopf **Language**: *Automatisch*
-(wie FreeCAD — FreeCAD auf Deutsch ergibt Deutsch, sonst Englisch),
-*Deutsch* oder *English*. Die Umschaltung wirkt sofort. Gespeichert
+(wie FreeCAD — gibt es eine Sprachdatei für FreeCADs Sprache, wird sie
+genommen, sonst Englisch), *Deutsch*, *English* oder *Español*. Die Umschaltung wirkt sofort. Gespeichert
 wird sie im Parameter `BaseApp/Preferences/Mod/SWUI/Language`.
 Weitere Sprachen: `swui/lang/en.py` kopieren (z. B. als `fr.py`),
 `CODE`, `NAME` und die Texte anpassen — die Sprache erscheint danach

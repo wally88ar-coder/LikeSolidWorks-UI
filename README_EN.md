@@ -19,12 +19,12 @@ Version 0.9.0 — other platforms have not been tested yet.
 
 ## Language
 
-The interface is available in **German and English**. Switch it in the
+The interface is available in **German, English and Spanish**. Switch it in the
 *Evaluate* tab (the leftmost tab) with the **Language** button:
 
-- *Automatic* — like FreeCAD: German if FreeCAD runs in German,
-  English otherwise
-- *Deutsch* / *English*
+- *Automatic* — like FreeCAD: FreeCAD's language if there is a
+  language file for it (German, Spanish), English otherwise
+- *Deutsch* / *English* / *Español*
 
 The change takes effect immediately. New objects get tree names in the
 chosen language (Sketch1, Boss-Extrude1, Top Plane, Mates, Coincident1,
