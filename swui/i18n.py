@@ -16,8 +16,8 @@ So funktioniert es:
     erscheint automatisch im Menue des Knopfes "Language".
   - Fehlt ein Text, wird Englisch genommen, dann der deutsche Text.
   - Einstellung: Parameter BaseApp/Preferences/Mod/SWUI/Language
-    ("auto", "de", "en", ...). "auto" = wie FreeCAD: FreeCAD auf
-    Deutsch -> Deutsch, sonst Englisch.
+    ("auto", "de", "en", ...). "auto" = wie FreeCAD: gibt es eine
+    Sprachdatei fuer FreeCADs Sprache, wird sie genommen, sonst Englisch.
   - Wer auf Umschaltungen reagieren muss (Ribbon), meldet sich mit
     add_listener() an.
 """
@@ -44,7 +44,7 @@ _languages = None  # Code -> Modul, einmal eingelesen
 _listeners = []
 
 # FreeCADs Sprachnamen (Gui.getLocale, Translator::supportedLocales) -> Code
-_FREECAD_NAMES = {"german": "de", "deutsch": "de", "english": "en"}
+_FREECAD_NAMES = {"german": "de", "deutsch": "de", "english": "en", "spanish": "es", "español": "es"}
 
 
 # --- Sprachen --------------------------------------------------------
@@ -113,6 +113,8 @@ def freecad_language():
         except Exception:
             name = ""
     low = name.strip().lower()
+    # FreeCAD speichert z. B. "Spanish (Argentina)" -> "spanish"
+    low = low.split(" (")[0].strip()
     if low in _FREECAD_NAMES:
         return _FREECAD_NAMES[low]
     return low.replace("-", "_").split("_")[0][:2]
@@ -123,7 +125,8 @@ def resolve(value):
     if value != AUTO:
         return value if value in languages() else FALLBACK
     fc = freecad_language()
-    return SOURCE if fc == SOURCE else FALLBACK  # Dominik: FreeCAD deutsch -> Deutsch, sonst Englisch
+    # FreeCAD deutsch -> Deutsch; weitere Sprache mit eigener Datei -> diese; sonst Englisch
+    return fc if fc in languages() else FALLBACK
 
 
 def current():

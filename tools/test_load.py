@@ -3807,16 +3807,16 @@ def run(split_namespace):
     lay_l = sys.modules["swui.ribbon_layout"]
     gui_l = sys.modules["FreeCADGui"]
     qtc_l = sys.modules["PySide.QtCore"]
-    if [c for c, _n in i18.choices()] != ["de", "en"] or i18.setting() != "auto":
+    if [c for c, _n in i18.choices()] != ["de", "en", "es"] or i18.setting() != "auto":
         print("  FEHLER: Sprachen/Vorgabe", i18.choices(), i18.setting())
         return False
-    # "Automatisch" = wie FreeCAD: deutsch -> Deutsch, sonst Englisch
+    # "Automatisch" = wie FreeCAD: Sprache mit eigener Datei -> diese, sonst Englisch
     res_auto = []
-    for loc in ("German", "English", "French", ""):
+    for loc in ("German", "English", "French", "Spanish (Argentina)", "es-AR", ""):
         gui_l.getLocale = (lambda l_=loc: l_)
         res_auto.append(i18.resolve("auto"))
     gui_l.getLocale = lambda: "German"
-    if res_auto[:3] != ["de", "en", "en"]:
+    if res_auto[:5] != ["de", "en", "en", "es", "es"]:
         print("  FEHLER: Automatisch folgt FreeCADs Sprache nicht", res_auto)
         return False
     # Alle Ribbon-Texte muessen in jeder Sprache vorhanden sein
@@ -3908,7 +3908,7 @@ def run(split_namespace):
     try:
         fr_ok = (i18.tr("Fase", "fr") == "Chanfrein" and i18.tr("Verrundung", "fr") == "Fillet"
                  and i18.tr("Gibt es nicht", "fr") == "Gibt es nicht"
-                 and [c for c, _n in i18.choices()] == ["de", "en", "fr"])
+                 and [c for c, _n in i18.choices()] == ["de", "en", "es", "fr"])
     finally:
         del langs_l["fr"]
     if not fr_ok:
@@ -3918,8 +3918,9 @@ def run(split_namespace):
     if {"language": True} not in [e_ for g_ in dict(lay_l.TABS)["Evaluieren"] for e_ in g_]:
         print("  FEHLER: Knopf Language nicht im Reiter Evaluieren")
         return False
-    if [(c, x) for c, x, _k in rb_l.language_menu()] != [("auto", "Automatisch (Deutsch)"), ("de", "Deutsch"), ("en", "English")] \
-            or [k for _c, _x, k in rb_l.language_menu()] != [True, False, False]:
+    if [(c, x) for c, x, _k in rb_l.language_menu()] != [("auto", "Automatisch (Deutsch)"), ("de", "Deutsch"), ("en", "English"),
+                                                         ("es", "Español")] \
+            or [k for _c, _x, k in rb_l.language_menu()] != [True, False, False, False]:
         print("  FEHLER: Language-Menü (deutsch)", rb_l.language_menu())
         return False
     # Umschalten auf Englisch: wirkt sofort (Ribbon neu aufgebaut)
@@ -3960,7 +3961,7 @@ def run(split_namespace):
     if tabs_en[:6] != ["Evaluate", "Features", "Sketch", "View", "Assembly", "Drawing"] or titles_en[2] != "Skizze":
         print("  FEHLER: Reiter auf Englisch / interne Namen", tabs_en, titles_en)
         return False
-    if [k for _c, _x, k in menu_en] != [False, False, True] or menu_en[0][1] != "Automatic (Deutsch)" or lang_btn != "Language":
+    if [k for _c, _x, k in menu_en] != [False, False, True, False] or menu_en[0][1] != "Automatic (Deutsch)" or lang_btn != "Language":
         print("  FEHLER: Language-Menü (englisch)", menu_en, lang_btn)
         return False
     if not fly_tip.endswith("(Arrow on the right: more variants)") or not removed or not bad_ok:
