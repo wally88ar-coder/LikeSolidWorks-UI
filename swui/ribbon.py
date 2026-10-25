@@ -943,9 +943,13 @@ def _run(command, index=None, *_args):
             from swui import from_sketch
 
             if from_sketch.handle(command):
+                _pick_plane_call("_disarm")  # Feature laeuft schon mit dieser Skizze
                 return
         except Exception as exc:
             FreeCAD.Console.PrintWarning(tr("[SWUI] Austragen aus Skizze: %s\n") % exc)
+        # Skizze / Feature ohne Auswahl: erst Ebene oder ebene Flaeche waehlen (wie SOLIDWORKS)
+        if _pick_plane_call("handle", command):
+            return
     try:
         if index is None:
             FreeCADGui.runCommand(command)
@@ -955,6 +959,16 @@ def _run(command, index=None, *_args):
         FreeCAD.Console.PrintError(
             tr("[SWUI] Befehl %s fehlgeschlagen: %s\n") % (command, exc)
         )
+
+
+def _pick_plane_call(name, *args):
+    try:
+        from swui import pick_plane
+
+        return getattr(pick_plane, name)(*args)
+    except Exception:
+        FreeCAD.Console.PrintWarning(tr("[SWUI] Ebene wählen: %s\n") % traceback.format_exc())
+        return False
 
 
 def _check_context():
