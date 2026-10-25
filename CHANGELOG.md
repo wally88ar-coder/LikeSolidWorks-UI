@@ -52,7 +52,9 @@ Neueste Version oben. / Newest version first.
 **Fork (wally88ar-coder, español)**
 - Panel de tareas (PropertyManager) **a la izquierda**, visible solo mientras hay
   una operación abierta; sin operación queda el árbol, como en SOLIDWORKS.
-  Vista de informe abajo. Código propio del fork en `swui/fork/`.
+  Vista de informe abajo y **oculta** (se abre con Ver → Paneles → Vista de
+  informe); dentro de LikeSolidWorks UI no se abre sola ante avisos/errores.
+  Código propio del fork en `swui/fork/`.
 - **Velocidad de giro** con la ruedita del mouse (menú *LikeSolidWorks UI →
   Velocidad de giro…*): x1 (como FreeCAD), x1,5 (de fábrica), x2, x2,5. Medido a
   1366 px: x1 = 16°, x1,5 = 25°, x2 = 35° por cada 100 px de arrastre.

@@ -48,6 +48,13 @@
   estilo de navegación SolidWorks, sin teclas, solo vistas 3D, solo en LikeSolidWorks UI).
   Menú "Velocidad de giro...", de fábrica x1,5. Medido en FreeCAD real.
 
+- Vista de informe oculta por defecto (pedido del usuario, 2026-10-25): se abre a mano con
+  Ver → Paneles → Vista de informe cuando haga falta mirar errores. Mientras está en
+  LikeSolidWorks UI tampoco se abre sola (preferencias OutputWindow, se devuelven al salir).
+  Probado en FreeCAD real.
+- Pendiente de OK del usuario: "usar siempre LikeSolidWorks UI" (arranque, volver si algo cambia
+  de banco, ocultar selector, opción en el menú para apagarlo).
+
 ## Falta (fase 0)
 - [x] Prueba del usuario (2026-10-25): conforme, "ahora sí se parece más a SW".
 

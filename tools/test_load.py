@@ -4272,9 +4272,13 @@ def run(split_namespace):
     pnl_sw = sys.modules["swui.fork.panel_sw"]
     if (by["Tasks"].area is not qt.DockWidgetArea.LeftDockWidgetArea
             or by["Report view"].area is not qt.DockWidgetArea.BottomDockWidgetArea
-            or by["Tasks"].visible or not by["Report view"].visible
+            or by["Tasks"].visible or by["Report view"].visible
             or by["Report view"].floating or by["Tasks"].floating):
-        print("  FEHLER: Tareas izquierda (oculto sin operación) / informe abajo", by["Tasks"].area, by["Tasks"].visible)
+        print("  FEHLER: Tareas izquierda (oculto sin operación) / informe abajo y oculto", by["Tasks"].area, by["Tasks"].visible)
+        return False
+    out_params = fcp.get("User parameter:BaseApp/Preferences/OutputWindow", {})
+    if [out_params.get(k_) for k_ in ("checkShowReportViewOnWarning", "checkShowReportViewOnError")] != [False, False]:
+        print("  FEHLER: la Vista de informe se sigue abriendo sola", out_params)
         return False
     mw.dialog_open = True
     pnl_sw._update(by["Tasks"])
@@ -4352,6 +4356,10 @@ def run(split_namespace):
     all_bars = sorted(b.name for b in mw.toolbars)
     if mw.visible_bars() != all_bars or layout.is_active():
         print("  FEHLER: nach Verlassen nicht wiederhergestellt", mw.visible_bars())
+        return False
+    if any(k_ in fcp.get("User parameter:BaseApp/Preferences/OutputWindow", {})
+           for k_ in ("checkShowReportViewOnWarning", "checkShowReportViewOnError")):
+        print("  FEHLER: fork: preferencias de la Vista de informe no devueltas al salir")
         return False
     task = [d for d in mw.docks if d.name == "Tasks"][0]
     if task.area != "right":
