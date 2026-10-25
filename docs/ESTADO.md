@@ -43,7 +43,7 @@
   `feat/skizze-ohne-auswahl`. Probado en FreeCAD real (extruir en Planta + corte en cara).
 
 ## Falta (fase 0)
-- [ ] Prueba del usuario de todo lo anterior.
+- [x] Prueba del usuario (2026-10-25): conforme, "ahora sí se parece más a SW".
 
 ## Problemas reportados por el usuario
 - 2026-10-25: al extruir un croquis saltaba a Part Design y el diálogo quedaba nativo. **Arreglado.**
