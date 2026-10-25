@@ -14,7 +14,10 @@ import traceback
 import FreeCAD
 
 
-def install():
+MENU = "LikeSolidWorks UI"
+
+
+def install(workbench=None):
     """Enganchar los agregados del fork. Cada uno protegido por separado."""
     try:
         from swui.fork import panel_sw
@@ -22,3 +25,11 @@ def install():
         panel_sw.install()
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Panel de tareas a la izquierda:\n%s\n" % traceback.format_exc())
+    try:
+        from swui.fork import orbit_speed
+
+        orbit_speed.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [orbit_speed.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Velocidad de giro:\n%s\n" % traceback.format_exc())

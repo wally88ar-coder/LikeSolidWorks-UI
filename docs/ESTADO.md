@@ -42,6 +42,12 @@
   antes y ya con Planta/Alzado/Vista lateral. `swui/pick_plane.py`, rama
   `feat/skizze-ohne-auswahl`. Probado en FreeCAD real (extruir en Planta + corte en cara).
 
+- Navegación (pedido del usuario, 2026-10-25): el usuario puso en Preferencias "Modo de
+  rotación: Centro del objeto" (antes "Centro de la ventana") y mejoró. Para la velocidad,
+  FreeCAD no tiene ajuste: `swui/fork/orbit_speed.py` agranda el arrastre con la ruedita (solo
+  estilo de navegación SolidWorks, sin teclas, solo vistas 3D, solo en LikeSolidWorks UI).
+  Menú "Velocidad de giro...", de fábrica x1,5. Medido en FreeCAD real.
+
 ## Falta (fase 0)
 - [x] Prueba del usuario (2026-10-25): conforme, "ahora sí se parece más a SW".
 
@@ -53,6 +59,7 @@
   ventana no entra en 1366 px y se corta el borde derecho (Tareas y Vista de informe).
 
 ## Decisiones
+- Fase 1 (chapa) **cajoneada por un tiempo** a pedido del usuario (2026-10-25).
 - Pendiente para más adelante: plantillas de rótulo en español (hoy un dibujo nuevo en español
   usa la plantilla en inglés). Decimales con coma en "Formato de línea" (hoy solo en alemán).
 - Panel de tareas: **solo a la izquierda, sin opción a la derecha**: se busca similitud total

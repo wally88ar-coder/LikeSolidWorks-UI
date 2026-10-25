@@ -4284,6 +4284,13 @@ def run(split_namespace):
     if not shown_with_task or by["Tasks"].visible:
         print("  FEHLER: Tareas no aparece/desaparece con la operación")
         return False
+    # Fork: velocidad de giro (swui/fork/orbit_speed.py)
+    osp = sys.modules["swui.fork.orbit_speed"]
+    if (osp.factor() != 1.5 or osp.scaled((100, 100), (110, 96), 1.5) != (115.0, 94.0)
+            or osp.choice_text(1.5) != "x1,5" or osp.choice_text(1.0) != "x1 (como FreeCAD)"
+            or "SWUI_OrbitSpeed" not in commands):
+        print("  FEHLER: velocidad de giro (x1,5 de fábrica, movimiento agrandado, comando)")
+        return False
     if not fcp[op.OWN_PARAMS].get(op.BACKUP_KEY):
         print("  FEHLER: keine Sicherung der Panel-Einstellungen")
         return False
