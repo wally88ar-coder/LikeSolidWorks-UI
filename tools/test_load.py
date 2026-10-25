@@ -702,7 +702,14 @@ def run(split_namespace):
     if during or after != ["PartDesign_Pad"] or ran_pp != ["PartDesign_Pad"] or pp.armed():
         print("  FEHLER: Feature nach Skizze beenden", during, after, ran_pp)
         return False
-    print("  Ohne Ausw: Skizze/Austragen ohne Auswahl -> Ebene oder ebene Fläche wählen, Feature nach Skizze beenden")
+    # FreeCAD-Ebenennamen (Koerper von der Startseite) werden erkannt, SW- und eigene Namen nicht
+    defaults_pp = [("XY_Plane", "XY_Plane"), ("Plano XY", "XY_Plane"), ("XZ-Ebene", "XZ_Plane"), ("Plan YZ001", "YZ_Plane")]
+    others_pp = [("Planta", "XY_Plane"), ("Ebene oben", "XY_Plane"), ("Plano XY", "XZ_Plane"), ("Mi plano XY", "XY_Plane")]
+    if (not all(pp.is_default_plane_label(l_, r_) for l_, r_ in defaults_pp)
+            or any(pp.is_default_plane_label(l_, r_) for l_, r_ in others_pp)):
+        print("  FEHLER: FreeCAD-Ebenennamen nicht richtig erkannt")
+        return False
+    print("  Ohne Ausw:Skizze/Austragen ohne Auswahl -> Ebene oder ebene Fläche wählen, Feature nach Skizze beenden")
 
     # --- SOLIDWORKS-Namen fuer neue Features ----------------------------
     fc = sys.modules["FreeCAD"]

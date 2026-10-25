@@ -24,8 +24,12 @@ Nebenbei: Legt PartDesign_NewSketch selbst einen Koerper an, steht die
 Ebenenliste schon da, bevor naming.py die Ebenen umbenennen kann - die
 Liste zeigte "XY_Plane" statt "Ebene oben" (unter Windows gemeldet,
 25.10.). Hier wird der Koerper vorher angelegt und gleich benannt.
+Kommt der Koerper von anderswo (Startseite "Parametrischer Koerper" legt
+ihn in Part Design an, aeltere Datei), heissen die Ebenen noch "Plano XY"
+o. ae.: rename_default_planes() benennt sie beim Oeffnen des Panels um.
 """
 
+import re
 import traceback
 
 import FreeCAD
@@ -116,6 +120,35 @@ def body_planes(body):
     except Exception:
         pass
     return out
+
+
+def is_default_plane_label(label, role):
+    """
+    Von FreeCAD vergebener Name einer Ursprungsebene? "XY_Plane", "Plano XY",
+    "XY-Ebene", "Plan XY001" ... (die Achsen der Rolle, dazu hoechstens ein Wort).
+    """
+    axes = (role or "").split("_")[0]
+    if len(axes) != 2:
+        return False
+    word = r"[^\W\d_]*"
+    return re.match(r"^%s[\s_-]*%s[\s_-]*%s\d*$" % (word, axes, word), label or "") is not None
+
+
+def rename_default_planes(planes):
+    """Ursprungsebenen mit FreeCAD-Namen wie in SW benennen ("Planta" ...)."""
+    from swui import naming
+
+    for p in planes:
+        try:
+            if getattr(p, "TypeId", "") != "App::Plane":
+                continue
+            if not is_default_plane_label(p.Label, getattr(p, "Role", "")):
+                continue  # schon SW-Name oder vom Benutzer benannt
+            label = naming.sw_label_for(p)
+            if label:
+                p.Label = label
+        except Exception:
+            FreeCAD.Console.PrintLog("[SWUI] Ebene umbenennen: %s" % traceback.format_exc())
 
 
 def _selection():
@@ -326,6 +359,7 @@ class _TaskPanel:
         lay.addWidget(hint)
         self.list = QtWidgets.QListWidget(self.form)
         self.planes = body_planes(body) if body is not None else []
+        rename_default_planes(self.planes)
         for p in self.planes:
             self.list.addItem(p.Label)
         self.list.itemClicked.connect(self._list_clicked)
@@ -371,7 +405,10 @@ class _TaskPanel:
     def _list_clicked(self, item):
         row = self.list.row(item)
         if 0 <= row < len(self.planes):
-            self._take((self.planes[row], ""))
+            # Erst nach dem Klick schliessen: closeDialog loescht die Liste, deren
+            # Mausereignis noch laeuft -> "Access violation" (unter Windows gemeldet, 25.10.)
+            plane = self.planes[row]
+            QtCore.QTimer.singleShot(0, lambda: self._take((plane, "")))
 
     def check_selection(self):
         if self.done:
