@@ -32,6 +32,12 @@
 - Dependencia: addon SheetMetal para chapa. No reimplementarlo: construir la interfaz encima.
 - Nada de íconos, nombres comerciales ni recursos de Dassault.
 - Preferir siempre la herramienta nativa de FreeCAD por debajo, con interfaz y flujo estilo SW.
+- Similitud total con SW (decidido por el usuario, 2026-10-25): LikeSolidWorks UI es el ÚNICO
+  banco (arranca ahí, vuelve solo, selector oculto; se apaga en el menú); todo módulo nuevo
+  (chapa, simulación FEM...) va como pestaña de la cinta dentro de él; aspecto claro SW 2018;
+  panel izquierdo con Modelo y Tareas en pestañas.
+- Código propio del fork en `swui/fork/` (comentarios en español): cambia tablas y funciones del
+  original desde afuera, sin editar sus archivos. Detalle en `docs/NOTAS_TECNICAS.md`.
 
 ## Lo que el original ya resuelve (no rehacer)
 Cinta tipo CommandManager; croquis (colores azul/negro, panel de relaciones aplicables, línea
@@ -54,8 +60,8 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
 - Asistente para taladro con flujo SW: elegir cara y ubicar los puntos dentro del asistente
   (hoy FreeCAD exige un croquis previo con los centros).
 - Relaciones de posición: agregar tangente y que el panel quede abierto para encadenar relaciones.
-- Panel de tareas: el original lo puso a la derecha; en SW el PropertyManager está a la izquierda.
-  Preguntar al usuario qué prefiere; idealmente que sea una opción.
+- (Hecho en el fork: panel de tareas a la izquierda, sin opción a la derecha, por decisión del
+  usuario.)
 
 **Propios del usuario:**
 - Chapa metálica (trabaja con plegadora, no punzonadora): pestaña nueva con brida base, brida de
@@ -77,6 +83,8 @@ El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con g
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
+Estado al 2026-10-25: fase 0 terminada; fase 1 cajoneada por un tiempo a pedido del usuario.
+Ver `docs/ESTADO.md`.
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el
    test pasa en Windows, traducción al español, arreglo de pantallas chicas, extruir/cortar sin
    croquis.
@@ -95,7 +103,10 @@ tolerancias geométricas.
 - Commits pequeños y descriptivos. Nunca forzar push ni reescribir historia publicada.
 - Mantener actualizado `docs/ESTADO.md`: fase actual, qué está hecho, qué falta, problemas
   reportados por el usuario, decisiones nuevas y estado de los PR al original. Leerlo al inicio
-  de cada sesión.
+  de cada sesión, junto con `docs/NOTAS_TECNICAS.md` (cómo probar en FreeCAD real con
+  `tools/fork/gui_probe.py`, hallazgos de FreeCAD 1.1.4 en Windows).
+- Antes de entregar cambios de interfaz, probarlos en FreeCAD real con la plantilla de prueba
+  (copia de la configuración, nunca la del usuario) y mirar las capturas; después la valida él.
 - Ser honesto sobre límites que el addon no puede resolver.
 
 ## Límites conocidos (comunicar, no prometer)
