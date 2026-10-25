@@ -49,8 +49,8 @@ Propios del fork (en `swui/fork/`, enganchados en `swui/fork/__init__.py`, una l
   seleccionado (repetida sobre la misma cara: del otro lado), croquis en edición, o vista
   estándar más cercana sin selección; "arriba" derecho. Acciones propias en la ventana +
   filtro en la vista 3D (en croquis la vista se queda con las teclas). Probado en FreeCAD
-  real; falta que lo pruebe el usuario. Pendiente que confirme en su SW cómo se comporta N
-  sin selección (supuesto: vista estándar más cercana).
+  real; falta que lo pruebe el usuario. Confirmado por él en SW 2018 (2026-10-25): N sin
+  selección va a la vista estándar más cercana.
 
 ## Falta / ideas pendientes
 - Fase 1: chapa metálica + DXF (cajoneada). Pedir al usuario piezas STEP de chapa cuando se retome.
