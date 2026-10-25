@@ -59,3 +59,6 @@
 - `Std_ViewFitAll` (tecla F) NO anima en 1.1.4: posición y zoom de la cámara quedan finales
   en el mismo instante (medido con "UseNavigationAnimations" prendido). Lo que sí anima es
   `setCameraOrientation` (tecla N), a propósito.
+- Videos del usuario: ffmpeg 9.0.2 instalado con winget (Gyan.FFmpeg, solo su usuario) en
+  `%LOCALAPPDATA%/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/`
+  (alias `ffmpeg` en consolas nuevas). Sacar cuadros: `ffmpeg -i video.mp4 -vf fps=2 <scratch>/c_%03d.png`.
