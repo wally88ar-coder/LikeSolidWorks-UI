@@ -20,20 +20,24 @@
 - Traducción al español: `swui/lang/es.py` (661 textos, términos de SW en español: Croquis,
   Extruir saliente/base, Relaciones de posición, Planta/Alzado/Vista lateral...). "Automático"
   ahora elige el idioma de FreeCAD si hay archivo para él (detecta "Spanish (Argentina)").
-  Rama `feat/sprache-es`, unida a `master`. Falta que el usuario la revise en pantalla.
+  Rama `feat/sprache-es`, unida a `master`. Probado por el usuario el 2026-10-25: carga bien y
+  se ve en español.
 
 ## Falta (fase 0)
-- [ ] Probar en la interfaz que el addon carga (lo valida el usuario).
-- [ ] Pantallas chicas (1366 px): cinta que se compacte o desplace.
+- [ ] Pantallas chicas (1366 px): cinta que se compacte o desplace. En español la cinta pide
+      1614 px de ancho mínimo (en inglés 1458): la ventana queda cortada a la derecha.
+- [ ] Panel de tareas a la izquierda (decidido), como opción.
 - [ ] Extruir / extruir corte sin croquis: elegir cara plana o plano, abrir croquis, lanzar al salir.
 
 ## Problemas reportados por el usuario
-(ninguno todavía)
+- 2026-10-25: con la cinta en español Windows avisa "Unable to set geometry 1614x705": la
+  ventana no entra en 1366 px y se corta el borde derecho (Tareas y Vista de informe).
 
 ## Decisiones
 - Pendiente para más adelante: plantillas de rótulo en español (hoy un dibujo nuevo en español
   usa la plantilla en inglés). Decimales con coma en "Formato de línea" (hoy solo en alemán).
-- Pendiente: panel de tareas a la izquierda (como SW) o a la derecha (como el original).
+- Panel de tareas: **a la izquierda**, como el PropertyManager de SW (usuario, 2026-10-25).
+  Hacerlo como opción para poder proponerlo al original sin cambiar su comportamiento.
 
 ## PR al original
 | Rama | Contenido | Estado |
