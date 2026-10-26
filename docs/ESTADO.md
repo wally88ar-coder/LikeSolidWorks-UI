@@ -8,13 +8,38 @@
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
-- **Fase 1 (chapa) sigue cajoneada.** Próximo trabajo: lo que elija el usuario. Las opciones que
-  quedaron sobre la mesa: fase 1 (chapa + DXF) o fase 2 (diálogos estilo SW, empezando por
-  redondeo: el nativo de FreeCAD le resultó confuso al reparar una arista).
+- **Fase 1 (chapa) sigue cajoneada.**
+- **Fase 2 — Flujos de pieza: empezada 2026-10-26** (plan aprobado por el usuario, sin código
+  todavía). Ver "Plan: fase 2" abajo.
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
   la arista de arriba del tetón; croquis totalmente definidos).
+
+## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
+Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
+SIEMPRE esperando selección (clic agrega, clic sobre una ya elegida la saca; nada de botones
+"Seleccionar" / "Agregar"), términos de SW en español y vista previa. Por debajo, siempre la
+operación NATIVA de FreeCAD (el archivo guarda un objeto común de Part Design: abre sin el addon
+y en versiones nuevas). Motivo: el usuario no supo elegir la arista nueva en el diálogo nativo de
+redondeo al reparar una referencia (botón "Seleccionar" que hay que prender).
+
+Orden (cada parte termina en una versión que prueba el usuario):
+1. Redondeo: elementos a redondear, radio, propagación tangente, vista previa. Se abre también
+   desde "Editar operación" y desde Reparar referencias (reasignar la arista perdida).
+2. Chaflán: mismo panel; distancia-distancia y ángulo-distancia.
+3. Simetría, matriz lineal y circular (sumadas por el usuario): operaciones a copiar por clic en
+   el árbol o el modelo, dirección/eje tocando una arista o eje, plano de simetría tocando una
+   cara o plano, espaciado e instancias. Verificado en 1.1.4 sin GUI: `LinearPattern` ya trae
+   Dirección 2 nativa (`Direction2`, `Occurrences2`, `Length2`...), `Mode` = Extent/Spacing,
+   `Spacings` (espaciado por instancia) y `TransformMode` = Features / Whole shape (= "Sólidos
+   a crear una matriz" de SW) en las cuatro (también Mirrored, PolarPattern, MultiTransform).
+   No hay "Instancias a saltear": no prometer (sería una operación propia).
+4. Asistente para taladro con pestañas Tipo / Posiciones: elegir cara, clic donde van los
+   agujeros y acotarlos; el panel arma solo el croquis de centros y el `PartDesign::Hole`.
+5. Más livianos (términos SW + selección siempre activa sobre el panel nativo, como Extruir):
+   ángulo de salida, barrido, hélice, geometría de referencia.
+Límite avisado: redondeos complejos fallan más que en SW; el panel puede decir qué arista falló.
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

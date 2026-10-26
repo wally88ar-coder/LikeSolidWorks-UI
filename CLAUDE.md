@@ -59,8 +59,8 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
 - Extruir / extruir corte sin croquis: hoy cae en el panel nativo "Seleccione un plano", que no
   acepta caras del sólido. Debe aceptar cara plana o plano, abrir el croquis ahí y lanzar la
   operación al salir del croquis (como SW). Extender el mecanismo de `from_sketch.py`.
-- Adaptar los diálogos que hoy quedan nativos: redondeo, chaflán, ángulo de salida, barrido,
-  hélice, geometría de referencia.
+- Adaptar los diálogos que hoy quedan nativos: redondeo, chaflán, simetría, matriz lineal y
+  circular, ángulo de salida, barrido, hélice, geometría de referencia.
 - Asistente para taladro con flujo SW: elegir cara y ubicar los puntos dentro del asistente
   (hoy FreeCAD exige un croquis previo con los centros).
 - Relaciones de posición: agregar tangente y que el panel quede abierto para encadenar relaciones.
