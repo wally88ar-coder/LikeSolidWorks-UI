@@ -213,6 +213,8 @@ Neueste Version oben. / Newest version first.
   vacío borra; distancia con dX/dY/dZ, centro a centro en círculos y cilindros, distancia
   normal, ángulo, longitud, diámetro, área y perímetro; dibuja la distancia en la vista y mide
   bien en ensamblajes (`swui/fork/measure_sw.py`). Reemplaza al Medir de FreeCAD, en inglés.
+  Tercera opción **Distancia máxima** (FreeCAD no la trae): entre bordes de agujeros como SW y
+  entre cualquier otra geometría, con cálculo propio exacto (`swui/fork/max_distance.py`).
 - **Franja Ecuaciones / Sólidos(n) / Material** arriba del árbol, como las carpetas del
   FeatureManager (`swui/fork/tree_strip.py`).
 

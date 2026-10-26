@@ -874,7 +874,36 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or tsp.rows_for(None) != [] or ms.COMMAND != rk.MEASURE):
         print("  FEHLER: fork: medir / pestaña Evaluar / franja del árbol", flat_)
         return False
+    # Distancia máxima (max_distance): el método general tiene que dar lo mismo que las fórmulas
+    import math as math_
+    mx = importlib.import_module("swui.fork.max_distance")
+
+    def circle_(c, r, n_dir):
+        u_ = mx._any_perp(n_dir)
+        w_ = (n_dir[1] * u_[2] - n_dir[2] * u_[1], n_dir[2] * u_[0] - n_dir[0] * u_[2], n_dir[0] * u_[1] - n_dir[1] * u_[0])
+        return mx.Item(lambda p: tuple(c[k] + r * (math_.cos(p[0]) * u_[k] + math_.sin(p[0]) * w_[k]) for k in range(3)),
+                       (0.0,), (2 * math_.pi,))
+
+    z_ = (0.0, 0.0, 1.0)
+    gen_cc = mx.max_between([circle_((20.0, 20.0, 0.0), 5.0, z_)], [circle_((70.0, 20.0, 0.0), 4.0, z_)])[0]
+    exa_cc = mx.max_coplanar_circles((20.0, 20.0, 0.0), 5.0, (70.0, 20.0, 0.0), 4.0, z_)[0]
+    gen_pc = mx.max_between([mx.Item.point((0.0, 0.0, 30.0))], [circle_((5.0, 0.0, 0.0), 10.0, z_)])[0]
+    exa_pc = mx.max_point_circle((0.0, 0.0, 30.0), (5.0, 0.0, 0.0), z_, 10.0)[0]
+    tilted_ = circle_((30.0, 5.0, 10.0), 6.0, (math_.sqrt(0.5), math_.sqrt(0.5), 0.0))
+    flat_c = circle_((0.0, 0.0, 0.0), 8.0, z_)
+    brute_ = max(mx.dist(flat_c.pos((2 * math_.pi * i / 720,)), tilted_.pos((2 * math_.pi * j / 720,)))
+                 for i in range(720) for j in range(720))
+    gen_tc = mx.max_between([flat_c], [tilted_])[0]
+    box_a = [mx.Item.point((x, y, z)) for x in (0.0, 10.0) for y in (0.0, 10.0) for z in (0.0, 10.0)]
+    box_b = [mx.Item.point((x, y, z)) for x in (30.0, 35.0) for y in (0.0, 5.0) for z in (0.0, 5.0)]
+    if (abs(gen_cc - 59.0) > 1e-6 or abs(exa_cc - 59.0) > 1e-12
+            or abs(gen_pc - exa_pc) > 1e-6 or abs(exa_pc - math_.sqrt(30 ** 2 + 15 ** 2)) > 1e-9
+            or gen_tc < brute_ - 1e-9 or gen_tc - brute_ > 1e-3
+            or abs(mx.max_between(box_a, box_b)[0] - math_.sqrt(35 ** 2 + 10 ** 2 + 10 ** 2)) > 1e-12):
+        print("  FEHLER: fork: distancia máxima (general contra fórmulas)", gen_cc, gen_pc, exa_pc, gen_tc, brute_)
+        return False
     print("  Evaluar  : fork: material (copia en la pieza), propiedades físicas, ecuaciones SW, medir SW, franja")
+    print("  Medir    : fork: distancia máxima general (barrido + afinado) = fórmulas exactas")
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")

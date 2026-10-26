@@ -129,8 +129,17 @@ Decisiones para revisar con el usuario (las tomó Claude trabajando solo; ver ta
 14. Propiedades físicas incluye sólidos ocultos de fábrica (casilla), como la opción de SW.
 15. En 26.3+ el botón Propiedades físicas abre la herramienta nueva de FreeCAD (regla de ceder a
     lo nativo): pierde el informe SW y no usa la copia del material. Revisar al actualizar.
-16. Medir reemplaza al de FreeCAD en la cinta y la barra espaciadora; sin "distancia máxima" ni
-    "proyectado en" (el usuario puede pedirlos). Un clic sobre algo ya elegido lo saca.
+16. Medir reemplaza al de FreeCAD en la cinta y la barra espaciadora; sin "proyectado en" (el
+    usuario puede pedirlo). Un clic sobre algo ya elegido lo saca.
+    **Distancia máxima: hecha a pedido del usuario (2026-10-26)**, tercera opción del Medir
+    (`max_distance.py`). Él eligió "general + casos sencillos": reducir (rectas y caras planas ->
+    vértices), barrido de lo curvo, afinado de 8 candidatos sobre la geometría exacta; fórmulas
+    exactas para solo vértices, punto-círculo y círculos coplanares (el test compara general
+    contra fórmulas). Qué es "máxima": entre bordes de agujeros (círculos) como SW; entre
+    cualquier otra cosa, la máxima real (en dos caras cilíndricas incluye el largo). Probado sin
+    GUI: exacto en círculos, cajas, cilindros, esfera, medio arco (contra fuerza bruta) y
+    caras de redondeo (≥ malla fina, dif. 2e-5 mm); en FreeCAD real: dos agujeros 59 mm
+    (centro a centro 50, mínima 41).
 17. FreeCAD recuerda un material borrado hasta reiniciar: el addon lo oculta de la lista.
 
 Para que pruebe el usuario (fase 3): asignar un material de FreeCAD y uno propio nuevo (ver que

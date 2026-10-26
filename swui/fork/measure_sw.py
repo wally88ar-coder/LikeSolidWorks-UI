@@ -12,6 +12,8 @@ la posición real (también en ensamblajes):
 - dos elementos: distancia mínima con dX/dY/dZ (o centro a centro si son círculos o
   cilindros, como SW), distancia normal entre caras planas paralelas y ángulo entre
   rectas/planos. La distancia se dibuja en la vista mientras la ventana está abierta.
+- distancia máxima (tercera opción): entre bordes de agujeros como SW, y entre cualquier
+  otra cosa la máxima real (max_distance.py: FreeCAD no la trae).
 Reemplaza al Medir de FreeCAD (Std_Measure, que en 1.1.4 sale en inglés) en la cinta
 y en la barra espaciadora.
 """
@@ -60,7 +62,10 @@ def kind_of(shape):
     if st == "Vertex":
         return "vertex"
     if st == "Edge":
-        name = type(shape.Curve).__name__
+        try:
+            name = type(shape.Curve).__name__
+        except Exception:  # arista degenerada (polo de una esfera)
+            return "other"
         if name in ("Line", "LineSegment"):
             return "line"
         if name in ("Circle", "ArcOfCircle"):
@@ -111,7 +116,8 @@ def center_distance(a, b):
 def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
     """
     shapes = formas globales elegidas. Devuelve (renglones [(texto, valor)], línea a dibujar
-    (p1, p2) o None). mode: "center" (centro a centro para círculos, como SW) o "min"; decimals: decimales.
+    (p1, p2) o None). mode: "center" (centro a centro para círculos, como SW), "min" o "max";
+    decimals: decimales.
     """
     rows, line = [], None
 
@@ -158,6 +164,14 @@ def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
         return [("Para medir distancias, elegí dos elementos.", "")], None
     a, b = shapes
     ka, kb = kinds
+    if mode == "max":
+        from swui.fork import max_distance
+
+        found = max_distance.max_distance(a, b)
+        if found:
+            dist, p1, p2 = found
+            rows.append(("Distancia máxima", f(dist)))
+            line = (_v(p1), _v(p2))
     if mode == "center":
         ca, cb = _center_item(a, ka), _center_item(b, kb)
         if ca and cb:
@@ -171,7 +185,7 @@ def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
         p1, p2 = pairs[0]
         rows.append(("Distancia" if dist > TOL else "Distancia (se tocan)", f(dist)))
         line = (p1, p2) if dist > TOL else None
-        if ka == kb == "plane":
+        if ka == kb == "plane" and mode != "max":
             na, nb = a.Surface.Axis, b.Surface.Axis
             if angle_between(na, nb) < 1e-6:
                 normal = abs((_v(b.Surface.Position) - _v(a.Surface.Position)).dot(_v(na).normalize()))
@@ -241,7 +255,7 @@ class _MeasureWindow(QtWidgets.QDialog):
         box.setContentsMargins(6, 6, 6, 6)
         bar = QtWidgets.QHBoxLayout()
         self.cb_mode = QtWidgets.QComboBox()
-        self.cb_mode.addItems(["Arcos/círculos: centro a centro", "Arcos/círculos: distancia mínima"])
+        self.cb_mode.addItems(["Centro a centro (arcos/círculos)", "Distancia mínima", "Distancia máxima"])
         self.cb_mode.setCurrentIndex(FreeCAD.ParamGet(PARAMS).GetInt("Mode", 0))
         self.cb_mode.currentIndexChanged.connect(self._mode)
         self.sp_dec = QtWidgets.QSpinBox()
@@ -386,7 +400,7 @@ class _MeasureWindow(QtWidgets.QDialog):
 
     def update_result(self):
         shapes, names = self._shapes()
-        mode = "center" if self.cb_mode.currentIndex() == 0 else "min"
+        mode = ("center", "min", "max")[max(0, min(2, self.cb_mode.currentIndex()))]
         try:
             rows, line = measure(shapes, mode, self.sp_dec.value())
         except Exception as exc:

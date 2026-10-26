@@ -186,3 +186,8 @@
 - El test arma la cinta esperada desde `ribbon_layout.py` por AST; el fork suma
   `swui/fork/evaluate_tab.py` (`_fork_layout_commands`, `FORK_REPLACED`) y sus textos en castellano
   no se exigen en de/en.
+- Distancia máxima (`max_distance.py`): OpenCASCADE no la trae (BRepExtrema/distToShape es solo la
+  mínima). `Edge.valueAt(t)` / `Face.valueAt(u, v)` dan el punto en posición real (con la
+  ubicación de la forma); `Face.ParameterRange` y `Face.isInside(p, tol, True)` para caras
+  recortadas. Las esferas tienen aristas degeneradas (polos, `Edge.Degenerated`) cuyo `.Curve`
+  da "undefined curve type": saltearlas. La primera llamada tarda ~1,5 s más (carga de numpy).
