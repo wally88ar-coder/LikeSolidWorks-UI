@@ -9,8 +9,12 @@
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
 - **Fase 1 (chapa) sigue cajoneada.**
-- **Fase 2 — Flujos de pieza: empezada 2026-10-26.** Ver "Plan: fase 2" abajo. Parte 1
-  (Redondeo) hecha y probada en FreeCAD real; falta que la pruebe el usuario.
+- **Fase 2 — Flujos de pieza: empezada 2026-10-26.** Ver "Plan: fase 2" abajo. Redondeo
+  probado por el usuario (2026-10-26, "anda OK"). El usuario se fue a dormir y pidió seguir con
+  chaflán y el resto, decidiendo con criterio y anotando dudas en "Preguntas para el usuario".
+
+## Preguntas para el usuario (decisiones tomadas por Claude mientras no estaba)
+- (vacío por ahora)
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
