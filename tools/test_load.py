@@ -791,6 +791,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or nt.root_names("PartGui::TaskAttacher") != ("PartGui::TaskAttacher", "PartGui__TaskAttacher")):
         print("  FEHLER: fork: ángulo de salida / términos SW en diálogos nativos")
         return False
+    importlib.import_module("swui.fork.flyout_tree")  # árbol flotante: que al menos cargue
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")

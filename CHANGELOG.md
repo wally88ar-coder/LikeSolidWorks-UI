@@ -173,6 +173,10 @@ Neueste Version oben. / Newest version first.
   UNC, UNF o sin norma), tipo de tornillo (ISO 4762, DIN 7984, ISO 10642...), tamaño (M6...),
   ajuste (Ajustado / Normal / Holgado), condición final, fondo, rosca; *Editar posiciones* vuelve
   al croquis. Todo sobre el taladro y las tablas de FreeCAD (`swui/fork/hole_panel.py`).
+- **Árbol flotante** sobre la vista mientras un panel SW está abierto (como el FeatureManager
+  desplegable de SW): un clic en una operación, plano o eje lo elige para el panel; el título lo
+  pliega (`swui/fork/flyout_tree.py`). Matriz y Simetría nuevas arrancan con la lista de
+  operaciones vacía, como SW (antes: toda la pieza).
 - **Panel de Ángulo de salida** estilo SW: ángulo, *Plano neutro* (casilla rosada que espera una
   cara plana o un plano) y *Caras de salida*, con vista previa.
 - **Términos de SW** en los diálogos que siguen siendo de FreeCAD: barrido (Perfil, Trayecto,

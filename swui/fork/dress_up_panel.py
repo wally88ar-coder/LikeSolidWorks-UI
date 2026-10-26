@@ -289,6 +289,20 @@ class SwPanel:
         FreeCADGui.Selection.addObserver(self.observer)
         FreeCADGui.Selection.clearSelection()
         self.preview()
+        self._flyout(True)
+
+    def _flyout(self, on):
+        """Árbol flotante sobre la vista (el árbol de verdad queda en la pestaña Modelo)."""
+        try:
+            from swui.fork import feature_tree as ft
+            from swui.fork import flyout_tree
+
+            if on:
+                flyout_tree.show(self.doc, ft.body_of(self.obj))
+            else:
+                flyout_tree.hide()
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Árbol flotante:\n%s\n" % traceback.format_exc())
 
     def _base(self):
         return self.obj.BaseFeature
@@ -474,6 +488,7 @@ class SwPanel:
         except Exception:
             pass
         self._undraw()
+        self._flyout(False)
         _restore_native_preview(getattr(self, "old_preview", None))
         _state["panel"] = None
 

@@ -84,6 +84,10 @@ class TransformedPanel(dp.SwPanel):
     REFS = ()  # [(propiedad, etiqueta, ayuda)]
 
     def __init__(self, obj):
+        if obj.Document.HasPendingTransaction and not obj.Originals and obj.TransformMode == "Whole shape":
+            # nueva sin nada elegido: FreeCAD arranca copiando toda la pieza; SW, con la lista
+            # vacía esperando operaciones (pedido del usuario, 2026-10-27)
+            obj.TransformMode = "Features"
         self.originals = list(obj.Originals)
         self.refs = {}
         self.ref_boxes = {}
