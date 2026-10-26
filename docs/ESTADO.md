@@ -159,6 +159,53 @@ Ecuaciones con una variable global y dos cotas, Medir con la barra espaciadora (
 agujeros centro a centro, en un ensamblaje), la franja arriba del árbol, y mandarle una pieza
 con material propio a otra PC (o borrar el .FCMat) para ver el aviso.
 
+## Multicuerpo (piezas con varios sólidos): analizado y decidido el 2026-10-26, sin código
+Surgió en la prueba de la fase 3 (paso 1.3: "Sólidos(1)" con dos sólidos sueltos en un Cuerpo).
+Usos del usuario en SW: piezas soldadas, partir una pieza, y armar partes por separado y
+unirlas al final. Deja los sólidos en la misma pieza; no comparte estos archivos (por ahora).
+Usa mucho **Fusionar resultado** (apagado) y **Alcance de la operación**.
+
+Cómo es FreeCAD 1.1.4 (verificado sin GUI):
+- Un Cuerpo admite varios sólidos sueltos (`AllowCompound`, prendido de fábrica). No hay
+  "Fusionar resultado": lo que toca se fusiona; y una operación nativa fusiona TODO lo que se
+  toca en el Cuerpo, aunque la operación no lo toque. No hay "Alcance": un corte pasante corta
+  todos los sólidos del Cuerpo. Material: uno por Cuerpo (al usuario le parece razonable).
+- "Combinar" de SW = `PartDesign::Boolean` (Fuse/Cut/Common) entre Cuerpos: el Cuerpo activo
+  (entero) con otros Cuerpos como herramientas.
+- FreeCAD no tiene nada de esto pedido ni en camino (relacionados abiertos: #14510 fusión
+  inesperada con varios sólidos, #18469 separar sólidos en Cuerpos, #9748 concepto de Cuerpo).
+
+Caminos analizados:
+1. Un Cuerpo por sólido de SW, todo nativo.
+2. Un Cuerpo con varios sólidos y operaciones propias (FeaturePython) antes/después de cada
+   operación nativa. Prototipo: funcionó (bloque apoyado sin fusionar; corte solo en un sólido),
+   pero una operación nativa posterior fusiona todo, y sin el addon el archivo abre y NO se
+   recalcula (queda viejo sin avisar). **Descartado por el usuario**: es lógica nuestra, sin años
+   de prueba, corriendo en cada recálculo.
+3. **ELEGIDO: camino 1 con el addon como asistente** (memoria "addon asistente, no motor"): el
+   addon arma objetos nativos al crear la operación; después recalcula FreeCAD solo. Se acepta
+   que cada sólido (Cuerpo) tenga su propio historial ("me acoplo a lo de FreeCAD").
+
+Verificado en 1.1.4 para el camino 3 (sin GUI):
+- **Trampa**: un croquis de un Cuerpo B apoyado DIRECTO en una cara de A no da error, pero la
+  extrusión de B se trae la placa de A adentro (68000 en vez de 18000 mm³). El asistente tiene
+  que apoyar el croquis en una **copia vinculada** de la cara (`PartDesign::SubShapeBinder` dentro
+  de B): así da bien y sigue los cambios de A.
+- Alcance: un solo croquis; corte en A (el croquis) y en otro Cuerpo con una copia vinculada
+  del croquis: correcto, y el Cuerpo no elegido queda intacto.
+- Combinar con la Booleana: correcto.
+- Dividir: `BOPTools.SplitFeatures.makeSlice` (Mode "Split") con un plano + un
+  `CompoundTools.CompoundFilter` por pieza + Cuerpo nuevo con `BaseFeature` = esa pieza: correcto
+  y paramétrico; son herramientas que trae FreeCAD (Mod/Part), así que reabierto en otro proceso
+  sin el addon se recalcula bien al cambiar una cota. Ojo: el filtro elige la pieza por número
+  de orden (si un cambio invierte el orden, se cruzan): probar con casos reales.
+
+Error encontrado (fase 3, sin corregir todavía): Propiedades físicas y la franja cuentan como
+pieza aparte a un Cuerpo usado como herramienta de una Booleana (y lo mismo pasaría con la base
+de un Dividir): su volumen se suma dos veces. Corregir junto con el multicuerpo.
+
+Plan propuesto (falta el OK del usuario), ver mensaje del 2026-10-26.
+
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
 SIEMPRE esperando selección (clic agrega, clic sobre una ya elegida la saca; nada de botones
