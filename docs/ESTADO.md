@@ -39,6 +39,10 @@ Verificado en 1.1.4 sin GUI:
   Copper-Generic). Comandos `Std_SetMaterial` / `Std_SetAppearance` en `lib/MatGui.pyd`.
   **El archivo guarda solo el UUID del material**: si al abrir no está en la biblioteca, FreeCAD
   dice "Material not found" y lo deja en "Default" (densidad 1 g/cm³) sin más aviso (probado).
+  Buscado 2026-10-26: FreeCAD lo tiene anotado como pedido abierto #10902 "Embedded materials"
+  (del autor del sistema de materiales, 2023, "Still pending" en 2025-01, sin fecha ni PR). No
+  está en el roadmap (solo "mejorar materiales" en general) ni en la propuesta FEP-0006 (editor
+  de materiales). Si llega algún día, el panel del fork cede a lo nativo.
 - Propiedades físicas: `Shape.Volume/Area/CenterOfMass/MatrixOfInertia` y
   `Solid.PrincipalProperties` (momentos, ejes, radios de giro) andan. No hay `Std_MassProperties`
   en 1.1.4 (llega en 26.3).
