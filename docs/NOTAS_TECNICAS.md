@@ -78,6 +78,15 @@
 - Part Design: las operaciones de sólido son `isDerivedFrom("PartDesign::Feature")` (croquis, planos
   de referencia y binders no). `Suppressed` existe en 1.1.4. Los vínculos de una operación incluyen
   `BaseFeature` (el sólido anterior: no es "padre" en sentido SW) y `_Body`.
+- Árbol (`Gui::TreeWidget`): **no guardar QTreeWidgetItem** para usarlos después; PySide los da
+  por borrados ("Internal C++ object already deleted"). Medir rectángulos en el momento. Los
+  renglones se relacionan con objetos por Label (`doc.getObjectsByLabel`); el renglón de primer
+  nivel es el documento. Dibujar encima: widget hermano del viewport (hijo del árbol, no del
+  viewport, así no se corre al desplazar), transparente al mouse; arrastre con filtro en el viewport.
+- Part Design: `Body.removeObject(f)` + `Body.insertObject(f, otro, after)` reordena y reengancha
+  BaseFeature solo; si se saca la punta, la punta pasa a la anterior (volver a ponerla).
+  `Shape.getElementHistory` no devuelve nada útil en 1.1.4: para "qué operación creó esta cara"
+  se compara geometría (misma superficie en la operación anterior).
 - `PySide.QtTest` no existe en el envoltorio de FreeCAD: `from PySide6.QtTest import QTest`.
   Los íconos del árbol y la vista 3D se refrescan después: capturar ~1 s más tarde.
 - Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles

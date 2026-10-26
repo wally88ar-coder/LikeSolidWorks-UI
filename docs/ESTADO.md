@@ -6,8 +6,8 @@
 **Fase 0 — Puesta en marcha: terminada y probada por el usuario** ("ahora sí se parece más a SW").
 Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
 **Fase 1 (chapa) cajoneada por un tiempo** a pedido del usuario. Próximo trabajo: lo que él pida.
-Árbol de operaciones estilo SW (sección "Plan" abajo): **etapa A hecha (2026-10-25), probada en
-FreeCAD real con la plantilla; falta que la pruebe el usuario**. Etapas B y C sin empezar.
+Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25),
+probadas en FreeCAD real con la plantilla; falta que las pruebe el usuario**. Etapa C sin empezar.
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`). Hay además un FreeCAD
@@ -95,10 +95,14 @@ Etapas:
   "¿Qué es incorrecto?", Origen abierto, aviso de pieza retrocedida, ocultar Body con la barra
   espaciadora, regla de nombres estables. Suprimir también suprime los dependientes (como SW) y
   suelta el apoyo de los croquis/planos sobre caras suprimidas (MapMode "Deactivated", modo
-  guardado en `SWUI_SuppressedMapMode`). Pendiente para B: en el árbol no se ve dónde está la
-  barra (lo retrocedido no se pinta todavía).
-- B (media): barra arrastrable, gris en lo suprimido y lo retrocedido, mover arriba/abajo, cara →
-  operación en el árbol, "Guardar también STEP".
+  guardado en `SWUI_SuppressedMapMode`).
+- B (media) — **HECHA** (`swui/fork/tree_overlay.py`, `step_copy.py`, más en `feature_tree.py`):
+  barra arrastrable, gris en lo suprimido y lo retrocedido, mover arriba/abajo (clic derecho, con
+  chequeo de dependencias y moviendo también su croquis), cara → operación en el árbol (marco
+  naranja; la operación se busca por geometría: la más vieja que ya tenía una cara sobre la misma
+  superficie), "Guardar también STEP" (apagado de fábrica). Quedó para más adelante: reordenar
+  arrastrando operaciones con el mouse. Límite: FreeCAD sigue marcando en azul la última operación
+  al elegir una cara (no se puede cambiar sin tocar FreeCAD).
 - C (grande): cotas con doble clic, "Reparar referencias", franja (con fase 3), "Chequear carpeta".
 - Descartado: carpetas, reconstruir tras un error. Configuraciones: mucho después.
 
