@@ -95,11 +95,22 @@ def _all_layout_commands(filename="ribbon_layout.py"):
 _FALLBACKS = {}
 
 
+# fork: la pestaña Evaluar cambia la tabla del original desde swui/fork/evaluate_tab.py
+FORK_REPLACED = {"Std_Measure": "SWUI_Measure"}
+
+
+def _fork_layout_commands():
+    return _all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
+
+
 def _expected_buttons():
     """Welche Knopf-IDs gebaut und welche Befehle ausgelassen werden muessen."""
-    available = ({c.split("#")[0] for c in _all_layout_commands()} | EXTRA_AVAILABLE) - MISSING
+    available = ({c.split("#")[0] for c in _all_layout_commands() + _fork_layout_commands()}
+                 | EXTRA_AVAILABLE) - MISSING
     built, skipped = [], []
-    for cid in _all_layout_commands():
+    layout_ids = [FORK_REPLACED.get(c, c) for c in _all_layout_commands()]  # fork
+    layout_ids += [c for c in _fork_layout_commands() if c not in layout_ids]  # fork
+    for cid in layout_ids:
         cmd = cid.split("#")[0]
         if cmd in available:
             built.append(cid)
@@ -418,7 +429,7 @@ def _make_stubs():
     gui.ActiveDocument = None
     gui.listCommands = lambda: sorted(
         (
-            {c.split("#")[0] for c in _all_layout_commands()}
+            {c.split("#")[0] for c in _all_layout_commands() + _fork_layout_commands()}
             | EXTRA_AVAILABLE
         )
         - MISSING
@@ -621,7 +632,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
         print("  FEHLER: fork: árbol: comandos sin registrar", missing)
         return False
     # Teclas: Ctrl+B, Ctrl+Q y barra espaciadora = Medir (como en el SW del usuario)
-    if (rk.keys() != [("Ctrl+B", rk.REBUILD), ("Ctrl+Q", rk.FORCE_REBUILD), ("Space", "Std_Measure")]
+    if (rk.keys() != [("Ctrl+B", rk.REBUILD), ("Ctrl+Q", rk.FORCE_REBUILD), ("Space", "SWUI_Measure")]
             or len(rk._actions) != 3 or not hooked(layout.enter, "_swui_rebuild")
             or not hooked(layout.leave, "_swui_rebuild")):
         print("  FEHLER: fork: teclas Ctrl+B / Ctrl+Q / barra espaciadora (Medir)", len(mw.actions))
@@ -814,6 +825,56 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or "PartDesign::Line" not in dup.PANELS or "PartDesign::Point" not in dup.PANELS):
         print("  FEHLER: fork: paneles de eje y punto de referencia")
         return False
+    # Fase 3 (Evaluar): material, propiedades físicas, ecuaciones, medir, franja y cinta
+    mat = sys.modules["swui.fork.material"]
+    mp = sys.modules["swui.fork.mass_props"]
+    eq = sys.modules["swui.fork.equations"]
+    ms = sys.modules["swui.fork.measure_sw"]
+    et = sys.modules["swui.fork.evaluate_tab"]
+    tsp = sys.modules["swui.fork.tree_strip"]
+    lay_ = sys.modules["swui.ribbon_layout"]
+    copy_ = mat.read_copy(mat.copy_text({"uuid": "u1", "name": "Chapa", "values": {"Density": (7870.0, "kg/m^3")}}))
+    if (mat.category_path("Standard/Metal/Steel") != ["Metales", "Acero"] or mat.parse_number("7.850,5") != 7850.5
+            or mat.parse_number("0,3") != 0.3 or mat.parse_number("x") is not None or mat.fmt_number(0.3) != "0,3"
+            or abs(mat.density_from(copy_) - 7.87e-6) > 1e-12 or mat.read_copy("roto") is not None
+            or mat.missing_in([("o", copy_, "otro")], set()) != [("o", copy_)]
+            or mat.missing_in([("o", copy_, "otro")], {"u1"}) or mat.missing_in([("o", copy_, "u1")], set())
+            or 'UUID: "u1"' not in mat.fcmat_text(copy_) or "Density: \"7870.0 kg/m^3\"" not in mat.fcmat_text(copy_)
+            or mat.safe_file_name('Acero "A/B"') != "Acero _A_B_"):
+        print("  FEHLER: fork: material (categorías, números, copia en la pieza, archivo .FCMat)")
+        return False
+    res_ = mp.combine([(1000.0, 600.0, (5.0, 5.0, 5.0), [[16666.67, 0, 0], [0, 16666.67, 0], [0, 0, 16666.67]], 1e-6)])
+    two_ = mp.combine([(1000.0, 600.0, (0.0, 0.0, 0.0), [[0.0] * 3] * 3, 1e-6),
+                       (1000.0, 600.0, (10.0, 0.0, 0.0), [[0.0] * 3] * 3, 1e-6)])
+    if (abs(res_["mass"] - 0.001) > 1e-12 or abs(res_["inertia_origin"][0][1] + 0.025) > 1e-9
+            or abs(res_["inertia_origin"][0][0] - (0.01666667 + 0.05)) > 1e-6 or mp.combine([]) is not None
+            or two_["center"] != [5.0, 0.0, 0.0] or abs(two_["inertia_cm"][1][1] - 0.05) > 1e-12
+            or mp.sw_matrix([[1, -2, 0], [-2, 1, 0], [0, 0, 1]])[0][1] != 2 or mp.fmt(1234.5678, 2) != "1.234,57"
+            or mp.fmt(-0.0001, 2) != "0,00" or "kilogramos por metro cúbico" not in mp.density_text([7.85e-6])
+            or "Masa = 0,001 kilogramos" not in mp.report(res_, [1e-6], ["Body"], [])):
+        print("  FEHLER: fork: propiedades físicas (masa, centro, inercia como SW, informe)")
+        return False
+    res_eq = eq.to_freecad('= "Largo" * 2,5 + sqr(16) + iif("Largo" > 5; 1; 2)',
+                           lambda n: {"Largo": "VariablesGlobales.Largo"}.get(n))
+    if (eq.sketch_dim_names([("Distance", ""), ("Coincident", ""), ("Radius", "D1"), ("Angle", "")])
+            != {0: "D2", 2: "D1", 3: "D3"}
+            or eq.feature_dim_names("PartDesign::Pad", ["Length", "Length2", "Type"]) != {"Length": "D1", "Length2": "D2"}
+            or res_eq != ("VariablesGlobales.Largo * 2.5 + sqrt(16) + ((VariablesGlobales.Largo > 5) ? (1) : (2))", [])
+            or eq.to_freecad('= "Nada"', lambda n: None)[1] != ["Nada"]
+            or eq.to_sw("VariablesGlobales.Largo * 2.5", lambda t, p: "Largo" if t == "VariablesGlobales" else None)
+            != '"Largo" * 2,5'
+            or eq.to_sw("Largo / 4", lambda t, p: None, {"Largo": "Largo"}) != '"Largo" / 4'
+            or eq.fmt(30.5, "mm") != "30,5 mm"):
+        print("  FEHLER: fork: ecuaciones (nombres D1@Croquis1, funciones y coma como SW)")
+        return False
+    groups_ = lay_.EVALUIEREN[1]
+    flat_ = [e[0] for g in groups_ for e in g if isinstance(e, tuple)]
+    if (ms.toggle_pick([1, 2], 2) != [1] or ms.toggle_pick([1], 2) != [1, 2] or "Std_Measure" in flat_
+            or flat_[:4] != ["SWUI_Measure", "SWUI_MassProperties", "SWUI_Equations", "SWUI_Material"]
+            or tsp.rows_for(None) != [] or ms.COMMAND != rk.MEASURE):
+        print("  FEHLER: fork: medir / pestaña Evaluar / franja del árbol", flat_)
+        return False
+    print("  Evaluar  : fork: material (copia en la pieza), propiedades físicas, ecuaciones SW, medir SW, franja")
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
@@ -4338,6 +4399,8 @@ def run(split_namespace):
                 for sub_ in entry.get(k_, ()):
                     walk_l(sub_)
         elif isinstance(entry, tuple):
+            if entry[0] in _fork_layout_commands():
+                return  # fork: textos en castellano sin tr() (convención del fork)
             keys_l.append(entry[1])
             cmd_ = commands.get(entry[0])
             if cmd_ is not None:

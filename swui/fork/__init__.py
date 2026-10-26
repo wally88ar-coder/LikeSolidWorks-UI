@@ -96,6 +96,21 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Aristas del modelo en el croquis:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import equations, evaluate_tab, mass_props, material, measure_sw, tree_strip
+
+        material.install()
+        mass_props.install()
+        equations.install()
+        measure_sw.install()
+        evaluate_tab.install()
+        tree_strip.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [measure_sw.COMMAND, mass_props.COMMAND, equations.COMMAND,
+                                        material.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Evaluar (material, propiedades físicas, ecuaciones, "
+                                   "medir):\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()
