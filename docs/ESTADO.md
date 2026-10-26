@@ -22,6 +22,12 @@
 - Mientras un panel está abierto, el árbol queda en la pestaña Modelo (escondido): las
   operaciones se eligen tocando sus caras. SW muestra un árbol flotante sobre la vista; no lo hice.
   ¿Lo necesita?
+- Taladro: el orden queda **Posiciones primero** (cara + puntos) y **Tipo después**; en SW 2018 se
+  arranca por Tipo y después Posiciones (se puede ir y volver). Lo hice así porque FreeCAD necesita
+  el croquis antes de crear el taladro. ¿Le molesta?
+- Taladro: "Rosca modelada" apagada de fábrica (la rosca de verdad pesa mucho en FreeCAD); queda
+  como en SW la rosca cosmética, pero FreeCAD no dibuja la rosca cosmética: el agujero se ve al
+  Ø de la broca. Tampoco sale en planos (TechDraw) como rosca. ¿Necesita la rosca en los planos?
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
@@ -72,6 +78,13 @@ Avance:
   simetría con una cara lateral como plano, OK. La "vista previa superpuesta" magenta de FreeCAD
   (con un corte Por todo tapaba la pieza) se apaga mientras el panel está abierto y se devuelve
   la preferencia al cerrar. Falta que lo pruebe el usuario.
+- Asistente para taladro: **hecho** (`swui/fork/hole_panel.py`). Sin selección usa el panel de
+  elegir cara del original (`pick_plane.FEATURE_COMMANDS` + `PartDesign_Hole`, desde el fork), el
+  croquis abre con Punto activo, al salir arranca `PartDesign_Hole` y el panel "Tipo" reemplaza
+  al nativo. Taladro nuevo arranca ISO M6 agujero normal (FreeCAD arranca sin norma). Probado en
+  FreeCAD real: cara, 2 puntos, Agujero M6 (Ø6,6), Refrentado ISO 4762, M8 Por todo,
+  Avellanado ISO 10642, Roscado M8 prof. 8 (Ø6,8), OK, editar, Editar posiciones abre el croquis.
+  Falta que lo pruebe el usuario.
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

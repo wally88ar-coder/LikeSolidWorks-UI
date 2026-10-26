@@ -769,11 +769,26 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or "PartDesign::LinearPattern" not in dup.PANELS or "PartDesign::Mirrored" not in dup.PANELS):
         print("  FEHLER: fork: paneles de matriz y simetría")
         return False
+    # Asistente para taladro (hole_panel): nombres SW, tipo desde FreeCAD, tornillos, y el taladro
+    # sin selección pasa por "elegir cara" (pick_plane)
+    hp = sys.modules["swui.fork.hole_panel"]
+    pk = sys.modules["swui.pick_plane"]
+    if (hp.size_text("ISOMetricProfile", "M6x1.0") != "M6" or hp.size_text("ISOMetricFineProfile", "M8x1.0") != "M8x1.0"
+            or hp.kind_of(True, "None") != hp.TAPPED or hp.kind_of(False, "ISO 10642") != hp.COUNTERSINK
+            or hp.kind_of(False, "Counterbore") != hp.COUNTERBORE or hp.kind_of(False, "None") != hp.PLAIN
+            or hp.screws_for(hp.COUNTERBORE, ["None", "Counterbore", "DIN 7984", "ISO 10642", "ISO 4762"])
+            != ["ISO 4762", "DIN 7984", "Counterbore"]
+            or hp.nearest_size(["M5x0.8", "M6x0.75", "M6x1.0"], "M6x1.0") != "M6x0.75"
+            or hp.fit_index("Loose") != 2 or "PartDesign_Hole" not in pk.FEATURE_COMMANDS
+            or "PartDesign::Hole" not in dup.PANELS):
+        print("  FEHLER: fork: asistente para taladro")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
     print("  Redondeo : fork: paneles SW de redondeo y chaflán (Arista<1>, clic agrega/saca, tipos de chaflán)")
     print("  Matrices : fork: paneles SW de matriz lineal/circular y simetría (espaciado, sólidos)")
+    print("  Taladro  : fork: asistente SW (cara -> croquis de posiciones -> tipo, tamaño, tornillo)")
     return True
 
 

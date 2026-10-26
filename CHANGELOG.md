@@ -167,6 +167,12 @@ Neueste Version oben. / Newest version first.
   (clic en una cara suma la operación que la creó), *Sólidos* (toda la pieza) y vista previa con
   las copias en amarillo. Se apaga la vista previa magenta de FreeCAD mientras el panel está
   abierto (`swui/fork/pattern_panel.py`).
+- **Asistente para taladro con flujo SW**: sin nada elegido, se toca la cara plana, se abre el
+  croquis con la herramienta Punto lista (Posiciones), y al salir del croquis aparece el panel
+  *Tipo*: Refrentado / Avellanado / Agujero / Agujero roscado, estándar ISO (también rosca fina,
+  UNC, UNF o sin norma), tipo de tornillo (ISO 4762, DIN 7984, ISO 10642...), tamaño (M6...),
+  ajuste (Ajustado / Normal / Holgado), condición final, fondo, rosca; *Editar posiciones* vuelve
+  al croquis. Todo sobre el taladro y las tablas de FreeCAD (`swui/fork/hole_panel.py`).
 
 ## 0.10.0 — 2026-10-18
 

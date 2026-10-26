@@ -260,6 +260,7 @@ class SwPanel:
         self.nodes = []
         self.yellow = []
         self.base = self._base()
+        self.is_new = self.doc.HasPendingTransaction  # la transacción del comando que la creó
         self.visible = self._remember_visibility()
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
