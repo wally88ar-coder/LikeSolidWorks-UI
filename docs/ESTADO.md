@@ -17,6 +17,11 @@ corregido (ver CHANGELOG). **Mover arriba/abajo probado por el usuario con esa p
 OK" (2026-10-25).** Marco naranja (cara → operación) también probado por él: OK; después
 pidió el estilo SW: ahora fondo celeste #A6C8E3 con borde #4288B5 sobre ícono y nombre (colores
 medidos en su captura de SW 2018), pintado en modo "multiplicar" para que el texto siga negro.
+Después pidió quitar el azul de FreeCAD en la última operación al tocar una cara: hecho (el
+estilo del árbol se cambia mientras todo lo elegido venga de la vista) y la selección en el
+árbol pasó a celeste SW. Probado en FreeCAD real; falta que lo pruebe él. Límite: al elegir en
+el árbol el celeste cubre también la zona de la flechita (SW solo ícono+nombre): estilar esa
+zona borra la flechita.
 Probando suprimir con esa pieza (sin GUI) apareció que "Desactivar supresión con dependientes"
 dejaba el redondeo suprimido (mientras el tetón está suprimido no se sabe qué arista usa):
 corregido, ahora va por tandas recalculando. El usuario probó suprimir (pasos 1-6 con esa pieza):

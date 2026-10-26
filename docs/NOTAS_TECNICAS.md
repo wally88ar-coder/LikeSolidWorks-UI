@@ -83,6 +83,11 @@
   renglones se relacionan con objetos por Label (`doc.getObjectsByLabel`); el renglón de primer
   nivel es el documento. Dibujar encima: widget hermano del viewport (hijo del árbol, no del
   viewport, así no se corre al desplazar), transparente al mouse; arrastre con filtro en el viewport.
+- Estilo de los renglones del árbol: FreeCAD 1.1 los pinta con el estilo de una vista interna
+  `QTreeView#DocumentTreeItems` (hija de `Gui::TreeWidget`): un estilo cambiado solo en el
+  TreeWidget no se ve. Una regla `::item:selected` agregada al final no le gana a la primera:
+  sacar la vieja (regex) y poner la nueva. Estilar `::branch` borra la flechita de abrir/cerrar;
+  la zona de la flechita se pinta con el fondo de `::item:selected`.
 - Part Design: `Body.removeObject(f)` + `Body.insertObject(f, otro, after)` reordena y reengancha
   BaseFeature solo; si se saca la punta, la punta pasa a la anterior (volver a ponerla).
   `Shape.getElementHistory` no devuelve nada útil en 1.1.4: para "qué operación creó esta cara"

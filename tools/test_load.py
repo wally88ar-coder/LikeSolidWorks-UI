@@ -678,6 +678,17 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or to.bar_y(g, pocket) != 80 or to.bar_y(g, None) != 30 or to.gaps([]) != []):
         print("  FEHLER: fork: barra de retroceso (lugares donde puede quedar)", g)
         return False
+    class _Pick:
+        def __init__(self, obj, subs):
+            self.Object, self.SubElementNames, self.SubObjects = obj, subs, [None] * len(subs)
+
+    # Tocado en la vista -> marcar la operación (y apagar el resaltado del árbol); desde el árbol -> nada
+    if (to.view_marks([_Pick(pocket, ["Edge1"]), _Pick(pocket, ["Vertex2"])]) != [pocket]
+            or to.view_marks([_Pick(pocket, [])]) is not None or to.view_marks([]) is not None
+            or to.view_marks([_Pick(pocket, ["Edge1"]), _Pick(pad, [])]) is not None
+            or to.view_marks([_Pick(sk2, ["Edge1"])]) is not None):
+        print("  FEHLER: fork: árbol: marca de lo tocado en la vista")
+        return False
     sc = sys.modules["swui.fork.step_copy"]
 
     class _Shape:

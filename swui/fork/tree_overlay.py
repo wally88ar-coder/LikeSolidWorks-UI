@@ -10,9 +10,12 @@ Dibujo sobre el árbol de operaciones, como el FeatureManager de SOLIDWORKS (eta
 - Lo que queda debajo de la barra se ve en gris, como en SW. Lo suprimido
   también (FreeCAD 26.3 ya lo tacha solo: desde esa versión no se pinta).
 - Cara elegida en la vista 3D: la operación que la creó (feature_tree.creator)
-  se marca como en SW 2018: fondo celeste con borde azul sobre ícono y nombre.
-  FreeCAD marca además en azul la última operación (la que se ve); eso no se
-  puede cambiar sin tocar FreeCAD.
+  se marca como en SW 2018: fondo celeste con borde azul sobre ícono y nombre
+  (aristas y vértices: la operación elegida). FreeCAD además selecciona en el
+  árbol la última operación (la que se ve): mientras todo lo elegido venga de la
+  vista, ese resaltado se apaga cambiando el estilo del árbol, así queda una
+  sola marca, como en SW. Elegido desde el árbol, el resaltado (celeste,
+  look_sw) vuelve.
 
 Cómo: un widget transparente encima del área del árbol (hermano del viewport,
 así no se corre al desplazar) que pinta usando visualItemRect de cada renglón,
@@ -37,6 +40,10 @@ GRAB = 5  # px alrededor de la barra donde se la puede agarrar
 MARK_FILL = "#a6c8e3"  # celeste del FeatureManager de SW 2018 (medido en captura del usuario)
 MARK_LINE = "#4288b5"
 ICON = 16  # ícono del objeto (sin el ojo)
+# Con "transparent" Qt pinta debajo el azul de selección del sistema: hay que usar el color del panel
+# La zona de la flechita se pinta con selection-background-color (estilar ::branch borra la flechita).
+HIDE_SELECTED = ("QTreeView { selection-background-color: %(panel)s; }"
+                 "QTreeView::item:selected { background: %(panel)s; border: none; color: %(tree_text)s; }")
 NATIVE_SUPPRESSED_FROM = 26  # FreeCAD 26.3 tacha lo suprimido
 
 _overlays = {}  # tree -> _Overlay
@@ -358,31 +365,79 @@ class _SelObserver:
             QtCore.QTimer.singleShot(0, _update_mark)
 
     def clearSelection(self, doc):
-        if _mark:
-            del _mark[:]
-            _later_refresh()
+        if _overlays:
+            QtCore.QTimer.singleShot(0, _update_mark)
+
+
+def view_marks(selection):
+    """
+    Operaciones a marcar cuando TODO lo elegido viene de la vista 3D (caras, aristas o
+    vértices de operaciones de un cuerpo): para una cara, la operación que la creó; para
+    aristas y vértices, la operación elegida. None si algo se eligió en el árbol, no es de
+    un cuerpo o no hay nada elegido: ahí manda el resaltado del árbol.
+    """
+    from swui.fork import feature_tree as ft
+
+    if not selection:
+        return None
+    out = []
+    for sel in selection:
+        if not sel.SubElementNames or not ft.is_feature(sel.Object) or ft.body_of(sel.Object) is None:
+            return None
+        for sub, shape in zip(sel.SubElementNames, sel.SubObjects):
+            found = ft.creator(sel.Object, shape) if sub.startswith("Face") else None
+            found = found or sel.Object
+            if found not in out:
+                out.append(found)
+    return out
 
 
 def _update_mark():
-    from swui.fork import feature_tree as ft
-
-    new = None
     try:
-        sel = FreeCADGui.Selection.getSelectionEx()
-        if len(sel) == 1 and len(sel[0].SubElementNames) == 1 and sel[0].SubElementNames[0].startswith("Face"):
-            feature = sel[0].Object
-            found = ft.creator(feature, sel[0].SubObjects[0])
-            if found is not None and found is not feature:
-                new = found
+        marks = view_marks(FreeCADGui.Selection.getSelectionEx())
     except Exception:
         FreeCAD.Console.PrintLog("[SWUI fork] Árbol (cara):\n%s\n" % traceback.format_exc())
-    if (_mark[0] if _mark else None) is new:
+        marks = None
+    # Como SW: con algo tocado en la vista, el árbol no resalta la última operación
+    # (FreeCAD la selecciona porque es la que se ve): solo queda el celeste propio.
+    _hide_tree_selection(marks is not None)
+    marks = marks or []
+    if marks == _mark:
         return
-    del _mark[:]
-    if new is not None:
-        _mark.append(new)
-        _scroll_to(new)
+    _mark[:] = marks
+    if marks:
+        _scroll_to(marks[0])
     refresh()
+
+
+_base_qss = {}  # árbol -> su estilo de siempre (el de look_sw)
+
+
+def without_selected(qss):
+    """El estilo sin sus reglas de renglón elegido (agregar otra después no alcanza: Qt sigue usando la primera)."""
+    import re
+
+    return re.sub(r"QTreeView::(item|branch):selected\s*\{[^}]*\}", "", qss)
+
+
+def _hide_tree_selection(on):
+    """Quitar (o devolver) el resaltado de los renglones elegidos del árbol."""
+    from swui.fork import look_sw
+
+    hide = HIDE_SELECTED % look_sw.COLORS
+    views = []
+    for tree in list(_overlays):
+        # FreeCAD 1.1 pinta los renglones con el estilo de una vista interna
+        # ("DocumentTreeItems"): cambiar solo el del árbol no alcanza.
+        views += [tree] + list(tree.findChildren(QtWidgets.QTreeView))
+    for view in views:
+        try:
+            base = _base_qss.setdefault(view, view.styleSheet())
+            want = without_selected(base) + hide if on else base
+            if view.styleSheet() != want:
+                view.setStyleSheet(want)
+        except Exception:
+            pass
 
 
 def _scroll_to(obj):
@@ -433,6 +488,8 @@ def attach():
 def detach():
     """Sacar el dibujo (al salir de LikeSolidWorks UI)."""
     global _sel_observer
+    _hide_tree_selection(False)
+    _base_qss.clear()
     for tree, overlay in list(_overlays.items()):
         try:
             tree.viewport().removeEventFilter(_filter)

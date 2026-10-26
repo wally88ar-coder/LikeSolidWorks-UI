@@ -11,7 +11,8 @@ archivos, se cambian sus tablas antes de que se apliquen:
   - Interfaz: cinta, menú, panel izquierdo y barras #F7F7F7, barra de
     pestañas #D4D4D4, texto oscuro, azul de selección #368EC4.
   - Árbol sobre panel opaco gris claro (no superpuesto): panel_sw.py lo pone
-    en pestañas con Tareas, como FeatureManager / PropertyManager.
+    en pestañas con Tareas, como FeatureManager / PropertyManager. Renglón
+    elegido como en SW: celeste #A6C8E3 con borde #4288B5 y texto oscuro.
   - Fondo 3D: degradado #E1E4ED (arriba) -> #D7DCE7 (medio) -> #FEFEFE (abajo).
   - Croquis: azul puro #0000FF (insuficientemente definido), negro (definido),
     líneas de 2 px; constructivas 1 px trazo y punto; resaltado naranja
@@ -40,6 +41,8 @@ COLORS = {
     "pressed": "#b7d4ee",
     "selection": "#368ec4",
     "tree_text": "#1e1e1e",
+    "tree_selection": "#a6c8e3",  # renglón elegido en el FeatureManager de SW 2018
+    "tree_selection_line": "#4288b5",
     "view_top": "#e1e4ed",
     "view_mid": "#d7dce7",
     "view_bottom": "#fefefe",
@@ -80,7 +83,8 @@ SKETCH_VALUES = [
 TREE_QSS = (
     "QTreeView { background: %(panel)s; color: %(tree_text)s; border: none; }"
     "QTreeView::item { color: %(tree_text)s; }"
-    "QTreeView::item:selected { background: %(selection)s; color: #ffffff; }"
+    "QTreeView::item:selected { background: %(tree_selection)s; color: %(tree_text)s;"
+    " border: 1px solid %(tree_selection_line)s; }"
 )
 
 # Se agrega al final del estilo del original (theme.build_qss)
