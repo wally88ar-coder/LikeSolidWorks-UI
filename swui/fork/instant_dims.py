@@ -457,6 +457,12 @@ def _modify(dim, button):
     if dim.locked:
         FreeCADGui.getMainWindow().statusBar().showMessage(
             "Esta cota está atada a una ecuación: se cambia desde las ecuaciones.", 5000)
+        try:
+            from swui.fork import equations
+
+            equations.show_dialog()
+        except Exception:
+            pass
         return
     box = QtWidgets.QFrame(FreeCADGui.getMainWindow(), QtCore.Qt.WindowType.Popup)
     box.setObjectName("SWUI_Modificar")
