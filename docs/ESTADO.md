@@ -209,8 +209,36 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
   "C (2 sólidos sueltos · material)". El informe de masa avisa los sólidos sueltos. Probado sin
   GUI (Combinar + Dividir + copia vinculada + Cuerpo con 2 sólidos: 78000 mm³, correcto) y en
   FreeCAD real. Falta que lo pruebe el usuario.
-- B. Extruir / Cortar / Revolución: casilla Fusionar resultado (apagada: Cuerpo nuevo con el
-  croquis apoyado en una copia vinculada) y Alcance de la operación en los cortes.
+- **B. HECHA (2026-10-26)** (`swui/fork/multibody.py`): en los diálogos nativos de Extruir /
+  Revolución, adentro del cuadro de parámetros:
+  - Saliente: casilla **Fusionar resultado** debajo de "Invertir dirección" (solo si el Cuerpo ya
+    tiene sólido, o si la operación ya está aparte). Apagada, al Aceptar la operación pasa a un
+    Cuerpo nuevo ("Cuerpo2"...): el croquis queda en su Cuerpo (con sus referencias a aristas) y
+    el nuevo usa una copia vinculada del croquis (SubShapeBinder). Revolución: eje del origen ->
+    el del Cuerpo nuevo; eje del croquis (V/H) -> recta de referencia apoyada en el croquis; otro
+    eje -> no se separa y avisa. Prenderla al editar la devuelve a su Cuerpo (si el sólido no tiene
+    otras operaciones; si tiene, avisa: usar Combinar).
+  - Corte: cuadro **Alcance de la operación** (solo si hay más de un sólido): Todos los sólidos /
+    Sólidos seleccionados, Selección automática (de fábrica, como SW: los que el corte atraviesa,
+    calculado con la herramienta del corte contra cada sólido antes del corte) y la lista con
+    tildes (el sólido del corte va siempre). Al Aceptar se crean/borran copias del corte en los
+    otros sólidos: copia vinculada del croquis + ecuaciones a las cotas del original (también
+    Tipo, Invertir, SideType...), propiedad `SWUI_ScopeOf` (LinkGlobal, nombre estable). Al editar
+    una copia, el panel avisa que se edita el original. Las ecuaciones de las copias no se
+    muestran en Ecuaciones ni en la franja.
+  Probado sin GUI (separar/volver, revoluciones con los dos ejes, copias que siguen al original
+  hasta en el tipo, "Hasta la cara" no se copia, y **reabierto sin el addon se recalcula bien**) y
+  en FreeCAD real (separar, cortar "Por todo" los dos sólidos con copia, editar y sacar un sólido:
+  copia y vínculo borrados; revolución separada; Cancelar no deja nada). Falta que lo pruebe el
+  usuario.
+  Decisiones / límites (avisados al usuario antes de empezar): Cuerpos nuevos "Cuerpo2"... (FreeCAD
+  no repite nombres); la vista previa con el diálogo abierto muestra la extrusión fusionada (la
+  separación se ve al Aceptar); dos pasos de deshacer; la selección automática se calcula al
+  Aceptar: si después el corte cambia por una ecuación y pasa a atravesar otro sólido, la copia se
+  agrega recién al volver a editarlo y Aceptar (SW lo recalcula solo; acá no hay motor propio, por
+  decisión); "Hasta la cara" no se lleva a otros sólidos; borrar el corte original deja sus
+  copias con error (pendiente). Para más adelante: alcance en taladro, matrices, simetría,
+  barridos.
 - C. Combinar (Agregar / Restar / Común) y Dividir con paneles SW.
 - D. Soldadas, después de la chapa.
 

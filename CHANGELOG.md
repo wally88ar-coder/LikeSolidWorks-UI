@@ -225,6 +225,11 @@ Neueste Version oben. / Newest version first.
 - **Multicuerpo, etapa A** (cada sólido de SW = un Cuerpo de FreeCAD): Propiedades físicas y la
   franja ya no cuentan dos veces un Cuerpo usado en una Booleana (Combinar) o en un Dividir;
   *Sólidos(n)* marca con ⚠ un Cuerpo que tiene varios sólidos sueltos adentro.
+- **Multicuerpo, etapa B**: en Extruir y Revolución, casilla **Fusionar resultado** (apagada, la
+  operación queda como un sólido aparte en un Cuerpo nuevo) y, en los cortes, **Alcance de la
+  operación** (Todos los sólidos / Sólidos seleccionados / Selección automática, como SW): el corte
+  se copia en cada sólido elegido y las copias siguen las medidas del original. Todo con objetos
+  nativos de FreeCAD: el archivo se abre y se recalcula bien sin el addon (`swui/fork/multibody.py`).
 
 ## 0.10.0 — 2026-10-18
 

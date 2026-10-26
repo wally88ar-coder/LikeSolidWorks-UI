@@ -191,3 +191,35 @@
   ubicación de la forma); `Face.ParameterRange` y `Face.isInside(p, tol, True)` para caras
   recortadas. Las esferas tienen aristas degeneradas (polos, `Edge.Degenerated`) cuyo `.Curve`
   da "undefined curve type": saltearlas. La primera llamada tarda ~1,5 s más (carga de numpy).
+
+## Multicuerpo (etapa B): hallazgos en FreeCAD 1.1.4
+- Diálogos nativos de operación: el formulario (`PartDesignGui__TaskPadPocketParameters`...) vive
+  en un `Gui::TaskView::TaskPanel` que FreeCAD REUSA entre diálogos: un widget agregado al panel
+  queda en el diálogo siguiente (sacarlo al cerrar). Agregado adentro del formulario, FreeCAD lo
+  destruye al cerrar: leer lo que haga falta ANTES.
+- Aceptar: conectar a `pressed` del botón OK del `QDialogButtonBox` visible; `accepted` no llega
+  (FreeCAD cierra y destruye el diálogo en su propio manejo, antes que el nuestro). Enter aprieta
+  el botón por defecto y también emite `pressed`. Al cerrar llega `slotResetEdit(vp)` (observador
+  de documento de Gui); FreeCAD avisa `slotInEdit` dos veces al editar una operación existente.
+- Radiobotones creados sin dueño y marcados antes de ponerlos en un layout no son excluyentes:
+  usar `QButtonGroup` (o crearlos con dueño).
+- `PartDesign_Pad` desde el diálogo deja `ReferenceAxis = (croquis, ['N_Axis'])`: al pasar la
+  operación a otro Cuerpo ese vínculo queda fuera de alcance y da "Invalid shape name N_Axis".
+  Con perfil = SubShapeBinder la dirección sale del perfil: se borra (`ReferenceAxis = None`).
+- Croquis de un Cuerpo apoyado directo en una cara de otro: la extrusión se trae el otro sólido
+  (base implícita). Usar SubShapeBinder del croquis (o de la cara) dentro del Cuerpo nuevo.
+- Recta de referencia sobre el eje de un croquis: `PartDesign::Line` con
+  `AttachmentSupport = [(croquis, "")]` y `MapMode = "ObjectY"` (V_Axis) / `"ObjectX"` (H_Axis);
+  apoyarla en `(croquis, "V_Axis")` da error del motor de apoyo.
+- Expresiones de un Pocket a otro Pocket de OTRO Cuerpo: funcionan, también en propiedades de
+  enumeración (`Type`) y booleanas (`Reversed`). `Midplane` está obsoleto en Pocket (avisa): usar
+  `SideType`. Groove 1.1.4 todavía usa `Midplane`.
+- Un `App::PropertyLink` hacia un objeto de otro Cuerpo da aviso "go out of the allowed scope":
+  usar `App::PropertyLinkGlobal`.
+- "Qué sólidos atraviesa un corte": `feature.AddSubShape` (herramienta, en coordenadas del Cuerpo)
+  contra la forma de cada sólido ANTES del corte (en el propio, `BaseFeature.Shape`; la forma del
+  Cuerpo ya tiene el agujero y el común da 0).
+- `swui/naming.py` del original renombra a lo SW toda operación nueva en un QTimer(0): lo que
+  arma el asistente vuelve a poner su nombre en otro QTimer(0) posterior (`multibody._keep_label`).
+- Probar sin GUI: un FeaturePython definido en el script de prueba no se puede reabrir en otro
+  proceso (1.1.4 bloquea importar módulos que no sean de FreeCAD o de addons instalados).
