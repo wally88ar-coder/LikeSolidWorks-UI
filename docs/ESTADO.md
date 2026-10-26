@@ -139,7 +139,10 @@ Etapas:
   El usuario lo probó ("anduvo") y pidió que sea como SW: resaltar al pasar y con distancia de
   enganche. Hecho: resaltado naranja a menos de 10 px (vértices primero), el clic se manda sobre
   la arista; una arista sobre un eje del croquis gana al eje. Probado en FreeCAD real (cota a
-  7 px, vértice, arista sobre eje); falta que lo vuelva a probar el usuario.
+  7 px, vértice, arista sobre eje). El usuario lo probó con línea y rectángulo ("funciona muy
+  bien") y pidió lo mismo sin herramienta (punto del croquis + arista para relacionar). Hecho:
+  sin herramienta la arista se suma a la selección y el panel de relaciones ofrece "Sobre
+  entidad" (probado: queda PointOnObject). Falta que lo pruebe el usuario.
 - 2026-10-25: panel "Croquis: seleccionar un plano" mostraba "Plano XY/XZ/YZ" (cuerpo creado
   desde la página de Inicio, en Part Design) y al hacer clic en la lista daba "Access violation"
   (el panel se cerraba durante el propio clic). Resuelto en `feat/skizze-ohne-auswahl` (+ master);

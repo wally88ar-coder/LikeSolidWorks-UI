@@ -99,6 +99,12 @@
   `view.getSceneGraph()`. Forma global con los mismos índices: `Part.getShape(raíz, "Pad.")` usando
   `obj.getParents()`. Una referencia externa encima de un eje del croquis le gana al eje en la
   preselección.
+- Sin herramienta (cursor flecha) la preselección del croquis (`Selection.getPreselection()`)
+  no se actualiza con movimientos sintéticos y puede quedar vieja: medir en pantalla si hay
+  geometría del croquis cerca (`View/PickRadius`). En ese modo el croquis elige al SOLTAR el
+  botón: para sumar una referencia a la selección usar
+  `Selection.addSelection(doc, sketch, "ExternalEdgeN")` (N desde 1, orden de ExternalGeometry)
+  y no dejar pasar ese soltar.
 - `PySide.QtTest` no existe en el envoltorio de FreeCAD: `from PySide6.QtTest import QTest`.
   Los íconos del árbol y la vista 3D se refrescan después: capturar ~1 s más tarde.
 - Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles
