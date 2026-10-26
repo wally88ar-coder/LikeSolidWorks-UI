@@ -87,6 +87,13 @@
   BaseFeature solo; si se saca la punta, la punta pasa a la anterior (volver a ponerla).
   `Shape.getElementHistory` no devuelve nada útil en 1.1.4: para "qué operación creó esta cara"
   se compara geometría (misma superficie en la operación anterior).
+- Croquis en edición: el modelo no se puede preseleccionar, pero `view.getObjectsInfo((x, y))`
+  (coordenadas Coin: y desde abajo, píxeles reales = Qt * devicePixelRatio) devuelve también las
+  aristas cercanas del sólido. Con una herramienta del croquis activa el cursor del viewport es
+  `BitmapCursor`. `sketch.addExternal("Pad", "Edge10")` + `sketch.recompute()` y un MouseMove
+  sintético en el mismo punto: el croquis la preselecciona y el clic la toma. No usar
+  `view.getCursorPos()` (es el cursor real, no el del evento). Dos Esc seguidos cierran el croquis.
+  `view.getPointOnViewport` da puntos fuera de la ventana si la cámara no los muestra (ajustar antes).
 - `PySide.QtTest` no existe en el envoltorio de FreeCAD: `from PySide6.QtTest import QTest`.
   Los íconos del árbol y la vista 3D se refrescan después: capturar ~1 s más tarde.
 - Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles

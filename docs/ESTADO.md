@@ -132,6 +132,13 @@ Etapas:
 - Color de las piezas (gris de SW): no se tocó; pedir captura si el usuario lo quiere.
 
 ## Problemas reportados por el usuario (todos resueltos)
+- 2026-10-25 (video): en un croquis sobre una cara no se podían enganchar ni acotar las aristas
+  del sólido. No era un error: FreeCAD 1.1.4 no deja tocar el modelo desde el croquis (hay que
+  usar Convertir entidades; 26.3 sí lo permite). Hecho en el fork (`sketch_model_edges.py`): con
+  una herramienta activa, un clic en una arista/vértice del modelo la trae sola como referencia.
+  Probado en FreeCAD real (cota y línea); falta que lo pruebe el usuario. Límite: si la arista
+  coincide con un eje del croquis (como en su video, el borde sobre el eje vertical), FreeCAD
+  toma el eje (misma medida, pero atada al origen del croquis, no a la arista).
 - 2026-10-25: panel "Croquis: seleccionar un plano" mostraba "Plano XY/XZ/YZ" (cuerpo creado
   desde la página de Inicio, en Part Design) y al hacer clic en la lista daba "Access violation"
   (el panel se cerraba durante el propio clic). Resuelto en `feat/skizze-ohne-auswahl` (+ master);
