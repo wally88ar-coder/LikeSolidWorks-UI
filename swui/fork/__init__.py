@@ -78,6 +78,9 @@ def install(workbench=None):
         dress_up_panel.install()
         pattern_panel.install()
         hole_panel.install()
+        from swui.fork import ref_plane_panel
+
+        ref_plane_panel.install()
         from swui.fork import native_terms
 
         native_terms.install()

@@ -792,6 +792,18 @@ def _check_feature_tree(commands, mw, layout, hooked):
         print("  FEHLER: fork: ángulo de salida / términos SW en diálogos nativos")
         return False
     importlib.import_module("swui.fork.flyout_tree")  # árbol flotante: que al menos cargue
+    # Plano de referencia SW: referencias + relaciones -> modo de adjunción de FreeCAD
+    rp = sys.modules["swui.fork.ref_plane_panel"]
+    if (rp.resolve([("plane", "distance")]) != ("FlatFace", [0], "offset")
+            or rp.resolve([("vertex", "coincident"), ("plane", "parallel")]) != ("ParallelPlane", [1, 0], None)
+            or rp.resolve([("plane", "angle"), ("edge", "coincident")]) != ("FlatFace", [0, 1], "angle")
+            or rp.resolve([("plane", "midplane"), ("plane", "midplane")]) != ("FlatFace", [0, 1], "mid")
+            or rp.resolve([("vertex", "coincident")] * 3) != ("ThreePointsPlane", [0, 1, 2], None)
+            or rp.resolve([("edge", "coincident")]) is not None
+            or rp.pick_mode("ParallelPlane", ["TangentPlane"]) != "TangentPlane"
+            or rp.offer("plane", ["midplane"])[1] != "midplane" or "PartDesign::Plane" not in dup.PANELS):
+        print("  FEHLER: fork: panel de plano de referencia")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
@@ -799,6 +811,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
     print("  Matrices : fork: paneles SW de matriz lineal/circular y simetría (espaciado, sólidos)")
     print("  Taladro  : fork: asistente SW (cara -> croquis de posiciones -> tipo, tamaño, tornillo)")
     print("  Diálogos : fork: ángulo de salida SW; términos SW en barrido, hélice y referencia")
+    print("  Plano    : fork: panel SW (primera/segunda/tercera referencia y relaciones)")
     return True
 
 
