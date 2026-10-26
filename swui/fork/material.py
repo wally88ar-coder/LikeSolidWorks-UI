@@ -462,16 +462,53 @@ def _owner(obj):
     return obj if is_part_object(obj) else None
 
 
+# Los que usan un sólido sin "comérselo": apoyos de croquis, copias vinculadas de una cara,
+# vistas de planos, planillas, contenedores y vínculos de ensamblaje.
+NOT_CONSUMERS = ("PartDesign::", "Sketcher::", "TechDraw::", "Spreadsheet::", "App::", "Measure::", "Assembly::")
+
+
+def consumes(user, obj):
+    """
+    ¿user se "come" a obj (obj pasa a ser parte de user y no cuenta aparte)? Como en SW, un
+    sólido combinado o dividido deja de existir por su cuenta:
+    - Combinar (PartDesign::Boolean): los Cuerpos de su lista (herramientas).
+    - Un Cuerpo que arranca de obj (BaseFeature): p. ej. cada pieza de un Dividir.
+    - Operaciones de Part (booleanas, Dividir, filtros...): todo lo que usan.
+    """
+    kind = getattr(user, "TypeId", "")
+    if kind == "PartDesign::Boolean":
+        return any(o is obj for o in (getattr(user, "Group", None) or []))
+    if kind == "PartDesign::Body":
+        return getattr(user, "BaseFeature", None) is obj
+    if kind.startswith(NOT_CONSUMERS):
+        return False
+    try:
+        return user.isDerivedFrom("Part::Feature")
+    except Exception:
+        return False
+
+
 def part_objects(doc):
-    """Piezas del documento que llevan material, sin las que están dentro de otra (base de un booleano)."""
+    """
+    Piezas (sólidos de SW: Cuerpos y sólidos sueltos de STEP) que llevan material, sin las que
+    se "comió" otra (herramienta de Combinar, base de un Dividir, de una booleana de Part...).
+    """
     out = []
     for obj in doc.Objects:
         if not is_part_object(obj):
             continue
-        if any(p for p in obj.InList if is_part_object(p) and p is not obj):
+        if any(p is not obj and consumes(p, obj) for p in obj.InList):
             continue
         out.append(obj)
     return out
+
+
+def loose_solids(obj):
+    """Cantidad de sólidos sueltos de un Cuerpo (1 si es un solo sólido, como debe ser)."""
+    try:
+        return len(obj.Shape.Solids)
+    except Exception:
+        return 0
 
 
 def targets(doc=None):

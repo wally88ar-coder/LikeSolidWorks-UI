@@ -867,6 +867,29 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or eq.fmt(30.5, "mm") != "30,5 mm"):
         print("  FEHLER: fork: ecuaciones (nombres D1@Croquis1, funciones y coma como SW)")
         return False
+    # Multicuerpo (etapa A): un sólido de SW = un Cuerpo; los que se "comió" otro no cuentan
+    class _U:
+        def __init__(self, type_id, part=False, **kw):
+            self.TypeId, self.part = type_id, part
+            self.__dict__.update(kw)
+
+        def isDerivedFrom(self, t):
+            return self.part and t == "Part::Feature"
+
+    tool_ = _U("PartDesign::Body", True)
+    if (not mat.consumes(_U("PartDesign::Boolean", True, Group=[tool_]), tool_)
+            or mat.consumes(_U("PartDesign::Boolean", True, Group=[]), tool_)
+            or not mat.consumes(_U("PartDesign::Body", True, BaseFeature=tool_), tool_)
+            or mat.consumes(_U("PartDesign::Body", True, BaseFeature=None), tool_)
+            or not mat.consumes(_U("Part::FeaturePython", True), tool_)
+            or mat.consumes(_U("PartDesign::SubShapeBinder", True), tool_)
+            or mat.consumes(_U("Sketcher::SketchObject", True), tool_)
+            or mat.consumes(_U("App::Link"), tool_) or mat.consumes(_U("TechDraw::DrawViewPart"), tool_)
+            or tsp.solids_text([1, 1]) != "Sólidos(2)" or tsp.solids_text([1, 2, 0]) != "Sólidos(2) ⚠"
+            or tsp.solid_item_text("C", 2, None) != "C   (2 sólidos sueltos · sin material)"
+            or tsp.solid_item_text("A", 1, "Acero") != "A   (Acero)"):
+        print("  FEHLER: fork: multicuerpo (cuerpos consumidos por Combinar/Dividir, sólidos sueltos)")
+        return False
     groups_ = lay_.EVALUIEREN[1]
     flat_ = [e[0] for g in groups_ for e in g if isinstance(e, tuple)]
     if (ms.toggle_pick([1, 2], 2) != [1] or ms.toggle_pick([1], 2) != [1, 2] or "Std_Measure" in flat_

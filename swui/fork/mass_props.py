@@ -300,12 +300,15 @@ def compute(parts):
         shape = _global_shape(obj, root, path)
         found = _solid_items(shape, rho)
         if not found:
-            notes.append("%s: no tiene sólidos (no se cuenta)." % _component_label(obj, root, path))
+            if getattr(obj, "TypeId", "") != "PartDesign::Body":  # un Cuerpo vacío es uno sin terminar
+                notes.append("%s: no tiene sólidos (no se cuenta)." % _component_label(obj, root, path))
             continue
         items += found
         rhos.append(rho)
         name = _component_label(obj, root, path)
         names.append(name)
+        if len(found) > 1:
+            notes.append("%s: tiene %d sólidos sueltos (se suman todos)." % (name, len(found)))
         if source is None:
             notes.append("%s: sin material, se usó 1000 kg/m³ (como SW)." % name)
         elif source == "copia":

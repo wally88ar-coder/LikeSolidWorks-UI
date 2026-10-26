@@ -200,11 +200,19 @@ Verificado en 1.1.4 para el camino 3 (sin GUI):
   sin el addon se recalcula bien al cambiar una cota. Ojo: el filtro elige la pieza por número
   de orden (si un cambio invierte el orden, se cruzan): probar con casos reales.
 
-Error encontrado (fase 3, sin corregir todavía): Propiedades físicas y la franja cuentan como
-pieza aparte a un Cuerpo usado como herramienta de una Booleana (y lo mismo pasaría con la base
-de un Dividir): su volumen se suma dos veces. Corregir junto con el multicuerpo.
-
-Plan propuesto (falta el OK del usuario), ver mensaje del 2026-10-26.
+Plan aprobado por el usuario (2026-10-26), por etapas:
+- **A. HECHA (2026-10-26)**: `material.consumes` / `part_objects`: no cuentan como pieza los
+  Cuerpos que se "comió" otro (herramienta de Combinar, base de un Dividir, cualquier operación de
+  Part que use el sólido); sí cuentan aunque haya un croquis o una copia vinculada apoyada en
+  ellos. Corrige el doble conteo de Propiedades físicas (encontrado al analizar). Franja:
+  "Sólidos(n)" = Cuerpos, con ⚠ y explicación si un Cuerpo tiene sólidos sueltos; en la lista,
+  "C (2 sólidos sueltos · material)". El informe de masa avisa los sólidos sueltos. Probado sin
+  GUI (Combinar + Dividir + copia vinculada + Cuerpo con 2 sólidos: 78000 mm³, correcto) y en
+  FreeCAD real. Falta que lo pruebe el usuario.
+- B. Extruir / Cortar / Revolución: casilla Fusionar resultado (apagada: Cuerpo nuevo con el
+  croquis apoyado en una copia vinculada) y Alcance de la operación en los cortes.
+- C. Combinar (Agregar / Restar / Común) y Dividir con paneles SW.
+- D. Soldadas, después de la chapa.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones

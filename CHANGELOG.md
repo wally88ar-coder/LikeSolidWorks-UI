@@ -222,6 +222,9 @@ Neueste Version oben. / Newest version first.
   apagarlas).
 - **Franja Ecuaciones / Sólidos(n) / Material** arriba del árbol, como las carpetas del
   FeatureManager (`swui/fork/tree_strip.py`).
+- **Multicuerpo, etapa A** (cada sólido de SW = un Cuerpo de FreeCAD): Propiedades físicas y la
+  franja ya no cuentan dos veces un Cuerpo usado en una Booleana (Combinar) o en un Dividir;
+  *Sólidos(n)* marca con ⚠ un Cuerpo que tiene varios sólidos sueltos adentro.
 
 ## 0.10.0 — 2026-10-18
 

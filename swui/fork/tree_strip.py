@@ -8,8 +8,10 @@ inventados, así que es una franja propia encima, en la pestaña Modelo.
 
 - "Ecuaciones" (solo si el documento tiene variables globales o ecuaciones, como en
   SW): clic abre la ventana Ecuaciones.
-- "Sólidos(n)": clic despliega la lista de sólidos; clic en uno lo elige (para
-  asignarle un material solo a él, por ejemplo).
+- "Sólidos(n)": cada sólido de SW es un Cuerpo de FreeCAD (decisión del 2026-10-26); no se
+  cuentan los que se "comió" otro (herramienta de Combinar, base de un Dividir). Clic despliega
+  la lista; clic en uno lo elige (para asignarle un material solo a él, por ejemplo). Un
+  Cuerpo con varios sólidos sueltos adentro se marca con ⚠ (FreeCAD lo trata como uno solo).
 - "Material <sin especificar>" o el nombre: clic abre la ventana Material; clic
   derecho: Editar material / Quitar material.
 Solo en documentos de pieza (en un ensamblaje cada pieza lleva su material). Solo
@@ -24,6 +26,8 @@ from swui.compat import QtCore, QtGui, QtWidgets
 STRIP_NAME = "SWUI_TreeStrip"
 POLL_MS = 1000
 ROW_HEIGHT = 20
+LOOSE_TIP = ("Un Cuerpo tiene varios sólidos sueltos adentro: FreeCAD lo trata como uno solo (un "
+             "material, y los cortes los afectan a todos). Como en SW, conviene un Cuerpo por sólido.")
 
 _strip = None
 _timer = None
@@ -54,10 +58,21 @@ def rows_for(doc):
             out.append(("equations", "Ecuaciones"))
     except Exception:
         pass
-    solids = [o for o in parts if _solid_count(o)]
-    out.append(("solids", "Sólidos(%d)" % len(solids)))
+    out.append(("solids", solids_text([_solid_count(o) for o in parts])))
     out.append(("material", material.summary(doc)))
     return out
+
+
+def solids_text(counts):
+    """'Sólidos(n)' con n = Cuerpos con sólido; ⚠ si alguno tiene varios sólidos sueltos."""
+    bodies = [c for c in counts if c]
+    return "Sólidos(%d)%s" % (len(bodies), " ⚠" if any(c > 1 for c in bodies) else "")
+
+
+def solid_item_text(label, count, material_name):
+    """Renglón de la lista de sólidos: 'Cuerpo   (Acero)' o con aviso de sólidos sueltos."""
+    extra = "%d sólidos sueltos · " % count if count > 1 else ""
+    return "%s   (%s%s)" % (label, extra, material_name or "sin material")
 
 
 def _solid_count(obj):
@@ -124,6 +139,7 @@ class _Strip(QtWidgets.QWidget):
             button.setVisible(key in shown)
             if key in shown:
                 button.setText(shown[key])
+                button.setToolTip(LOOSE_TIP if shown[key].endswith("⚠") else "")
         self.setVisible(bool(rows))
         if self.solid_list.isVisible():
             self._fill_solids()
@@ -152,11 +168,13 @@ class _Strip(QtWidgets.QWidget):
         if doc is None:
             return
         for obj in material.part_objects(doc):
-            if not _solid_count(obj):
+            count = _solid_count(obj)
+            if not count:
                 continue
             info, _src = material.material_info(obj)
-            text = "%s   (%s)" % (obj.Label, info["name"] if info else "sin material")
-            item = QtWidgets.QListWidgetItem(text)
+            item = QtWidgets.QListWidgetItem(solid_item_text(obj.Label, count, info["name"] if info else None))
+            if count > 1:
+                item.setToolTip(LOOSE_TIP)
             try:
                 item.setIcon(obj.ViewObject.Icon)
             except Exception:
