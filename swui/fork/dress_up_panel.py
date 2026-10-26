@@ -40,6 +40,7 @@ QAction = getattr(QtGui, "QAction", None) or QtWidgets.QAction  # Qt6 / Qt5
 WB_NAME = "LikeSolidWorksUIWorkbench"
 FILLET = "PartDesign::Fillet"
 CHAMFER = "PartDesign::Chamfer"
+DRAFT = "PartDesign::Draft"
 PREVIEW_COLOR = (1.0, 0.86, 0.0)  # amarillo de la vista previa de SW
 PICKED_COLOR = (0.26, 0.53, 0.71)  # celeste SW (#4288B5, igual que look_sw)
 CURRENT_COLOR = (1.0, 0.55, 0.0)  # naranja: renglón elegido en la lista
@@ -220,6 +221,22 @@ def _spin(value, suffix, low, high, decimals=2):
     box.setValue(value)
     box.setKeyboardTracking(False)
     return box
+
+
+ACTIVE_QSS = "background: #FCE0F0;"  # casilla de selección activa (rosado, como SW)
+
+
+class RefBox(QtWidgets.QLineEdit):
+    """Casilla de una referencia (dirección, eje, plano): un clic la activa."""
+
+    def __init__(self, on_click):
+        super().__init__()
+        self.setReadOnly(True)
+        self._on_click = on_click
+
+    def mousePressEvent(self, event):
+        self._on_click(self)
+        super().mousePressEvent(event)
 
 
 def pick_list(remove, clear, height=90):
@@ -503,6 +520,7 @@ class DressUpPanel(SwPanel):
 
     TITLE = ""
     NOTHING = "Elegí al menos una arista o cara."
+    LIST_LABEL = "Aristas y caras (clic en la pieza):"
 
     def __init__(self, obj):
         self.subs = []
@@ -543,7 +561,7 @@ class DressUpPanel(SwPanel):
         self._build_values(self.values)
         lay.addLayout(self.values)
 
-        lay.addWidget(QtWidgets.QLabel("Aristas y caras (clic en la pieza):"))
+        lay.addWidget(QtWidgets.QLabel(self.LIST_LABEL))
         self.list = pick_list(self.remove_current, self.clear)
         self.list.currentRowChanged.connect(lambda *_a: self._draw())
         lay.addWidget(self.list)
@@ -729,7 +747,88 @@ class ChamferPanel(DressUpPanel):
 # --- Enganche ----------------------------------------------------------
 
 
-PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel}  # pattern_panel.py suma los suyos
+class DraftPanel(DressUpPanel):
+    """
+    Ángulo de salida (tipo "Plano neutro" de SW): ángulo, plano neutro (casilla
+    rosada mientras espera) y caras de salida. Una cara tocada con el plano
+    neutro esperando va ahí; si no, a la lista (solo caras).
+    """
+
+    TITLE = "Ángulo de salida"
+    TRANSACTION = "Editar ángulo de salida"
+    FAIL = "FreeCAD no puede dar salida a estas caras con este plano neutro y este ángulo."
+    NOTHING = "Elegí al menos una cara de salida."
+    LIST_LABEL = "Caras de salida (clic en la pieza):"
+
+    def _build_values(self, form):
+        self.angle = self._value_box("Angle", "°", 0.01, 89.99)
+        form.addRow("Ángulo de salida:", self.angle)
+        self.neutral = RefBox(self._activate)
+        self.neutral.setPlaceholderText("Cara plana o plano")
+        self.neutral_ref = self.obj.NeutralPlane
+        form.addRow("Plano neutro:", self.neutral)
+        self.flip = QtWidgets.QCheckBox("Invertir dirección")
+        self.flip.setChecked(bool(self.obj.Reversed))
+        self.flip.toggled.connect(self._changed)
+        form.addRow(self.flip)
+
+    def _build(self):
+        super()._build()
+        self.tangent.hide()  # FreeCAD no la ofrece para la salida
+        self._show_neutral()
+        self._activate(self.list if self.neutral_ref else self.neutral)
+
+    def _activate(self, widget):
+        self.active = widget
+        for w in (self.neutral, self.list):
+            w.setStyleSheet(ACTIVE_QSS if w is widget else "")
+
+    def _show_neutral(self):
+        ref = self.neutral_ref
+        if not ref:
+            self.neutral.setText("")
+            return
+        obj, subs = ref
+        sub = subs[0] if subs else ""
+        self.neutral.setText("Cara (%s)" % obj.Label if sub.startswith("Face") else obj.Label)
+
+    def _pick(self, obj, sub):
+        if getattr(self, "active", None) is self.neutral:
+            ref = None
+            if obj.TypeId in ("App::Plane", "PartDesign::Plane") and not sub:
+                ref = (obj, [""])
+            elif sub.startswith("Face") and obj in (self.base, self.obj):
+                face = _element(obj.Shape, sub)
+                if face is not None and type(face.Surface).__name__ == "Plane":
+                    if obj == self.obj:
+                        name = to_base(obj.Shape, sub, self.base.Shape)
+                        ref = (self.base, [name]) if name else None
+                    else:
+                        ref = (obj, [sub])
+            if ref is None:
+                return False
+            self.neutral_ref = ref
+            self._show_neutral()
+            self._activate(self.list)
+            return True
+        if sub.startswith("Edge"):
+            return False  # solo caras
+        return super()._pick(obj, sub)
+
+    def _apply_values(self):
+        self._set("Reversed", self.flip.isChecked())
+        self._set("Angle", self.angle.value())
+        if self.neutral_ref and self.obj.NeutralPlane != self.neutral_ref:
+            self.obj.NeutralPlane = self.neutral_ref
+
+    def _apply(self):
+        problem = super()._apply()
+        if not problem and not self.neutral_ref:
+            problem = "Elegí el plano neutro: tocá una cara plana o un plano."
+        return problem
+
+
+PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel, DRAFT: DraftPanel}  # pattern/hole_panel suman los suyos
 
 
 def _in_workbench():

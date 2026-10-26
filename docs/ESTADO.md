@@ -28,6 +28,10 @@
 - Taladro: "Rosca modelada" apagada de fábrica (la rosca de verdad pesa mucho en FreeCAD); queda
   como en SW la rosca cosmética, pero FreeCAD no dibuja la rosca cosmética: el agujero se ve al
   Ø de la broca. Tampoco sale en planos (TechDraw) como rosca. ¿Necesita la rosca en los planos?
+- Plano de referencia: hoy solo cambié textos del editor de FreeCAD. Un panel como el de SW
+  (Primera/Segunda/Tercera referencia con botones Paralelo, Perpendicular, Coincidente, A
+  distancia, Ángulo) es posible sobre los mismos modos de FreeCAD, pero es un trabajo mediano.
+  ¿Lo usa seguido como para hacerlo?
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
@@ -85,6 +89,15 @@ Avance:
   FreeCAD real: cara, 2 puntos, Agujero M6 (Ø6,6), Refrentado ISO 4762, M8 Por todo,
   Avellanado ISO 10642, Roscado M8 prof. 8 (Ø6,8), OK, editar, Editar posiciones abre el croquis.
   Falta que lo pruebe el usuario.
+- Ángulo de salida: **hecho** como panel propio (`DraftPanel` en `dress_up_panel.py`; es un
+  DressUp como el redondeo). Probado en FreeCAD real: cara lateral preelegida, plano neutro =
+  cara de abajo (la casilla pasa sola a la lista), 5°, OK.
+- Barrido, hélice, geometría de referencia: **términos SW** sobre el diálogo nativo
+  (`swui/fork/native_terms.py`, por objectName y listas por texto). Barrido: el botón del
+  trayecto queda prendido si ya hay perfil. Probado en FreeCAD real (textos y botón).
+  El plano de referencia sigue con el "Tipo de relación" de FreeCAD (modos de adjunción): no es
+  el PropertyManager de SW (primera/segunda/tercera referencia con Paralelo, Perpendicular, A
+  distancia...). Ver Preguntas.
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

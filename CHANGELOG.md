@@ -173,6 +173,13 @@ Neueste Version oben. / Newest version first.
   UNC, UNF o sin norma), tipo de tornillo (ISO 4762, DIN 7984, ISO 10642...), tamaño (M6...),
   ajuste (Ajustado / Normal / Holgado), condición final, fondo, rosca; *Editar posiciones* vuelve
   al croquis. Todo sobre el taladro y las tablas de FreeCAD (`swui/fork/hole_panel.py`).
+- **Panel de Ángulo de salida** estilo SW: ángulo, *Plano neutro* (casilla rosada que espera una
+  cara plana o un plano) y *Caras de salida*, con vista previa.
+- **Términos de SW** en los diálogos que siguen siendo de FreeCAD: barrido (Perfil, Trayecto,
+  Esquinas, Tipo de orientación/torsión: Seguir trayecto…), hélice (Definido por: Altura y paso,
+  Paso y revolución…; Paso, Revoluciones, Sentido antihorario) y plano/eje/punto de referencia
+  (textos que quedaban en inglés). En el barrido, con el perfil ya elegido, queda esperando el
+  trayecto sin apretar nada (`swui/fork/native_terms.py`).
 
 ## 0.10.0 — 2026-10-18
 

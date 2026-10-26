@@ -783,12 +783,21 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or "PartDesign::Hole" not in dup.PANELS):
         print("  FEHLER: fork: asistente para taladro")
         return False
+    # Ángulo de salida (panel SW) y términos SW en barrido / hélice / referencia (native_terms)
+    nt = sys.modules["swui.fork.native_terms"]
+    if ("PartDesign::Draft" not in dup.PANELS
+            or nt.translate_items(["Estándar", "Algo nuevo"], nt.DIALOGS["PartDesignGui::TaskPipeOrientation"]["combos"]["comboBoxMode"])
+            != ["Seguir trayecto", "Algo nuevo"]
+            or nt.root_names("PartGui::TaskAttacher") != ("PartGui::TaskAttacher", "PartGui__TaskAttacher")):
+        print("  FEHLER: fork: ángulo de salida / términos SW en diálogos nativos")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
     print("  Redondeo : fork: paneles SW de redondeo y chaflán (Arista<1>, clic agrega/saca, tipos de chaflán)")
     print("  Matrices : fork: paneles SW de matriz lineal/circular y simetría (espaciado, sólidos)")
     print("  Taladro  : fork: asistente SW (cara -> croquis de posiciones -> tipo, tamaño, tornillo)")
+    print("  Diálogos : fork: ángulo de salida SW; términos SW en barrido, hélice y referencia")
     return True
 
 

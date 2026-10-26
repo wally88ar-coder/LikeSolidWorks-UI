@@ -35,7 +35,7 @@ from swui.fork import dress_up_panel as dp
 LINEAR = "PartDesign::LinearPattern"
 POLAR = "PartDesign::PolarPattern"
 MIRRORED = "PartDesign::Mirrored"
-ACTIVE_QSS = "background: #FCE0F0;"  # casilla de selección activa (rosado, como SW)
+ACTIVE_QSS = dp.ACTIVE_QSS
 REF_TYPES = ("App::Line", "App::Plane", "PartDesign::Line", "PartDesign::Plane")
 MAX_COMPARE = 40000  # caras x caras: más que esto, sin amarillo (piezas grandes)
 
@@ -60,17 +60,7 @@ def sub_name(sub):
 # --- Casilla de selección ----------------------------------------------
 
 
-class _RefBox(QtWidgets.QLineEdit):
-    """Casilla de una referencia (dirección, eje, plano): un clic la activa."""
-
-    def __init__(self, on_click):
-        super().__init__()
-        self.setReadOnly(True)
-        self._on_click = on_click
-
-    def mousePressEvent(self, event):
-        self._on_click(self)
-        super().mousePressEvent(event)
+_RefBox = dp.RefBox
 
 
 class _ListClick(QtCore.QObject):
