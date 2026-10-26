@@ -355,8 +355,8 @@ class Model:
         """[(objeto, ruta, expresión)] de todo el documento, salvo las de las variables globales."""
         out = []
         for obj in self.doc.Objects:
-            if obj.TypeId == "App::VarSet":
-                continue
+            if obj.TypeId == "App::VarSet" or hasattr(obj, "SWUI_ScopeOf"):
+                continue  # las copias de un corte en otro sólido (multibody.py) siguen al original solas
             for path, expr in getattr(obj, "ExpressionEngine", []):
                 out.append((obj, path, expr))
         return out

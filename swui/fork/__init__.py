@@ -111,6 +111,13 @@ def install(workbench=None):
         FreeCAD.Console.PrintError("[SWUI fork] Evaluar (material, propiedades físicas, ecuaciones, "
                                    "medir):\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import multibody
+
+        multibody.install()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Multicuerpo (fusionar resultado, alcance):\n%s\n"
+                                   % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

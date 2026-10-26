@@ -890,6 +890,18 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or tsp.solid_item_text("A", 1, "Acero") != "A   (Acero)"):
         print("  FEHLER: fork: multicuerpo (cuerpos consumidos por Combinar/Dividir, sólidos sueltos)")
         return False
+    # Multicuerpo (etapa B): Fusionar resultado / Alcance de la operación (multibody)
+    mb = sys.modules["swui.fork.multibody"]
+    if (mb.next_body_label({"Cuerpo"}) != "Cuerpo2" or mb.next_body_label({"Cuerpo2", "Cuerpo3"}) != "Cuerpo4"
+            or mb.copy_label("Cortar-Extruir1", "Cuerpo2") != "Cortar-Extruir1 (Cuerpo2)"
+            or mb.scope_bodies("all", True, "A", ["A", "B", "C"], ["A", "C"], []) != ["A", "C"]
+            or mb.scope_bodies("all", False, "A", ["A", "B", "C"], ["A"], []) != ["A", "B", "C"]
+            or mb.scope_bodies("selected", True, "A", ["A", "B", "C"], ["A", "B"], ["B"]) != ["A", "B"]
+            or mb.scope_bodies("selected", False, "B", ["A", "B", "C"], [], []) != ["B"]
+            or "Midplane" in mb.COPY_PROPS["PartDesign::Pocket"]
+            or not any(isinstance(o, mb._EditObserver) for o in gui_._doc_observers)):
+        print("  FEHLER: fork: multicuerpo (fusionar resultado, alcance de la operación)")
+        return False
     groups_ = lay_.EVALUIEREN[1]
     flat_ = [e[0] for g in groups_ for e in g if isinstance(e, tuple)]
     if (ms.toggle_pick([1, 2], 2) != [1] or ms.toggle_pick([1], 2) != [1, 2] or "Std_Measure" in flat_
