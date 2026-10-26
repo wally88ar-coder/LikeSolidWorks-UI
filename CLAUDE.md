@@ -71,7 +71,7 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   arista, propiedades de chapa, desplegar/plegar, sobre SheetMetal. **Exportar DXF del desarrollo
   con un clic**: contorno y líneas de plegado en capas separadas, nombre de archivo automático
   (pieza + espesor + material), y exportación por lotes desde un ensamblaje.
-- Pestaña Evaluar: propiedades físicas (masa, volumen, área, CDG, inercia) con Shape.Volume, Area,
+- (Hecho en la fase 3, en `swui/fork/`; falta que lo pruebe el usuario.) Pestaña Evaluar: propiedades físicas (masa, volumen, área, CDG, inercia) con Shape.Volume, Area,
   CenterOfMass, MatrixOfInertia y la densidad del material; FreeCAD 1.1 no las trae (llegan en
   26.3 como Std_MassProperties): diseñar para migrar fácil a la herramienta oficial. Asignar
   material. Diálogo de Ecuaciones estilo SW sobre expresiones + Spreadsheet/VarSet. Mediciones en
@@ -88,11 +88,12 @@ El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con g
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-27: fase 0 terminada; fase 2 con código completo, falta que la pruebe el
-usuario (solo probó el redondeo). Hecho además fuera de las fases: árbol de operaciones estilo SW
+Estado al 2026-10-26: fase 0 terminada; fases 2 y 3 con código completo, falta que las pruebe el
+usuario (de la 2 solo probó el redondeo) y que revise las decisiones de la fase 3 (lista en
+`docs/ESTADO.md`). Hecho además fuera de las fases: árbol de operaciones estilo SW
 (barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...) y aristas del
 modelo dentro del croquis. Fase 1 cajoneada a pedido del usuario. Próximo: lo que elija el usuario
-después de probar la fase 2 (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
+después de probar las fases 2 y 3 (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
 Trabajo de planos (TechDraw, sin número de fase): rosca simplificada automática, rótulo en
 castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el

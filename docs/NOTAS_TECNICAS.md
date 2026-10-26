@@ -146,3 +146,43 @@
   con `PartDesign_Hole`, y `pick_plane.arm` se envuelve para prender `Sketcher_CreatePoint`.
 - En las pruebas: no llamar `dump` a una función propia (la plantilla ya tiene `dump()`); una lista
   guardada en el log se vuelca al final (guardar copias: `list(...)`).
+
+## Fase 3 (Evaluar): hallazgos en FreeCAD 1.1.4
+- Materiales: `Materials.MaterialManager()`; `MaterialLibraries` da tuplas (nombre, carpeta,
+  ícono): "System" (`D:/Freecad/data/Mod/Material/Resources/Materials`) y "User"
+  (`%APPDATA%/FreeCAD/v1-1/Material`, no existe hasta que se guarda algo). Con las preferencias
+  `Mod/Material/Resources` UseMaterialsFromConfigDir=False, UseMaterialsFromCustomDir=True y
+  CustomMaterialsDir=<carpeta> aparece una biblioteca "Custom": así se prueba sin tocar la del
+  usuario (en una copia de user.cfg). No hay `defaultMaterial()`: el "Default" tiene UUID
+  `7f9fd73b-50c9-41d8-b7b2-575a030c1eeb` (está en System y tiene densidad: filtrarlo).
+- `ShapeMaterial` se guarda en el archivo SOLO como UUID (`<PropertyMaterial uuid=.../>`). Material
+  que falta al abrir: "Material not found" en la consola y queda "Default". Un .FCMat escrito a
+  mano (YAML, ver `material.fcmat_text`) con el mismo UUID + `refresh()` lo vuelve a encontrar.
+  `refresh()` NO olvida un material cuyo archivo se borró (sigue hasta reiniciar): las pruebas de
+  "material faltante" van en otro proceso.
+- Asignar `ShapeMaterial` desde Python no cambió `ShapeAppearance` en la prueba, pero igual se
+  guarda y se devuelve la apariencia (versiones nuevas podrían cambiarla).
+- `getPhysicalValue` da Quantity (`getValueAs("kg/m^3")`), float (Poisson, en float32: 0,29 ->
+  0,28999999) o None; propiedad del modelo sin valor = nan.
+- Inercia: `Solid.MatrixOfInertia` es el tensor en el centro de masa con densidad 1 (fuera de la
+  diagonal -∫xy). Un compuesto no tiene MatrixOfInertia ni CenterOfMass: sumar sólido por sólido
+  (Steiner, `mass_props.combine`).
+- Expresiones: aceptan coma decimal (FreeCAD la guarda como punto), trigonometría en grados,
+  `a ? b : c`, `trunc`, `sqrt`. En un VarSet FreeCAD guarda las referencias a sí mismo SIN el
+  nombre del objeto ("Largo / 4"). Una PropertyFloat acepta un resultado con mm (lo guarda sin
+  unidad). Ruta de una cota de croquis: `.Constraints.D1` o `.Constraints[3]`; de una operación,
+  `Length` (sin punto). `renameConstraint(i, "D1")` deja la ecuación atada aunque se borren cotas.
+  `setDocumentationOfProperty` cambia el comentario de una propiedad dinámica.
+- `doc.openTransaction` al abrir la ventana + varios cambios + `abortTransaction` deshace todo
+  (también un VarSet creado y un renombre de cota). Por eso Ecuaciones es modal.
+- Selección en ensamblajes: el observador (`addSelection(doc, obj, sub, pnt)`) recibe el objeto
+  RESUELTO (p. ej. "Box", "Face6"), sin la ruta del componente. La ruta completa sale de
+  `Selection.getSelectionEx("", 0)` (raíz "Ensamblaje", sub "Pieza1.Box.Face6");
+  `raíz.getSubObject(sub)` da la forma en su posición real y `Part.getShape(raíz, "Pieza1.",
+  needSubElement=False)` el sólido entero ubicado. Los vínculos del original se llaman "Body<1>".
+- Un clic del usuario en la vista llega como clearSelection + addSelection; un clic en el vacío,
+  solo clearSelection: Medir espera 60 ms para distinguirlos.
+- Las ventanas sueltas (QDialog) no salen en `mw.grab()`: capturarlas con `dialogo.grab()`.
+- El test arma la cinta esperada desde `ribbon_layout.py` por AST; el fork suma
+  `swui/fork/evaluate_tab.py` (`_fork_layout_commands`, `FORK_REPLACED`) y sus textos en castellano
+  no se exigen en de/en.

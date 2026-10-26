@@ -192,6 +192,29 @@ Neueste Version oben. / Newest version first.
   Paso y revolución…; Paso, Revoluciones, Sentido antihorario) y plano/eje/punto de referencia
   (textos que quedaban en inglés). En el barrido, con el perfil ya elegido, queda esperando el
   trayecto sin apretar nada (`swui/fork/native_terms.py`).
+- **Pestaña Evaluar como en SW** (fase 3): *Medir*, *Propiedades físicas*, *Ecuaciones* y
+  *Editar material*, con íconos propios (`tools/fork/make_icons_fork.py`).
+- **Material**: ventana con *Materiales de FreeCAD* (por categoría, en castellano, solo los que
+  tienen densidad) y *Materiales personalizados* que uno crea, copia, edita y borra (archivos
+  .FCMat nativos en la biblioteca del usuario). Se asigna a lo elegido o a toda la pieza **sin
+  cambiar el color**. Cada pieza guarda una copia del material: si se abre el archivo en una PC
+  que no lo tiene (FreeCAD lo cambiaría por "Default" sin avisar), el addon avisa y lo recrea
+  igual (`swui/fork/material.py`).
+- **Propiedades físicas** con el informe de SW: densidad, masa en kg, volumen, área, centro de
+  masa (marcado en la vista), ejes y momentos principales, momentos en el centro de masa y en el
+  origen. Pieza entera, sólidos elegidos o ensamblaje (cada pieza con su material y en su
+  lugar). Sin material: 1000 kg/m³, como SW (`swui/fork/mass_props.py`).
+- **Ecuaciones, variables globales y cotas**: tabla como la de SW ("Largo" = 120,
+  "D1@Croquis1" = "Largo" / 2...), lista de cotas para insertar con doble clic, funciones de SW
+  (sqr, iif...), coma decimal; Aceptar es un solo paso de deshacer y Cancelar deja todo igual.
+  Por debajo, expresiones y un VarSet de FreeCAD (abre sin el addon). Doble clic en una cota con
+  ecuación abre la ventana (`swui/fork/equations.py`).
+- **Medir** estilo SW (también con la barra espaciadora): cada clic suma un elemento, clic en el
+  vacío borra; distancia con dX/dY/dZ, centro a centro en círculos y cilindros, distancia
+  normal, ángulo, longitud, diámetro, área y perímetro; dibuja la distancia en la vista y mide
+  bien en ensamblajes (`swui/fork/measure_sw.py`). Reemplaza al Medir de FreeCAD, en inglés.
+- **Franja Ecuaciones / Sólidos(n) / Material** arriba del árbol, como las carpetas del
+  FeatureManager (`swui/fork/tree_strip.py`).
 
 ## 0.10.0 — 2026-10-18
 

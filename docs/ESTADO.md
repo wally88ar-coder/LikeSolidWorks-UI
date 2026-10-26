@@ -1,6 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-27 (fin de la tercera sesión de trabajo). Todo subido a `origin`.
+Última actualización: 2026-10-26 (cuarta sesión: fase 3 hecha, trabajando solo). Commits locales sin subir a `origin`.
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -18,8 +18,9 @@
   matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el plano en
   el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia / en
   ángulo / punto medio cambiando una cota, eje en un cilindro).
-- **Fase 3 — Evaluar: analizada con el usuario (2026-10-26), sin código.** Plan y respuestas en
-  "Plan: fase 3". Falta su OK para arrancar por el punto 1 (Material).
+- **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
+  toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
+  "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
@@ -31,7 +32,7 @@ Pendiente:
   frente, líneas finas en lateral/corte). Decidido: va con el trabajo de planos (ver Falta).
 - Pedido a FreeCAD (planos en ángulo / punto medio): el usuario lo dejó por ahora.
 
-## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26, sin código)
+## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
 - Material: `ShapeMaterial` (Materials::PropertyMaterial) ya existe en Body y en todo Part::Feature;
   biblioteca System de ~200 materiales (nombres en inglés/DIN; varios de "Appearance" y
@@ -72,6 +73,71 @@ Orden propuesto (cada parte termina en una versión que prueba el usuario):
 5. Medir estilo SW: panel propio (distancia, mínima/máxima, entre centros, dX/dY/dZ, ángulo,
    radio/diámetro, longitud, área) en pieza y ensamblaje, sobre la medición de Part/Measure.
 Límite avisado: no hay configuraciones (ni valor de ecuación por configuración).
+
+Avance (todo hecho, en `swui/fork/`; cinta en `evaluate_tab.py`, íconos con
+`tools/fork/make_icons_fork.py`):
+- Material (`material.py`): ventana, personalizados (.FCMat en la biblioteca "User", carpeta por
+  categoría), aplicar sin tocar el color, quitar, copia `SWUI_MaterialCopy` (nombre estable) que
+  se pone al aplicar y se pone al día al guardar, aviso al abrir con material faltante y
+  recreación con el mismo UUID. Probado sin GUI (guardar, abrir en otro proceso sin el material:
+  queda "Default", se recrea y vuelve el mismo UUID) y en FreeCAD real (acero, color igual antes y
+  después, material nuevo "Chapa SAE 1010", aviso de faltante con Sí).
+- Propiedades físicas (`mass_props.py`): informe SW, decimales, ocultos sí/no, centro de masa
+  marcado en la vista, selección (cara -> cuerpo, en ensamblaje el componente). Probado: placa
+  100x50x10 de acero (0,395 kg, Lxx = 85,583 a mano), pieza en L (producto de inercia), ensamblaje
+  con dos instancias (0,790 kg, CDG z = 55) y elegir un componente.
+- Ecuaciones (`equations.py`): probado sin GUI y en FreeCAD real ("Largo" = 120, D1@Croquis1 =
+  "Largo", D1@Saliente-Extruir1 = "Largo" / 10 -> 12 mm; insertar cota con doble clic; Cancelar
+  deja cota, ecuación y nombre de la cota como estaban). El addon renombra las extrusiones como
+  SW ("Saliente-Extruir1"), así que los nombres quedan iguales a los de SW en castellano.
+- Medir (`measure_sw.py`): probado sin GUI (vértice, arista, círculo, cara con agujeros, dos caras
+  paralelas, cilindros centro a centro / mínima, ángulo, totales) y en FreeCAD real (dos caras de
+  una pieza; ensamblaje: 90 mm entre piezas; clic en el vacío borra; barra espaciadora abre y
+  cierra). Hallazgo: el observador de selección recibe la cara RESUELTA (objeto interno, sin la
+  posición en el ensamblaje); se toma la ruta completa de `getSelectionEx("", 0)`.
+- Franja (`tree_strip.py`): Ecuaciones (si hay) / Sólidos(n) con lista desplegable / Material
+  con clic derecho Editar/Quitar. Probada en FreeCAD real.
+
+Decisiones para revisar con el usuario (las tomó Claude trabajando solo; ver también memoria
+"decidir y anotar"):
+1. **Productos de inercia con el signo de SW** (+∫xy dm), al revés que OpenCASCADE. Creo que SW
+   los muestra así, pero no lo verifiqué en SW: comparar Lxy de una pieza en L en SW 2018.
+2. Sin material: 1000 kg/m³, igual que SW, con una nota en el informe.
+3. Masa con 3 decimales de fábrica (en SW se elige); Medir con 2 (como SW). Se cambian en cada
+   ventana y quedan guardados.
+4. Materiales de FreeCAD con su nombre original (en inglés / normas DIN: "Steel-C22E"...),
+   categorías en castellano; solo los que tienen densidad. Ver si prefiere nombres en castellano.
+5. "Aplicar" va a lo elegido; sin selección, a todos los sólidos de la pieza (como SW a nivel
+   pieza).
+6. La copia del material queda **a la vista** (solo lectura) en Datos > Material >
+   SWUI_MaterialCopy, para que se lea aun sin el addon.
+7. Material recuperado: si era personalizado vuelve a su categoría; si era de FreeCAD, a
+   "Recuperados". Al recrearlo el documento queda modificado (hay que guardar).
+8. Ecuaciones es **modal** (mientras está abierta no se toca el modelo) para que Aceptar sea un
+   solo deshacer y Cancelar deshaga todo. Las cotas se eligen de la lista de la derecha, no
+   tocándolas en la vista como en SW.
+9. Comentarios solo en variables globales (FreeCAD no guarda comentarios en las expresiones).
+10. Variables globales sin unidades (como SW): "Largo" = 120 se usa como 120 mm o 120°.
+11. Nombres de cotas: D1, D2... en el orden de las cotas del croquis; al usar una en una ecuación
+    se le pone ese nombre en el croquis (así no se corre). Cotas de operaciones con tabla propia
+    (`FEATURE_DIMS`: D1 = profundidad, D2 = segunda profundidad...): puede no coincidir con la
+    numeración de SW en todos los casos.
+12. "Ecuaciones" en la franja aparece solo si hay ecuaciones (como SW). El objeto "Variables
+    globales" (VarSet, nombre interno `VariablesGlobales`, estable) se ve en el árbol: es de
+    FreeCAD.
+13. La franja va arriba del árbol (no dentro: FreeCAD no deja) y solo en piezas.
+14. Propiedades físicas incluye sólidos ocultos de fábrica (casilla), como la opción de SW.
+15. En 26.3+ el botón Propiedades físicas abre la herramienta nueva de FreeCAD (regla de ceder a
+    lo nativo): pierde el informe SW y no usa la copia del material. Revisar al actualizar.
+16. Medir reemplaza al de FreeCAD en la cinta y la barra espaciadora; sin "distancia máxima" ni
+    "proyectado en" (el usuario puede pedirlos). Un clic sobre algo ya elegido lo saca.
+17. FreeCAD recuerda un material borrado hasta reiniciar: el addon lo oculta de la lista.
+
+Para que pruebe el usuario (fase 3): asignar un material de FreeCAD y uno propio nuevo (ver que
+no cambie el color), Propiedades físicas de una pieza suya comparando con SW (masa, CDG, Lxy),
+Ecuaciones con una variable global y dos cotas, Medir con la barra espaciadora (dos caras, dos
+agujeros centro a centro, en un ensamblaje), la franja arriba del árbol, y mandarle una pieza
+con material propio a otra PC (o borrar el .FCMat) para ver el aviso.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
@@ -164,7 +230,7 @@ al tocar una cara, cotas con doble clic / un clic en croquis + Modificar, Cheque
 Cambios pedidos por él en el camino: barra espaciadora = **Medir** (en su SW la tiene así;
 nunca la usó para ocultar); marca de la cara en celeste SW (#A6C8E3 / #4288B5) en vez de marco
 naranja; un clic en un croquis muestra sus cotas y el doble clic lo abre (como SW 2018).
-Pendiente para la fase 3: el panel de Medir de FreeCAD sale en inglés.
+El panel de Medir de FreeCAD salía en inglés: resuelto en la fase 3 con Medir propio estilo SW.
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`). Hay además un FreeCAD
