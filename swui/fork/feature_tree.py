@@ -263,14 +263,27 @@ def suppress(obj):
 
 
 def unsuppress(obj, with_children=False):
-    """Desactivar supresión de obj (y de sus dependientes si with_children)."""
+    """
+    Desactivar supresión de obj (y de sus dependientes si with_children). Con
+    dependientes se va por tandas, recalculando entre una y otra: mientras algo está
+    suprimido no se sabe bien qué depende de él (p. ej. qué arista usa un redondeo).
+    """
     done = []
-    for o in [obj] + (dependents(obj) if with_children else []):
-        if is_feature(o) and _suppressed(o):
-            o.Suppressed = False
-            done.append(o)
     body = body_of(obj)
-    sync_attachments(body.Group if body is not None else [obj] + dependents(obj))
+    todo = [obj]
+    while todo:
+        for o in todo:
+            if is_feature(o) and _suppressed(o):
+                o.Suppressed = False
+                done.append(o)
+        sync_attachments(body.Group if body is not None else [obj] + dependents(obj))
+        if not with_children:
+            break
+        try:
+            obj.Document.recompute()
+        except Exception:
+            pass
+        todo = [o for o in dependents(obj) if is_feature(o) and _suppressed(o) and o not in done]
     return done
 
 

@@ -27,6 +27,8 @@ EXPLAIN = (
     ("subshape not found", "Perdió la cara o arista donde estaba apoyado (cambió o desapareció). "
                            "Hay que elegir otra: editar el croquis o la operación y volver a seleccionarla."),
     ("total length of zero", "La profundidad es cero."),
+    ("Base feature's TopoShape is invalid", "No hay sólido antes de esta operación (lo de arriba está "
+                                            "suprimido, vacío o con error): no tiene sobre qué trabajar."),
     ("not a solid", "El resultado no es un sólido cerrado."),
     ("multiple solids", "El resultado quedó partido en varios sólidos separados."),
     ("Resulting shape is empty", "La operación no deja nada: el resultado quedó vacío."),

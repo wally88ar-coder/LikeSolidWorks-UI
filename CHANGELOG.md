@@ -127,6 +127,9 @@ Neueste Version oben. / Newest version first.
   mismas aristas por su forma, como en SW. El padre de un redondeo es la operación que creó
   sus aristas (no la de justo arriba): ya se puede mover un redondeo por encima de un corte
   que no lo afecta. Si después de mover algo queda con error, avisa y ofrece deshacer.
+- *Desactivar supresión con dependientes* también devuelve los redondeos/chaflanes de la
+  operación (antes quedaban suprimidos). "¿Qué es incorrecto?" explica el error de una
+  operación sin sólido antes (por ejemplo, un corte con la base suprimida).
 
 ## 0.10.0 — 2026-10-18
 

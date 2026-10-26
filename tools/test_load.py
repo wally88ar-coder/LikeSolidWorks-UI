@@ -643,6 +643,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
     if (td.explain("AttachEngine3D: subshape not found Pad.Face3").startswith("Perdió") is False
             or td.explain("Cannot create a pad with a total length of zero.") != "La profundidad es cero."
             or td.explain("Pocket: does not intersect") != "La operación no toca el sólido."
+            or not td.explain("Base feature's TopoShape is invalid").startswith("No hay sólido")
             or td.explain("algo raro") != td.UNKNOWN_TEXT):
         print("  FEHLER: fork: ¿Qué es incorrecto? (mensajes en palabras simples)")
         return False

@@ -14,7 +14,10 @@ Pieza de prueba para mover operaciones (pedida por el usuario), armada por Claud
 tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
 la arista de arriba del tetón. Al prepararla apareció que mover rompía/cambiaba los redondeos:
 corregido (ver CHANGELOG). **Mover arriba/abajo probado por el usuario con esa pieza: "anduvo
-OK" (2026-10-25).**
+OK" (2026-10-25).** Marco naranja (cara → operación) también probado por él: OK.
+Probando suprimir con esa pieza (sin GUI) apareció que "Desactivar supresión con dependientes"
+dejaba el redondeo suprimido (mientras el tetón está suprimido no se sabe qué arista usa):
+corregido, ahora va por tandas recalculando. Falta que el usuario pruebe suprimir.
 Etapa C sin empezar.
 
 ## Entorno del usuario
