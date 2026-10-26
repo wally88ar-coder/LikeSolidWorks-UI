@@ -1,39 +1,32 @@
 # Estado del fork
 
-Última actualización: 2026-10-25 (fin de la primera sesión de trabajo)
+Última actualización: 2026-10-26 (fin de la segunda sesión de trabajo). Todo subido a `origin`.
 
 ## Fase actual
-**Fase 0 — Puesta en marcha: terminada y probada por el usuario** ("ahora sí se parece más a SW").
-Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
-**Fase 1 (chapa) cajoneada por un tiempo** a pedido del usuario. Próximo trabajo: lo que él pida.
-Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25), etapa C hecha (2026-10-26, sin la franja, que pasó a la fase 3)**.
-El usuario probó la barra de retroceso arrastrable con gris debajo ("quedó muy bien", capturas
-del 2026-10-25); el resto de A y B, probado con la plantilla, sin confirmación suya todavía.
-Pieza de prueba para mover operaciones (pedida por el usuario), armada por Claude en
-`C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd`: base 100x60x10,
-tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
-la arista de arriba del tetón. Al prepararla apareció que mover rompía/cambiaba los redondeos:
-corregido (ver CHANGELOG). **Mover arriba/abajo probado por el usuario con esa pieza: "anduvo
-OK" (2026-10-25).** Marco naranja (cara → operación) también probado por él: OK; después
-pidió el estilo SW: ahora fondo celeste #A6C8E3 con borde #4288B5 sobre ícono y nombre (colores
-medidos en su captura de SW 2018), pintado en modo "multiplicar" para que el texto siga negro.
-Después pidió quitar el azul de FreeCAD en la última operación al tocar una cara: hecho (el
-estilo del árbol se cambia mientras todo lo elegido venga de la vista) y la selección en el
-árbol pasó a celeste SW. Probado en FreeCAD real; falta que lo pruebe él. Límite: al elegir en
-el árbol el celeste cubre también la zona de la flechita (SW solo ícono+nombre): estilar esa
-zona borra la flechita.
-Probando suprimir con esa pieza (sin GUI) apareció que "Desactivar supresión con dependientes"
-dejaba el redondeo suprimido (mientras el tetón está suprimido no se sabe qué arista usa):
-corregido, ahora va por tandas recalculando. El usuario probó suprimir (pasos 1-6 con esa pieza):
-anduvo, el tetón vuelve a su lugar. Salía un aviso rojo "subshape not found Pad.Face6" al
-desactivar la supresión de la base (el apoyo del croquis se devolvía antes de recalcular la
-base): corregido.
-Ctrl+B / Ctrl+Q probados por el usuario: OK. "Guardar también STEP" probado: el .step abrió en
-SW 2018 sin errores (Diagnóstico de importación). Barra espaciadora: andaba, pero el usuario
-la tiene en SW para **Medir** (nunca la usó para ocultar): cambiada a Std_Measure (probado en
-FreeCAD real). El panel de Medir de FreeCAD sale en inglés (Measurement, Mode, Result):
-pendiente para la fase 3 (Evaluar).
-Etapa C sin empezar.
+- **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
+- **Árbol de operaciones estilo SW (trabajo extra, no estaba en las fases): terminado**
+  (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
+  de pruebas en la sección "Plan: árbol de operaciones" de abajo.
+- **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
+- **Fase 1 (chapa) sigue cajoneada.** Próximo trabajo: lo que elija el usuario. Las opciones que
+  quedaron sobre la mesa: fase 1 (chapa + DXF) o fase 2 (diálogos estilo SW, empezando por
+  redondeo: el nativo de FreeCAD le resultó confuso al reparar una arista).
+- Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
+  `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
+  tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
+  la arista de arriba del tetón; croquis totalmente definidos).
+
+## Pruebas del usuario (árbol y croquis)
+Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la
+operación al tocar una cara, suprimir / desactivar supresión, Ctrl+B / Ctrl+Q, "Guardar también
+STEP" (el .step abre en SW 2018 sin errores), aristas del modelo en el croquis (con y sin
+herramienta), Reparar referencias (caso croquis).
+Probado solo por Claude en FreeCAD real: celeste SW en la selección del árbol y una sola marca
+al tocar una cara, cotas con doble clic / un clic en croquis + Modificar, Chequear carpeta.
+Cambios pedidos por él en el camino: barra espaciadora = **Medir** (en su SW la tiene así;
+nunca la usó para ocultar); marca de la cara en celeste SW (#A6C8E3 / #4288B5) en vez de marco
+naranja; un clic en un croquis muestra sus cotas y el doble clic lo abre (como SW 2018).
+Pendiente para la fase 3: el panel de Medir de FreeCAD sale en inglés.
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`). Hay además un FreeCAD

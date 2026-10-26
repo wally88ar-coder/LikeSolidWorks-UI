@@ -27,8 +27,12 @@
 
 ## Decisiones de arquitectura (no cambiar sin consultar)
 - Addon en Python encima de FreeCAD oficial; nada de modificar el código de FreeCAD.
-- Versión objetivo: FreeCAD 1.1.4 (último mantenimiento de la rama 1.1). La próxima será la 1.2:
-  evitar depender de detalles internos frágiles y revisar compatibilidad cuando salga.
+- Versión objetivo: FreeCAD 1.1.4 (último mantenimiento de la rama 1.1). La "1.2" pasó a llamarse
+  **26.3** (FreeCAD numera ahora año.N: 26.3, 27.1, 27.2...; tres por año). El usuario actualiza
+  cada ~2 años: desarrollar para 1.1.4 aunque una versión nueva ya traiga la función, y que cada
+  función ceda a lo nativo si la versión lo trae. Evitar detalles internos frágiles.
+- Nombres internos de lo que el fork guarda en los archivos (propiedades, clases): estables para
+  siempre (ver `docs/ESTADO.md`, Decisiones).
 - Dependencia: addon SheetMetal para chapa. No reimplementarlo: construir la interfaz encima.
 - Nada de íconos, nombres comerciales ni recursos de Dassault.
 - Preferir siempre la herramienta nativa de FreeCAD por debajo, con interfaz y flujo estilo SW.
@@ -70,8 +74,10 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   (pieza + espesor + material), y exportación por lotes desde un ensamblaje.
 - Pestaña Evaluar: propiedades físicas (masa, volumen, área, CDG, inercia) con Shape.Volume, Area,
   CenterOfMass, MatrixOfInertia y la densidad del material; FreeCAD 1.1 no las trae (llegan en
-  1.2): diseñar para migrar fácil a la herramienta oficial. Asignar material. Diálogo de
-  Ecuaciones estilo SW sobre expresiones + Spreadsheet/VarSet. Mediciones en pieza y ensamblaje.
+  26.3 como Std_MassProperties): diseñar para migrar fácil a la herramienta oficial. Asignar
+  material. Diálogo de Ecuaciones estilo SW sobre expresiones + Spreadsheet/VarSet. Mediciones en
+  pieza y ensamblaje (el panel de Medir de FreeCAD sale en inglés). Franja Material / Ecuaciones /
+  Sólidos arriba del árbol (pasada acá desde el plan del árbol).
 - Mover/rotar cara: solo caras **planas**. Operación paramétrica (FeaturePython) en el Body,
   editable y controlable por ecuaciones. Mover = desfase según la normal (o componente normal de
   una dirección elegida) con el desfase de caras de OpenCASCADE, prolongando/recortando caras
@@ -83,8 +89,11 @@ El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con g
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-25: fase 0 terminada; fase 1 cajoneada por un tiempo a pedido del usuario.
-Ver `docs/ESTADO.md`.
+Estado al 2026-10-26: fase 0 terminada; además, hecho fuera de las fases: árbol de operaciones
+estilo SW (barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...) y
+aristas del modelo dentro del croquis. Fase 1 cajoneada a pedido del usuario. Ver `docs/ESTADO.md`.
+(Los "rápidos / generales" de arriba —español, pantallas chicas, extruir sin croquis— ya están
+hechos en la fase 0; quedan los diálogos, el taladro y relaciones de posición.)
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el
    test pasa en Windows, traducción al español, arreglo de pantallas chicas, extruir/cortar sin
    croquis.
