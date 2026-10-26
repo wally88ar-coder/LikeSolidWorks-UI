@@ -66,6 +66,20 @@
 - Un atajo de varias teclas que empieza con la tecla suelta ("F, S" de Part_SelectFilter,
   acción [2] del grupo, invisible para `Command.get(...).getShortcut()`) hace esperar ~0,3 s
   a la tecla suelta. Buscar con `mw.findChildren(QAction)` y `shortcuts()`.
+- Menú de clic derecho: `FreeCADGui.addWorkbenchManipulator(obj)` con
+  `modifyContextMenu(recipient)` (recipient "Tree" o "View") que devuelve
+  `[{"insert": cmd, "menuItem": "Std_Placement"}]` inserta ANTES de ese comando ("Separator" vale).
+  El manipulador es global: revisar el banco activo. En el árbol FreeCAD igual pone arriba las
+  opciones del objeto ("Editar vaciado", "Suprimido", "Toggle Freeze"): `feature_tree.arrange_menu`
+  las reordena al mostrarse el menú (filtro de eventos de la aplicación, solo dentro del banco).
+  Las acciones de comandos tienen objectName = nombre del comando.
+- **No usar Std_ToggleFreeze**: con un croquis congelado, guardar el documento cuelga FreeCAD 1.1.4
+  (probado dos veces). Para suprimir sin errores, apagar el apoyo del croquis (MapMode "Deactivated").
+- Part Design: las operaciones de sólido son `isDerivedFrom("PartDesign::Feature")` (croquis, planos
+  de referencia y binders no). `Suppressed` existe en 1.1.4. Los vínculos de una operación incluyen
+  `BaseFeature` (el sólido anterior: no es "padre" en sentido SW) y `_Body`.
+- `PySide.QtTest` no existe en el envoltorio de FreeCAD: `from PySide6.QtTest import QTest`.
+  Los íconos del árbol y la vista 3D se refrescan después: capturar ~1 s más tarde.
 - Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles
   oscuros de la pieza por cuadro); las hojas de miniaturas no alcanzan para ver animaciones.
 - Videos del usuario: ffmpeg 9.0.2 instalado con winget (Gyan.FFmpeg, solo su usuario) en
