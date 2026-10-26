@@ -134,8 +134,11 @@ Etapas:
   - Cotas con doble clic: **hecho** (`swui/fork/instant_dims.py`), probado en FreeCAD real con la
     pieza de prueba (árbol y cara, Modificar 100→120, Esc, deshacer). Falta que lo pruebe él.
     Muestra cotas de croquis (Distance/X/Y, Radius, Diameter, Angle) y de Pad/Pocket (Length),
-    Fillet, Chamfer, Revolution/Groove. No: arrastrar cotas, Hole, croquis anidados en el árbol
-    (doble clic en un croquis hijo sigue abriendo el croquis).
+    Fillet, Chamfer, Revolution/Groove. No: arrastrar cotas, Hole.
+    Croquis (pedido del usuario, como SW 2018): un clic en el árbol muestra sus cotas (observador
+    de selección, sirve también para los croquis de adentro de una operación); doble clic lo abre.
+    Probado en FreeCAD real (3 de 3 corridas; en una corrida anterior el clic no las mostró, sin
+    causa clara).
   - Reparar referencias: **hecho** (`swui/fork/repair_refs.py`), probado en FreeCAD real (apoyo
     perdido reparado solo; redondeo con arista perdida abre su diálogo). Falta que lo pruebe él.
     No reconstruye solo las aristas de un redondeo (no se sabe cuáles eran una vez perdidas).

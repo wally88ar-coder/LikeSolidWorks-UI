@@ -4,12 +4,14 @@
 """
 Cotas con doble clic, como en SOLIDWORKS (versión liviana de Instant3D).
 
-- Doble clic en una operación o croquis del árbol, o en una cara de la pieza
-  (la operación que la creó), muestra sobre el modelo sus cotas: las del
-  croquis (distancias, Ø, R, ángulos) y las de la operación (profundidad de
+- Doble clic en una operación del árbol, o en una cara de la pieza (la
+  operación que la creó), muestra sobre el modelo sus cotas: las del croquis
+  (distancias, Ø, R, ángulos) y las de la operación (profundidad de
   Extruir/Cortar, radio de Redondeo, distancia de Chaflán, ángulo de
   Revolución). Como en SW, el doble clic ya no abre el diálogo de FreeCAD:
   para eso está clic derecho -> Editar operación.
+- Croquis, como en SW 2018: UN clic en el árbol (también los de adentro de
+  una operación) muestra sus cotas; el doble clic lo abre (lo de FreeCAD).
 - Clic en un valor abre la cajita "Modificar" (valor, ✓, ✗ y reconstruir);
   acepta "12,5", "12.5", "1/2 in"... (unidades de FreeCAD; sin unidad: mm o °).
   Se puede deshacer.
@@ -37,7 +39,8 @@ LABEL_QSS = ("QPushButton { color: #000000; background: rgba(247,247,247,170); b
              "QPushButton:hover { color: #ff8000; }")
 SKETCH_DIMS = ("Distance", "DistanceX", "DistanceY", "Radius", "Diameter", "Angle")
 
-_state = {"obj": None, "dims": [], "labels": [], "node": None, "view": None, "camera": None, "timer": None}
+_state = {"obj": None, "dims": [], "labels": [], "node": None, "view": None, "camera": None, "timer": None,
+          "by_click": False}  # by_click: mostradas por un clic en un croquis (se van al elegir otra cosa)
 _filters = {}
 
 
@@ -413,8 +416,9 @@ def _place():
 
 def _follow():
     try:
-        if FreeCAD.ActiveDocument is None or _state["obj"] is None or _state["obj"].Document is not FreeCAD.ActiveDocument:
-            hide()
+        if (FreeCAD.ActiveDocument is None or _state["obj"] is None
+                or _state["obj"].Document is not FreeCAD.ActiveDocument or _editing()):
+            hide()  # otro documento, o se abrió el croquis/la operación
             return
         from swui.fork import sketch_model_edges as me
 
@@ -585,8 +589,10 @@ class _TreeFilter(QtCore.QObject):
                 return False
             pos = event.position() if hasattr(event, "position") else QtCore.QPointF(event.pos())
             obj = _target(row_at(tree, pos.y()))
-            if obj is None:
-                return False
+            from swui.fork import feature_tree as ft
+
+            if obj is None or ft.is_sketch(obj):
+                return False  # croquis: el doble clic lo abre (las cotas salen con un clic)
             show(obj)
             return True
         except Exception:
@@ -615,12 +621,61 @@ def _attach():
         FreeCAD.Console.PrintLog("[SWUI fork] Cotas:\n%s\n" % traceback.format_exc())
 
 
+def sketch_to_show(selection):
+    """
+    Croquis cuyas cotas mostrar con un clic, como en SW 2018: uno solo elegido entero
+    (desde el árbol, sin aristas ni puntos) y de un cuerpo. None si no.
+    """
+    from swui.fork import feature_tree as ft
+
+    if len(selection) != 1 or selection[0].SubElementNames:
+        return None
+    obj = selection[0].Object
+    return obj if ft.is_sketch(obj) and ft.body_of(obj) is not None else None
+
+
+def _on_selection():
+    try:
+        if not _in_workbench() or _editing():
+            return
+        sketch = sketch_to_show(FreeCADGui.Selection.getSelectionEx())
+        if sketch is not None:
+            if _state["obj"] is not sketch:
+                show(sketch)
+        elif _state["obj"] is not None and _state.get("by_click"):
+            hide()  # se eligió otra cosa: las cotas del croquis se van, como en SW
+        _state["by_click"] = sketch is not None
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] Cotas (selección):\n%s\n" % traceback.format_exc())
+
+
+class _SelectionObserver:
+    """Un clic en un croquis del árbol (también los de adentro de una operación) muestra sus cotas."""
+
+    def addSelection(self, *_a):
+        QtCore.QTimer.singleShot(0, _on_selection)
+
+    def setSelection(self, *_a):
+        QtCore.QTimer.singleShot(0, _on_selection)
+
+    def removeSelection(self, *_a):
+        QtCore.QTimer.singleShot(0, _on_selection)
+
+    def clearSelection(self, *_a):
+        QtCore.QTimer.singleShot(0, _on_selection)
+
+
 def install():
     """Filtros de doble clic en la vista 3D y en el árbol (también al entrar al banco)."""
     if _filters:
         return
     _filters["view"] = _ViewFilter()
     _filters["tree"] = _TreeFilter()
+    _filters["selection"] = _SelectionObserver()
+    try:
+        FreeCADGui.Selection.addObserver(_filters["selection"])
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] Cotas: sin observador de selección.\n")
     try:
         mdi = FreeCADGui.getMainWindow().findChild(QtWidgets.QMdiArea)
         mdi.subWindowActivated.connect(lambda *_a: (_attach(), hide()))

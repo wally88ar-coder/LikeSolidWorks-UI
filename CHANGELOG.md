@@ -135,7 +135,9 @@ Neueste Version oben. / Newest version first.
   Clic en un valor abre **Modificar** (✓, ✗, ↻ reconstruir; acepta "12,5"); se puede
   deshacer. Las cotas atadas a una ecuación se marcan con Σ. Esc o un clic en otro lado las
   esconde. Como en SW, el doble clic ya no abre el diálogo: para eso, clic derecho → *Editar
-  operación* (`swui/fork/instant_dims.py`).
+  operación* (`swui/fork/instant_dims.py`). **Croquis, como en SW 2018: un clic** en el árbol
+  (también en los que están adentro de una operación) muestra sus cotas y se pueden cambiar;
+  el doble clic abre el croquis.
 - **Reparar referencias…** (menú *LikeSolidWorks UI*, botón en "¿Qué es incorrecto?" y clic
   derecho de una operación con error): lista los croquis/planos que perdieron la cara donde
   se apoyaban, los redondeos/chaflanes que perdieron aristas y los croquis con referencias

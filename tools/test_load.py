@@ -744,6 +744,12 @@ def _check_feature_tree(commands, mw, layout, hooked):
         print("  FEHLER: fork: cotas con doble clic (formato, lectura, ubicación)",
               idm.fmt(12.5), idm.perpendicular_away((0, 0), (10, 0), (5, 5)))
         return False
+    # Croquis: un clic (elegido entero, desde el árbol) muestra sus cotas
+    if (idm.sketch_to_show([_Pick(sk2, [])]) is not sk2 or idm.sketch_to_show([_Pick(sk2, ["Edge1"])])
+            or idm.sketch_to_show([_Pick(pad, [])]) or idm.sketch_to_show([_Pick(sk2, []), _Pick(sk1, [])])
+            or idm.sketch_to_show([])):
+        print("  FEHLER: fork: cotas de un croquis con un clic")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
