@@ -59,10 +59,9 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
 - Extruir / extruir corte sin croquis: hoy cae en el panel nativo "Seleccione un plano", que no
   acepta caras del sólido. Debe aceptar cara plana o plano, abrir el croquis ahí y lanzar la
   operación al salir del croquis (como SW). Extender el mecanismo de `from_sketch.py`.
-- Adaptar los diálogos que hoy quedan nativos: redondeo, chaflán, simetría, matriz lineal y
-  circular, ángulo de salida, barrido, hélice, geometría de referencia.
-- Asistente para taladro con flujo SW: elegir cara y ubicar los puntos dentro del asistente
-  (hoy FreeCAD exige un croquis previo con los centros).
+- (Hecho en la fase 2, en `swui/fork/`: paneles SW de redondeo, chaflán, simetría, matriz lineal y
+  circular, ángulo de salida, plano/eje/punto de referencia; asistente para taladro con flujo SW;
+  términos SW en barrido y hélice. Son propios del fork, no candidatos a PR tal cual.)
 - Relaciones de posición: agregar tangente y que el panel quede abierto para encadenar relaciones.
 - (Hecho en el fork: panel de tareas a la izquierda, sin opción a la derecha, por decisión del
   usuario.)
@@ -89,11 +88,13 @@ El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con g
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-26: fase 0 terminada; además, hecho fuera de las fases: árbol de operaciones
-estilo SW (barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...) y
-aristas del modelo dentro del croquis. Fase 1 cajoneada a pedido del usuario. Ver `docs/ESTADO.md`.
-(Los "rápidos / generales" de arriba —español, pantallas chicas, extruir sin croquis— ya están
-hechos en la fase 0; quedan los diálogos, el taladro y relaciones de posición.)
+Estado al 2026-10-27: fase 0 terminada; fase 2 con código completo, falta que la pruebe el
+usuario (solo probó el redondeo). Hecho además fuera de las fases: árbol de operaciones estilo SW
+(barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...) y aristas del
+modelo dentro del croquis. Fase 1 cajoneada a pedido del usuario. Próximo: lo que elija el usuario
+después de probar la fase 2 (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
+Trabajo de planos (TechDraw, sin número de fase): rosca simplificada automática, rótulo en
+castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el
    test pasa en Windows, traducción al español, arreglo de pantallas chicas, extruir/cortar sin
    croquis.

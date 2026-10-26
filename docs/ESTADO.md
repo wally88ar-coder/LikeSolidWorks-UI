@@ -1,6 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-26 (fin de la segunda sesión de trabajo). Todo subido a `origin`.
+Última actualización: 2026-10-27 (fin de la tercera sesión de trabajo). Todo subido a `origin`.
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -12,9 +12,13 @@
 - **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
   salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
-  barrido, hélice y referencia. Detalle en "Plan: fase 2" > Avance. El usuario se fue a dormir y
-  pidió seguir decidiendo con criterio: las dudas quedaron en "Preguntas para el usuario".
-  Nada subido a origin (commits locales en master).
+  barrido, hélice y referencia; además árbol flotante, paneles SW de plano/eje/punto, y planos
+  En ángulo / Punto medio que siguen a la pieza. Detalle en "Plan: fase 2" > Avance.
+- **Próximo paso:** que el usuario pruebe la fase 2 con una pieza suya (lista sugerida: chaflán,
+  matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el plano en
+  el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia / en
+  ángulo / punto medio cambiando una cota, eje en un cilindro). Después elige fase: 1 chapa
+  (recomendada; pedirle piezas STEP de chapa), 3 Evaluar, 4 mover/rotar cara, 5 ensamblaje.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
