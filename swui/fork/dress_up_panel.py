@@ -184,7 +184,7 @@ def _faces_node(faces, color):
 
 
 class _PickObserver:
-    """Toda selección en la vista mientras el panel está abierto va a la lista."""
+    """Toda selección (vista o árbol) mientras el panel está abierto va al panel."""
 
     def __init__(self, panel):
         self.panel = panel
@@ -195,11 +195,11 @@ class _PickObserver:
 
 
 class _ListKeys(QtCore.QObject):
-    """Supr en la lista borra el renglón (le gana al Supr de FreeCAD, que borraría objetos)."""
+    """Supr en una lista borra el renglón (le gana al Supr de FreeCAD, que borraría objetos)."""
 
-    def __init__(self, panel):
+    def __init__(self, remove):
         super().__init__()
-        self.panel = panel
+        self.remove = remove
 
     def eventFilter(self, _watched, event):
         kind = event.type()
@@ -207,7 +207,7 @@ class _ListKeys(QtCore.QObject):
                 event.key() in (QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace):
             event.accept()
             if kind == QtCore.QEvent.KeyPress:
-                self.panel.remove_current()
+                self.remove()
             return True
         return False
 
@@ -222,13 +222,34 @@ def _spin(value, suffix, low, high, decimals=2):
     return box
 
 
-class DressUpPanel:
-    """Lo común de Redondeo y Chaflán; cada uno agrega sus valores (_build_values / _apply_values)."""
+def pick_list(remove, clear, height=90):
+    """Lista de selección con Supr y clic derecho Borrar / Borrar selecciones (como SW)."""
+    widget = QtWidgets.QListWidget()
+    widget.setMinimumHeight(height)
+    widget.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+    act = QAction("Borrar", widget)
+    act.triggered.connect(lambda *_a: remove())
+    widget.addAction(act)
+    act = QAction("Borrar selecciones", widget)
+    act.triggered.connect(lambda *_a: clear())
+    widget.addAction(act)
+    widget._swui_keys = _ListKeys(remove)  # que no se lo lleve el recolector
+    widget.installEventFilter(widget._swui_keys)
+    return widget
 
-    TITLE = ""
+
+class SwPanel:
+    """
+    Lo común a los paneles SW sobre una operación nativa ya puesta en edición:
+    transacción, qué se ve (la operación si sale bien, si no el sólido anterior),
+    selección siempre activa, vista previa demorada, Aceptar / Cancelar.
+    Cada panel define _build (self.form), _apply (pasa los valores al objeto y
+    devuelve un problema o ""), _pick(obj, sub) y, si quiere, _overlays.
+    """
+
     TRANSACTION = ""
     FAIL = ""
-    WHAT = ""  # "redondeo", "chaflán" (mensajes)
+    NOTHING = ""  # mensaje si se acepta sin haber elegido nada
 
     def __init__(self, obj):
         self.obj = obj
@@ -237,41 +258,24 @@ class DressUpPanel:
         self.busy = False
         self.valid = False
         self.nodes = []
-        self.base = obj.BaseFeature or (obj.Base[0] if obj.Base else None)
-        self.subs = self._initial_subs()
+        self.yellow = []
+        self.base = self._base()
         self.visible = self._remember_visibility()
-        self._build()
-        if not self.doc.HasPendingTransaction:
-            self.doc.openTransaction(self.TRANSACTION)
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.preview)
+        self._build()
+        if not self.doc.HasPendingTransaction:
+            self.doc.openTransaction(self.TRANSACTION)
         self.observer = _PickObserver(self)
         FreeCADGui.Selection.addObserver(self.observer)
         FreeCADGui.Selection.clearSelection()
         self.preview()
 
-    # --- datos
+    def _base(self):
+        return self.obj.BaseFeature
 
-    def _initial_subs(self):
-        try:
-            owner, subs = self.obj.Base
-        except Exception:
-            return []
-        subs = list(subs)
-        if owner is not None and self.base is not None and owner != self.base:
-            # FreeCAD a veces apoya el redondeo en la operación de la arista tocada,
-            # no en el sólido anterior: pasar los nombres al sólido anterior.
-            moved = []
-            for sub in subs:
-                name = to_base(owner.Shape, sub, self.base.Shape)
-                if name and name not in moved:
-                    moved.append(name)
-            subs = moved
-        return subs
-
-    def _missing(self, sub):
-        return self.base is None or _element(self.base.Shape, sub) is None
+    # --- qué se ve
 
     def _remember_visibility(self):
         from swui.fork import feature_tree as ft
@@ -300,50 +304,14 @@ class DressUpPanel:
                 if o.Visibility != want:
                     o.Visibility = want
 
-    # --- interfaz
+    # --- interfaz (ayudas)
 
-    def _build(self):
-        box = QtWidgets.QWidget()
-        box.setWindowTitle(self.TITLE)
-        lay = QtWidgets.QVBoxLayout(box)
-        self.values = QtWidgets.QFormLayout()
-        self._build_values(self.values)
-        lay.addLayout(self.values)
-
-        lay.addWidget(QtWidgets.QLabel("Aristas y caras (clic en la pieza):"))
-        self.list = QtWidgets.QListWidget()
-        self.list.setMinimumHeight(90)
-        self.list.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
-        act = QAction("Borrar", self.list)
-        act.triggered.connect(self.remove_current)
-        self.list.addAction(act)
-        act = QAction("Borrar selecciones", self.list)
-        act.triggered.connect(self.clear)
-        self.list.addAction(act)
-        self.keys = _ListKeys(self)
-        self.list.installEventFilter(self.keys)
-        self.list.currentRowChanged.connect(lambda *_a: self._draw())
-        lay.addWidget(self.list)
-
-        self.tangent = QtWidgets.QCheckBox("Propagación tangente")
-        self.tangent.setChecked(True)
-        self.tangent.setEnabled(False)
-        self.tangent.setToolTip("FreeCAD siempre sigue las aristas tangentes")
-        lay.addWidget(self.tangent)
-
+    def _message_label(self):
         self.message = QtWidgets.QLabel()
         self.message.setWordWrap(True)
         self.message.setStyleSheet("color: %s;" % MISSING_COLOR)
         self.message.hide()
-        lay.addWidget(self.message)
-        self.form = box
-        self._fill_list()
-
-    def _build_values(self, form):
-        pass
-
-    def _apply_values(self):
-        pass
+        return self.message
 
     def _has_expression(self, prop):
         try:
@@ -351,9 +319,9 @@ class DressUpPanel:
         except Exception:
             return False
 
-    def _value_box(self, prop, suffix, low, high, kind="length"):
+    def _value_box(self, prop, suffix, low, high, value=None):
         """Casilla para una propiedad del objeto; bloqueada si la controla una ecuación."""
-        box = _spin(getattr(self.obj, prop).Value, suffix, low, high)
+        box = _spin(getattr(self.obj, prop).Value if value is None else value, suffix, low, high)
         if self._has_expression(prop):
             box.setEnabled(False)
             box.setToolTip("Controlado por una ecuación")
@@ -361,23 +329,20 @@ class DressUpPanel:
         return box
 
     def _set(self, prop, value):
-        if not self._has_expression(prop) and abs(getattr(self.obj, prop).Value - value) > 1e-9:
-            setattr(self.obj, prop, value)
+        """Poner un valor (sin pisar una ecuación ni tocar lo que no cambió)."""
+        if self._has_expression(prop):
+            return
+        old = getattr(self.obj, prop)
+        old = getattr(old, "Value", old)
+        if isinstance(value, float) and isinstance(old, (int, float)):
+            if abs(old - value) <= 1e-9:
+                return
+        elif old == value:
+            return
+        setattr(self.obj, prop, value)
 
     def _changed(self, *_a):
         self.timer.start(PREVIEW_DELAY_MS)
-
-    def _fill_list(self):
-        row = self.list.currentRow()
-        self.list.clear()
-        for sub, text in zip(self.subs, sw_names(self.subs)):
-            item = QtWidgets.QListWidgetItem(text)
-            if self._missing(sub):
-                item.setText(text + "  (no se encuentra: borrala y elegí otra)")
-                item.setForeground(QtGui.QBrush(QtGui.QColor(MISSING_COLOR)))
-            self.list.addItem(item)
-        if self.subs:
-            self.list.setCurrentRow(min(max(row, 0), len(self.subs) - 1) if row >= 0 else -1)
 
     def getStandardButtons(self):
         return QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -391,17 +356,228 @@ class DressUpPanel:
             sels = []
         changed = False
         for sel in sels:
-            for sub in sel.SubElementNames:
-                changed = self._pick(sel.Object, sub.split(".")[-1]) or changed
+            subs = [s.split(".")[-1] for s in sel.SubElementNames] or [""]
+            for sub in subs:
+                try:
+                    changed = self._pick(sel.Object, sub) or changed
+                except Exception:
+                    FreeCAD.Console.PrintError("[SWUI fork] Selección:\n%s\n" % traceback.format_exc())
         self.busy = True
         try:
             FreeCADGui.Selection.clearSelection()
         finally:
             self.busy = False
         if changed:
-            self._fill_list()
-            self.list.setCurrentRow(-1)
+            self._refresh()
             self.preview()
+
+    def _pick(self, obj, sub):
+        return False
+
+    def _refresh(self):
+        pass
+
+    # --- vista previa
+
+    def _apply(self):
+        return ""
+
+    def _ready(self):
+        return True
+
+    def _new_faces(self):
+        return new_faces(self.obj.Shape, self.base.Shape)
+
+    def preview(self):
+        self.timer.stop()
+        obj = self.obj
+        self.valid = False
+        self.yellow = []
+        problem = ""
+        try:
+            problem = self._apply()
+            if not problem and self._ready():
+                obj.recompute()
+                self.valid = obj.isValid() and not obj.Shape.isNull()
+                if not self.valid:
+                    problem = self.FAIL
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] %s:\n%s\n" % (self.TRANSACTION, traceback.format_exc()))
+            problem = "No se pudo calcular la vista previa."
+        if self.valid and self.base is not None:
+            try:
+                self.yellow = self._new_faces()
+            except Exception:
+                self.yellow = []
+        self._show_only(obj if self.valid or self.base is None else self.base)
+        self.message.setText(problem)
+        self.message.setVisible(bool(problem))
+        self._draw()
+
+    def _overlays(self, base, result):
+        """Nodos a dibujar: por defecto las caras nuevas en amarillo."""
+        if result is None:
+            return []
+        return [_faces_node([result.Faces[i] for i in self.yellow if i < len(result.Faces)], PREVIEW_COLOR)]
+
+    def _undraw(self):
+        try:
+            graph = self.gdoc.ActiveView.getSceneGraph()
+        except Exception:
+            graph = None
+        for node in self.nodes:
+            try:
+                graph.removeChild(node)
+            except Exception:
+                pass
+        self.nodes = []
+
+    def _draw(self):
+        self._undraw()
+        try:
+            graph = self.gdoc.ActiveView.getSceneGraph()
+        except Exception:
+            return
+        try:
+            base = _global_shape(self.base) if self.base is not None else None
+            result = _global_shape(self.obj) if self.valid else None
+            for node in self._overlays(base, result):
+                graph.addChild(node)
+                self.nodes.append(node)
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Vista previa:\n%s\n" % traceback.format_exc())
+
+    # --- cerrar
+
+    def _close(self):
+        self.timer.stop()
+        try:
+            FreeCADGui.Selection.removeObserver(self.observer)
+        except Exception:
+            pass
+        self._undraw()
+        _state["panel"] = None
+
+    def _nothing(self):
+        return False
+
+    def accept(self):
+        if self.timer.isActive():
+            self.preview()
+        if self._nothing():
+            self.message.setText(self.NOTHING)
+            self.message.show()
+            return False
+        if not self.valid:
+            return False  # el mensaje ya dice por qué
+        self._close()
+        self._restore_visibility()
+        self.obj.Visibility = self._tip_or_self()
+        self.doc.recompute()
+        self.gdoc.resetEdit()
+        self.doc.commitTransaction()
+        return True
+
+    def _tip_or_self(self):
+        """La operación queda visible solo si es la punta del cuerpo."""
+        from swui.fork import feature_tree as ft
+
+        body = ft.body_of(self.obj)
+        return body is None or body.Tip == self.obj
+
+    def reject(self):
+        self._close()
+        self._restore_visibility()
+        # Primero deshacer: resetEdit confirma la transacción abierta (probado en 1.1.4)
+        self.doc.abortTransaction()
+        if self.gdoc.getInEdit() is not None:
+            self.gdoc.resetEdit()
+        self.doc.recompute()
+        return True
+
+
+class DressUpPanel(SwPanel):
+    """Lo común de Redondeo y Chaflán; cada uno agrega sus valores (_build_values / _apply_values)."""
+
+    TITLE = ""
+    NOTHING = "Elegí al menos una arista o cara."
+
+    def __init__(self, obj):
+        self.subs = []
+        super().__init__(obj)
+
+    def _base(self):
+        base = self.obj.BaseFeature or (self.obj.Base[0] if self.obj.Base else None)
+        self.subs = self._initial_subs(base)
+        return base
+
+    def _initial_subs(self, base):
+        try:
+            owner, subs = self.obj.Base
+        except Exception:
+            return []
+        subs = list(subs)
+        if owner is not None and base is not None and owner != base:
+            # FreeCAD a veces apoya el redondeo en la operación de la arista tocada,
+            # no en el sólido anterior: pasar los nombres al sólido anterior.
+            moved = []
+            for sub in subs:
+                name = to_base(owner.Shape, sub, base.Shape)
+                if name and name not in moved:
+                    moved.append(name)
+            subs = moved
+        return subs
+
+    def _missing(self, sub):
+        return self.base is None or _element(self.base.Shape, sub) is None
+
+    # --- interfaz
+
+    def _build(self):
+        box = QtWidgets.QWidget()
+        box.setWindowTitle(self.TITLE)
+        lay = QtWidgets.QVBoxLayout(box)
+        self.values = QtWidgets.QFormLayout()
+        self._build_values(self.values)
+        lay.addLayout(self.values)
+
+        lay.addWidget(QtWidgets.QLabel("Aristas y caras (clic en la pieza):"))
+        self.list = pick_list(self.remove_current, self.clear)
+        self.list.currentRowChanged.connect(lambda *_a: self._draw())
+        lay.addWidget(self.list)
+
+        self.tangent = QtWidgets.QCheckBox("Propagación tangente")
+        self.tangent.setChecked(True)
+        self.tangent.setEnabled(False)
+        self.tangent.setToolTip("FreeCAD siempre sigue las aristas tangentes")
+        lay.addWidget(self.tangent)
+        lay.addWidget(self._message_label())
+        self.form = box
+        self._fill_list()
+
+    def _build_values(self, form):
+        pass
+
+    def _apply_values(self):
+        pass
+
+    def _fill_list(self):
+        row = self.list.currentRow()
+        self.list.clear()
+        for sub, text in zip(self.subs, sw_names(self.subs)):
+            item = QtWidgets.QListWidgetItem(text)
+            if self._missing(sub):
+                item.setText(text + "  (no se encuentra: borrala y elegí otra)")
+                item.setForeground(QtGui.QBrush(QtGui.QColor(MISSING_COLOR)))
+            self.list.addItem(item)
+        if self.subs:
+            self.list.setCurrentRow(min(max(row, 0), len(self.subs) - 1) if row >= 0 else -1)
+
+    def _refresh(self):
+        self._fill_list()
+        self.list.setCurrentRow(-1)
+
+    # --- selección
 
     def _pick(self, obj, sub):
         if self.base is None or not (sub.startswith("Edge") or sub.startswith("Face")):
@@ -441,119 +617,31 @@ class DressUpPanel:
 
     # --- vista previa
 
-    def preview(self):
-        obj = self.obj
-        self.valid = False
-        self.yellow = []
-        problem = ""
-        try:
-            if self.base is not None:
-                obj.Base = (self.base, self.subs)
-            self._apply_values()
-            if any(self._missing(s) for s in self.subs):
-                problem = "Hay referencias que ya no existen (en rojo): borralas y elegí las nuevas."
-            elif self.subs:
-                obj.recompute()
-                self.valid = obj.isValid() and not obj.Shape.isNull()
-                if not self.valid:
-                    problem = self.FAIL
-        except Exception:
-            FreeCAD.Console.PrintError("[SWUI fork] %s:\n%s\n" % (self.TRANSACTION, traceback.format_exc()))
-            problem = "No se pudo calcular la vista previa."
-        if self.valid:
-            try:
-                self.yellow = new_faces(obj.Shape, self.base.Shape)
-            except Exception:
-                self.yellow = []
-        self._show_only(obj if self.valid else self.base)
-        self.message.setText(problem)
-        self.message.setVisible(bool(problem))
-        self._draw()
+    def _apply(self):
+        if self.base is not None:
+            self.obj.Base = (self.base, self.subs)
+        self._apply_values()
+        if any(self._missing(s) for s in self.subs):
+            return "Hay referencias que ya no existen (en rojo): borralas y elegí las nuevas."
+        return ""
 
-    def _undraw(self):
-        try:
-            graph = self.gdoc.ActiveView.getSceneGraph()
-        except Exception:
-            graph = None
-        for node in self.nodes:
-            try:
-                graph.removeChild(node)
-            except Exception:
-                pass
-        self.nodes = []
+    def _ready(self):
+        return bool(self.subs)
 
-    def _draw(self):
-        self._undraw()
-        try:
-            graph = self.gdoc.ActiveView.getSceneGraph()
-        except Exception:
-            return
-        try:
-            nodes = []
-            base = _global_shape(self.base) if self.base is not None else None
-            if self.valid:
-                result = _global_shape(self.obj)
-                faces = [result.Faces[i] for i in self.yellow if i < len(result.Faces)]
-                nodes.append(_faces_node(faces, PREVIEW_COLOR))
-            elif base is not None:
-                picked = [_element(base, s) for s in self.subs]
-                nodes.append(_lines_node([p for p in picked if p is not None], PICKED_COLOR, LINE_WIDTH))
-            row = self.list.currentRow()
-            if base is not None and 0 <= row < len(self.subs):
-                el = _element(base, self.subs[row])
-                if el is not None:
-                    nodes.append(_lines_node([el], CURRENT_COLOR, LINE_WIDTH + 1))
-            for node in nodes:
-                graph.addChild(node)
-                self.nodes.append(node)
-        except Exception:
-            FreeCAD.Console.PrintError("[SWUI fork] Vista previa:\n%s\n" % traceback.format_exc())
+    def _nothing(self):
+        return not self.subs
 
-    # --- cerrar
-
-    def _close(self):
-        self.timer.stop()
-        try:
-            FreeCADGui.Selection.removeObserver(self.observer)
-        except Exception:
-            pass
-        self._undraw()
-        _state["panel"] = None
-
-    def accept(self):
-        if self.timer.isActive():
-            self.timer.stop()
-            self.preview()
-        if not self.subs:
-            self.message.setText("Elegí al menos una arista o cara.")
-            self.message.show()
-            return False
-        if not self.valid:
-            return False  # el mensaje ya dice por qué
-        self._close()
-        self._restore_visibility()
-        self.obj.Visibility = self._tip_or_self()
-        self.doc.recompute()
-        self.gdoc.resetEdit()
-        self.doc.commitTransaction()
-        return True
-
-    def _tip_or_self(self):
-        """La operación queda visible solo si es la punta del cuerpo."""
-        from swui.fork import feature_tree as ft
-
-        body = ft.body_of(self.obj)
-        return body is None or body.Tip == self.obj
-
-    def reject(self):
-        self._close()
-        self._restore_visibility()
-        # Primero deshacer: resetEdit confirma la transacción abierta (probado en 1.1.4)
-        self.doc.abortTransaction()
-        if self.gdoc.getInEdit() is not None:
-            self.gdoc.resetEdit()
-        self.doc.recompute()
-        return True
+    def _overlays(self, base, result):
+        nodes = super()._overlays(base, result)
+        if result is None and base is not None:
+            picked = [_element(base, s) for s in self.subs]
+            nodes.append(_lines_node([p for p in picked if p is not None], PICKED_COLOR, LINE_WIDTH))
+        row = self.list.currentRow()
+        if base is not None and 0 <= row < len(self.subs):
+            el = _element(base, self.subs[row])
+            if el is not None:
+                nodes.append(_lines_node([el], CURRENT_COLOR, LINE_WIDTH + 1))
+        return nodes
 
 
 class FilletPanel(DressUpPanel):
@@ -629,11 +717,8 @@ class ChamferPanel(DressUpPanel):
         super()._changed()
 
     def _apply_values(self):
-        kind = chamfer_type(self.by_angle.isChecked(), self.equal.isChecked())
-        if self.obj.ChamferType != kind:
-            self.obj.ChamferType = kind
-        if bool(self.obj.FlipDirection) != self.flip.isChecked():
-            self.obj.FlipDirection = self.flip.isChecked()
+        self._set("ChamferType", chamfer_type(self.by_angle.isChecked(), self.equal.isChecked()))
+        self._set("FlipDirection", self.flip.isChecked())
         self._set("Size", self.size.value())
         self._set("Size2", self.size2.value())
         self._set("Angle", self.angle.value())
@@ -642,7 +727,7 @@ class ChamferPanel(DressUpPanel):
 # --- Enganche ----------------------------------------------------------
 
 
-PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel}
+PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel}  # pattern_panel.py suma los suyos
 
 
 def _in_workbench():
