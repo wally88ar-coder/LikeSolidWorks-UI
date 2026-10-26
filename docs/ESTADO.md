@@ -140,6 +140,11 @@ Decisiones para revisar con el usuario (las tomó Claude trabajando solo; ver ta
     GUI: exacto en círculos, cajas, cilindros, esfera, medio arco (contra fuerza bruta) y
     caras de redondeo (≥ malla fina, dif. 2e-5 mm); en FreeCAD real: dos agujeros 59 mm
     (centro a centro 50, mínima 41).
+    Reportado por el usuario (2026-10-26, captura): centro a centro entre un agujero y una cara
+    plana daba la mínima. Corregido: como SW, desde el centro/eje de lo circular (círculo,
+    cilindro, esfera) hasta una cara plana, arista recta o vértice ("Distancia desde el centro");
+    si el eje corta el plano o ninguno es circular, la mínima. Probado en FreeCAD real (agujero
+    con redondeo y cara lateral: 45 mm).
 17. FreeCAD recuerda un material borrado hasta reiniciar: el addon lo oculta de la lista.
 
 Para que pruebe el usuario (fase 3): asignar un material de FreeCAD y uno propio nuevo (ver que

@@ -215,6 +215,8 @@ Neueste Version oben. / Newest version first.
   bien en ensamblajes (`swui/fork/measure_sw.py`). Reemplaza al Medir de FreeCAD, en inglés.
   Tercera opción **Distancia máxima** (FreeCAD no la trae): entre bordes de agujeros como SW y
   entre cualquier otra geometría, con cálculo propio exacto (`swui/fork/max_distance.py`).
+  *Centro a centro* también entre un agujero y una cara plana, arista recta o vértice (desde el
+  eje del agujero, como SW).
 - **Franja Ecuaciones / Sólidos(n) / Material** arriba del árbol, como las carpetas del
   FeatureManager (`swui/fork/tree_strip.py`).
 

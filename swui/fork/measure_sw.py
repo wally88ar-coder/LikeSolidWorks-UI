@@ -83,12 +83,27 @@ def kind_of(shape):
     return "other"
 
 
+CIRCULAR = ("point", "axis")  # lo que sale de un círculo, cilindro o esfera
+
+
 def _center_item(shape, kind):
-    """Para centro a centro: ('point', p) de un círculo, ('axis', p, dir) de un cilindro."""
+    """
+    Para centro a centro (como SW): de lo circular, su centro o eje; de lo demás, con qué se
+    mide desde ese centro. ('point', p) círculo/esfera/vértice, ('axis', p, dir) cilindro,
+    ('line', p, dir) arista recta, ('plane', p, normal) cara plana. (tipo, es_circular) o None.
+    """
     if kind == "circle":
-        return ("point", shape.Curve.Center)
+        return ("point", shape.Curve.Center), True
     if kind == "cylinder":
-        return ("axis", shape.Surface.Center, shape.Surface.Axis)
+        return ("axis", shape.Surface.Center, shape.Surface.Axis), True
+    if kind == "face" and type(shape.Surface).__name__ == "Sphere":
+        return ("point", shape.Surface.Center), True
+    if kind == "vertex":
+        return ("point", shape.Point), False
+    if kind == "line":
+        return ("line", shape.Curve.Location, shape.Curve.Direction), False
+    if kind == "plane":
+        return ("plane", shape.Surface.Position, shape.Surface.Axis), False
     return None
 
 
@@ -99,15 +114,38 @@ def _point_line(p, base, d):
     return (_v(p) - foot).Length, foot
 
 
+def _point_plane(p, origin, normal):
+    n = _v(normal).normalize()
+    h = (_v(p) - _v(origin)).dot(n)
+    return abs(h), _v(p) - n * h
+
+
+RANK = {"point": 0, "axis": 1, "line": 1, "plane": 2}
+
+
 def center_distance(a, b):
-    """(distancia, punto1, punto2) entre centros/ejes, o None (ejes que se cruzan)."""
-    if a[0] == "point" and b[0] == "point":
+    """
+    (distancia, punto1, punto2) entre centros/ejes, o desde un centro/eje hasta una recta o
+    plano; None si no hay una distancia única (ejes que se cruzan, eje que corta el plano).
+    a, b: ('point', p) / ('axis', p, dir) / ('line', p, dir) / ('plane', p, normal).
+    """
+    if RANK[a[0]] > RANK[b[0]]:  # el más "chico" primero; los puntos se devuelven en orden
+        found = center_distance(b, a)
+        return None if found is None else (found[0], found[2], found[1])
+    ka, kb = a[0], b[0]
+    if kb == "plane":
+        if ka == "plane":
+            return None
+        if ka != "point" and abs(_v(a[2]).normalize().dot(_v(b[2]).normalize())) > 1e-9:
+            return None  # eje que corta el plano
+        dist, foot = _point_plane(a[1], b[1], b[2])
+        return dist, a[1], foot
+    if ka == "point" and kb == "point":
         return (_v(b[1]) - _v(a[1])).Length, a[1], b[1]
-    if a[0] == "point" or b[0] == "point":
-        pt, ax = (a, b) if a[0] == "point" else (b, a)
-        dist, foot = _point_line(pt[1], ax[1], ax[2])
-        return (dist, pt[1], foot) if a[0] == "point" else (dist, foot, pt[1])
-    if angle_between(a[2], b[2]) < 1e-6:  # ejes paralelos
+    if ka == "point":  # punto con eje o recta
+        dist, foot = _point_line(a[1], b[1], b[2])
+        return dist, a[1], foot
+    if angle_between(a[2], b[2]) < 1e-6:  # ejes / rectas paralelas
         dist, foot = _point_line(a[1], b[1], b[2])
         return dist, a[1], foot
     return None
@@ -174,12 +212,13 @@ def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
             line = (_v(p1), _v(p2))
     if mode == "center":
         ca, cb = _center_item(a, ka), _center_item(b, kb)
-        if ca and cb:
-            found = center_distance(ca, cb)
+        if ca and cb and (ca[1] or cb[1]):  # al menos uno circular (si no, la mínima, como SW)
+            found = center_distance(ca[0], cb[0])
             if found:
                 dist, p1, p2 = found
-                rows.append(("Distancia centro a centro", f(dist)))
-                line = (p1, p2)
+                both = ca[1] and cb[1]
+                rows.append(("Distancia centro a centro" if both else "Distancia desde el centro", f(dist)))
+                line = (_v(p1), _v(p2))
     if not rows:
         dist, pairs, _info = a.distToShape(b)
         p1, p2 = pairs[0]
