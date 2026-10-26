@@ -9,8 +9,8 @@
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
 - **Fase 1 (chapa) sigue cajoneada.**
-- **Fase 2 — Flujos de pieza: empezada 2026-10-26** (plan aprobado por el usuario, sin código
-  todavía). Ver "Plan: fase 2" abajo.
+- **Fase 2 — Flujos de pieza: empezada 2026-10-26.** Ver "Plan: fase 2" abajo. Parte 1
+  (Redondeo) hecha y probada en FreeCAD real; falta que la pruebe el usuario.
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
@@ -40,6 +40,16 @@ Orden (cada parte termina en una versión que prueba el usuario):
 5. Más livianos (términos SW + selección siempre activa sobre el panel nativo, como Extruir):
    ángulo de salida, barrido, hélice, geometría de referencia.
 Límite avisado: redondeos complejos fallan más que en SW; el panel puede decir qué arista falló.
+
+Avance:
+- Redondeo: **hecho** (`swui/fork/dress_up_panel.py`). Probado en FreeCAD real con la pieza de
+  prueba: nuevo sin selección, dos aristas, radio 5, clic en la cara amarilla saca su arista, OK
+  (un solo paso de deshacer), editar y Cancelar (queda igual), nuevo y Cancelar (desaparece),
+  Reparar referencias con arista perdida (en rojo, Supr, arista nueva, OK, sin problemas).
+  "Propagación tangente" marcada y fija (OpenCASCADE siempre la hace). Sin "Radio variable" ni
+  "Retroceso" (FreeCAD no los tiene). El radio con ecuación se muestra bloqueado.
+  Falta que lo pruebe el usuario. FreeCAD además dibuja en magenta el borde de las caras
+  redondeadas mientras el panel está abierto (es suyo, del modo edición).
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

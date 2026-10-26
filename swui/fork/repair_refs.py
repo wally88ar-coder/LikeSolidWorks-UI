@@ -187,6 +187,8 @@ def repair(obj, kind):
     FreeCADGui.Selection.addSelection(obj)
     FreeCADGui.getDocument(doc.Name).setEdit(obj)
     if kind == DRESS_UP:
+        if obj.TypeId == "PartDesign::Fillet":  # panel SW (dress_up_panel): las perdidas salen en rojo
+            return "En el panel de %s, borrá las referencias en rojo y tocá las nuevas en la pieza." % obj.Label
         return "Volvé a elegir las aristas/caras de %s en su diálogo." % obj.Label
     return "En el croquis, borrá las referencias marcadas y volvé a traer las aristas."
 

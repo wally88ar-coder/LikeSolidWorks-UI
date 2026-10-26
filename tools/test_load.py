@@ -387,6 +387,8 @@ def _make_stubs():
     gui.listWorkbenches = lambda: dict(registered)
     gui.addWorkbench = lambda obj: registered.setdefault(type(obj).__name__, obj)
     gui.addCommand = lambda name, obj: commands.setdefault(name, obj)
+    gui._doc_observers = []  # fork: panel de redondeo (slotInEdit)
+    gui.addDocumentObserver = lambda o: gui._doc_observers.append(o)
 
     # Ribbon und Layout brauchen: Hauptfenster, Befehlsliste, Befehle.
     # Das Hauptfenster ist eine echte kleine Attrappe mit Zustand, damit
@@ -750,9 +752,18 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or idm.sketch_to_show([])):
         print("  FEHLER: fork: cotas de un croquis con un clic")
         return False
+    # Panel de redondeo (dress_up_panel): nombres como SW, clic agrega / saca, enganchado a la edición
+    dup = sys.modules["swui.fork.dress_up_panel"]
+    gui_ = sys.modules["FreeCADGui"]
+    if (dup.sw_names(["Edge3", "Face1", "Edge7"]) != ["Arista<1>", "Cara<1>", "Arista<2>"]
+            or dup.toggle(["Edge1"], "Edge2") != ["Edge1", "Edge2"] or dup.toggle(["Edge1", "Edge2"], "Edge1") != ["Edge2"]
+            or not any(isinstance(o, dup._EditObserver) for o in gui_._doc_observers)):
+        print("  FEHLER: fork: panel de redondeo (nombres, selección, enganche)")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
+    print("  Redondeo : fork: panel SW (Arista<1>, clic agrega/saca, reemplaza al diálogo de FreeCAD)")
     return True
 
 

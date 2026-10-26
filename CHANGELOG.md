@@ -152,6 +152,13 @@ Neueste Version oben. / Newest version first.
 - *Desactivar supresión con dependientes* también devuelve los redondeos/chaflanes de la
   operación (antes quedaban suprimidos). "¿Qué es incorrecto?" explica el error de una
   operación sin sólido antes (por ejemplo, un corte con la base suprimida).
+- **Panel de Redondeo como el PropertyManager de SW** (fase 2): la lista *Elementos a
+  redondear* siempre espera selección (clic en una arista o cara la agrega, otro clic o Supr la
+  saca; clic en la cara amarilla de la vista previa también), radio, vista previa con las caras
+  nuevas en amarillo y aviso claro si FreeCAD no puede hacer el redondeo. Reemplaza al diálogo
+  de FreeCAD desde la cinta, el menú, *Editar operación* y *Reparar referencias* (las
+  referencias perdidas salen en rojo). Por debajo sigue siendo el redondeo de FreeCAD
+  (`swui/fork/dress_up_panel.py`).
 
 ## 0.10.0 — 2026-10-18
 

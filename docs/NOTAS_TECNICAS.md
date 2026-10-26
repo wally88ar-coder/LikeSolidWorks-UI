@@ -121,3 +121,11 @@
 - Videos del usuario: ffmpeg 9.0.2 instalado con winget (Gyan.FFmpeg, solo su usuario) en
   `%LOCALAPPDATA%/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/`
   (alias `ffmpeg` en consolas nuevas). Sacar cuadros: `ffmpeg -i video.mp4 -vf fps=2 <scratch>/c_%03d.png`.
+- Reemplazar un diálogo de operación por uno propio: observador de documento de Gui
+  (`FreeCADGui.addDocumentObserver`) con `slotInEdit(vp)`; fuera del slot (QTimer 0)
+  `Control.closeDialog()` cierra el diálogo nativo SIN cancelarlo: la operación, el modo edición
+  y la transacción del comando ("Make Fillet") quedan abiertos. Editar una existente no abre
+  transacción (abrir una propia). **`resetEdit()` confirma la transacción pendiente**: para
+  cancelar, `abortTransaction()` primero y después `resetEdit()`. Sin selección,
+  `PartDesign_Fillet` crea igual el redondeo (vacío, con error) sobre la punta y lo pone en edición.
+- En el envoltorio de PySide de FreeCAD 1.1 (Qt6), `QAction` está en `QtGui`, no en `QtWidgets`.
