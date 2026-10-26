@@ -608,7 +608,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
     menu = ft.menu_commands([pocket])
     body.Tip = pad
     menu_back = ft.menu_commands([sk2])
-    if (menu != [ft.EDIT, ft.EDIT_SKETCH, ft.SUPPRESS, ft.ROLLBACK, ft.PARENT_CHILD]
+    if (menu != [ft.EDIT, ft.EDIT_SKETCH, ft.SUPPRESS, ft.ROLLBACK, ft.MOVE_UP, ft.MOVE_DOWN, ft.PARENT_CHILD]
             or menu_back != [ft.EDIT_SKETCH, ft.ROLL_FORWARD, ft.ROLL_END, ft.PARENT_CHILD]
             or ft.menu_commands([body]) != []):
         print("  FEHLER: fork: árbol: comandos del clic derecho", menu, menu_back)
@@ -680,7 +680,36 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or menu_q.acts[4].visible):
         print("  FEHLER: fork: lo nuestro arriba del clic derecho y sin 'Toggle Freeze'")
         return False
+    # Etapa B: mover con chequeo, barra arrastrable, STEP al lado
+    if (ft.move_blocker(pocket, "up") is None or ft.move_blocker(pad, "down") is None
+            or ft.move_blocker(pad, "up") is None or ft.move_blocker(fillet, "down") is None):
+        print("  FEHLER: fork: árbol: mover arriba/abajo sin romper dependencias")
+        return False
+    to = importlib.import_module("swui.fork.tree_overlay")
+    rows_g = [(sk1, 10, 30, False), (pad, 30, 50, True), (sk2, 50, 60, False), (pocket, 60, 80, True)]
+    g = to.gaps(rows_g)
+    # el croquis suelto de arriba no cambia la punta: la barra "antes de todo" queda debajo de él
+    if (g != [(30, None), (60, pad), (80, pocket)] or to.nearest(g, 57) != (60, pad)
+            or to.bar_y(g, pocket) != 80 or to.bar_y(g, None) != 30 or to.gaps([]) != []):
+        print("  FEHLER: fork: barra de retroceso (lugares donde puede quedar)", g)
+        return False
+    sc = sys.modules["swui.fork.step_copy"]
+
+    class _Shape:
+        def __init__(self, kind, part=False, two_d=False):
+            self.TypeId, self.part, self.two_d = kind, part, two_d
+
+        def isDerivedFrom(self, t):
+            return {"Part::Feature": self.part, "Part::Part2DObject": self.two_d}.get(t, False)
+
+    shapes = [_Shape("PartDesign::Body"), _Shape("Sketcher::SketchObject", True, True), _Shape("Part::Feature", True),
+              _Shape("TechDraw::DrawPage"), _Shape("App::Part")]
+    if (sc.step_path("C:/x/pieza.FCStd") != "C:/x/pieza.step" or [s.TypeId for s in sc.exportable(shapes)]
+            != ["PartDesign::Body", "Part::Feature", "App::Part"] or sc.enabled() or sc.COMMAND not in commands):
+        print("  FEHLER: fork: guardar también STEP (nombre, qué se exporta, apagado de fábrica)")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora")
+    print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     return True
 
 

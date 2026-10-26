@@ -100,6 +100,14 @@ Neueste Version oben. / Newest version first.
   Vista lateral a la vista). Al guardar una pieza retrocedida, aviso con *Avanzar hasta el
   final y guardar*. Código en `swui/fork/feature_tree.py`, `rebuild_keys.py` y
   `tree_dialogs.py`.
+- **Árbol, etapa B**: **barra de retroceso** amarilla debajo de la última operación, que
+  se arrastra con el mouse (manito) como en SW; lo que queda debajo se ve **en gris**, y lo
+  suprimido también. Clic derecho *Mover arriba* / *Mover abajo* (con su croquis); si
+  rompería una dependencia, avisa por qué no se puede. Al elegir una cara en la vista, un
+  **marco naranja** marca en el árbol la operación que la creó (FreeCAD sigue marcando en
+  azul la última). Menú *LikeSolidWorks UI → Guardar también STEP* (apagado de fábrica):
+  al guardar deja al lado un `.step` con el mismo nombre, como resguardo sin historial.
+  Código en `swui/fork/tree_overlay.py` y `step_copy.py`.
 
 ## 0.10.0 — 2026-10-18
 

@@ -9,6 +9,7 @@ arriba de todo, como en SW:
     Editar operación / Editar croquis
     Suprimir / Desactivar supresión / Desactivar supresión con dependientes
     Retroceder / Avanzar / Avanzar hasta el final
+    Mover arriba / Mover abajo (si no rompe dependencias; con su croquis)
     Padre/Hijo...
 
 Por debajo, siempre lo nativo de FreeCAD:
@@ -62,6 +63,8 @@ ROLLBACK = "SWUI_Rollback"
 ROLL_FORWARD = "SWUI_RollForward"
 ROLL_END = "SWUI_RollToEnd"
 PARENT_CHILD = "SWUI_ParentChild"
+MOVE_UP = "SWUI_MoveUp"
+MOVE_DOWN = "SWUI_MoveDown"
 
 # Ancla del menú: lo nuestro va antes de este comando (arriba de todo).
 ANCHOR = {"Tree": "Std_Placement", "View": "Std_ViewFitAll"}
@@ -246,6 +249,124 @@ def unsuppress(obj, with_children=False):
     return done
 
 
+def ancestors(obj):
+    """Todo aquello de lo que depende obj (padres, abuelos...), sin repetir."""
+    seen, todo = [], list(parents(obj))
+    while todo:
+        o = todo.pop(0)
+        if o in seen or o is obj:
+            continue
+        seen.append(o)
+        todo.extend(parents(o))
+    return seen
+
+
+def move_blocker(feature, direction):
+    """
+    Por qué no se puede mover una operación (None = se puede). direction: 'up' / 'down'.
+    No puede quedar arriba de algo de lo que depende, ni abajo de algo que depende de ella.
+    """
+    feats = features(body_of(feature))
+    i = feats.index(feature)
+    j = i - 1 if direction == "up" else i + 1
+    if j < 0 or j >= len(feats):
+        return "Ya está %s de todo." % ("arriba" if direction == "up" else "abajo")
+    other = feats[j]
+    if direction == "up" and other in ancestors(feature):
+        return "%s depende de %s (usa su geometría)." % (feature.Label, other.Label)
+    if direction == "down" and feature in ancestors(other):
+        return "%s depende de %s (usa su geometría)." % (other.Label, feature.Label)
+    return None
+
+
+def move(feature, direction):
+    """Mover una operación (con su croquis) un lugar arriba o abajo, sin perder la barra."""
+    body = body_of(feature)
+    feats = features(body)
+    other = feats[feats.index(feature) + (-1 if direction == "up" else 1)]
+    at_end, tip = not rolled_back(feats, body.Tip), body.Tip
+    sketch = _profile_sketch(feature)
+    body.removeObject(feature)
+    body.insertObject(feature, other, direction == "down")
+    if sketch is not None and sketch in body.Group:
+        body.removeObject(sketch)
+        body.insertObject(sketch, feature, False)  # el croquis queda justo antes de su operación
+    feats = features(body)
+    set_tip(body, feats[-1] if at_end else tip)
+
+
+# --- Cara -> operación que la creó --------------------------------------
+
+TOL = 1e-6
+
+
+def _parallel(a, b):
+    return abs(abs(a.dot(b)) - a.Length * b.Length) < TOL * max(1.0, a.Length * b.Length)
+
+
+def _on_axis(point, origin, axis):
+    d = point - origin
+    return (d - axis * (d.dot(axis) / axis.dot(axis))).Length < TOL * 1000
+
+
+def same_surface(f1, f2):
+    """¿Las dos caras están sobre la misma superficie (mismo plano, mismo cilindro...)?"""
+    try:
+        s1, s2 = f1.Surface, f2.Surface
+    except Exception:
+        return False
+    kind = type(s1).__name__
+    if kind != type(s2).__name__:
+        return False
+    try:
+        if kind == "Plane":
+            return _parallel(s1.Axis, s2.Axis) and abs((s2.Position - s1.Position).dot(s1.Axis)) < TOL * 1000
+        if kind in ("Cylinder", "Cone"):
+            same = _parallel(s1.Axis, s2.Axis) and _on_axis(s2.Center, s1.Center, s1.Axis)
+            if kind == "Cylinder":
+                return same and abs(s1.Radius - s2.Radius) < TOL * 1000
+            return same and abs(s1.SemiAngle - s2.SemiAngle) < TOL and (s1.Apex - s2.Apex).Length < TOL * 1000
+        if kind == "Sphere":
+            return (s1.Center - s2.Center).Length < TOL * 1000 and abs(s1.Radius - s2.Radius) < TOL * 1000
+        if kind == "Toroid":
+            return (_parallel(s1.Axis, s2.Axis) and (s1.Center - s2.Center).Length < TOL * 1000
+                    and abs(s1.MajorRadius - s2.MajorRadius) < TOL * 1000
+                    and abs(s1.MinorRadius - s2.MinorRadius) < TOL * 1000)
+    except Exception:
+        return False
+    # Otras superficies (splines...): la misma cara sin cambios
+    try:
+        return abs(f1.Area - f2.Area) < TOL * 1000 and (f1.CenterOfMass - f2.CenterOfMass).Length < TOL * 1000
+    except Exception:
+        return False
+
+
+def creator(feature, face):
+    """
+    Operación que creó la cara elegida (como SW marca en el árbol): se va hacia
+    atrás mientras la operación anterior ya tenía una cara sobre la misma
+    superficie. Ej.: la tapa de un bloque con un agujero -> la extrusión del
+    bloque; la pared del agujero -> el corte.
+    """
+    body = body_of(feature)
+    if body is None or not is_feature(feature):
+        return None
+    feats = features(body)
+    found = feature
+    for f in reversed(feats[:feats.index(feature)]):
+        if _suppressed(f):
+            continue  # deja pasar el sólido de la anterior
+        try:
+            faces = f.Shape.Faces
+        except Exception:
+            break
+        if any(same_surface(face, g) for g in faces):
+            found = f
+        else:
+            break
+    return found
+
+
 def menu_commands(objs):
     """Comandos del clic derecho para lo seleccionado (vacío si no es de un cuerpo)."""
     objs = [o for o in objs if body_of(o) is not None and (is_feature(o) or is_sketch(o))]
@@ -262,7 +383,7 @@ def menu_commands(objs):
             out += [UNSUPPRESS, UNSUPPRESS_ALL]
         else:
             out.append(SUPPRESS)
-        out.append(ROLLBACK)
+        out += [ROLLBACK, MOVE_UP, MOVE_DOWN]
     body = body_of(obj)
     if rolled_back(features(body), body.Tip):
         out += [ROLL_FORWARD, ROLL_END]
@@ -335,10 +456,13 @@ def roll_to(body, where):
 
 
 def check_saved(doc):
-    """Después de guardar: si alguna pieza quedó retrocedida, ofrecer avanzar y volver a guardar."""
+    """
+    Después de guardar: si alguna pieza quedó retrocedida, ofrecer avanzar y volver
+    a guardar. Devuelve True si se volvió a guardar.
+    """
     bodies = [o for o in doc.Objects if getattr(o, "TypeId", "") == BODY and rolled_back(features(o), o.Tip)]
     if not bodies or not _in_workbench():
-        return
+        return False
     from swui.compat import QtWidgets
 
     names = ", ".join(b.Label for b in bodies)
@@ -354,6 +478,8 @@ def check_saved(doc):
         for body in bodies:
             roll_to(body, "end")
         doc.save()
+        return True
+    return False
 
 
 def expand_body(doc_name, body_name):
@@ -389,9 +515,13 @@ class _Observer:
 
 def _check_saved_later(name):
     try:
-        check_saved(FreeCAD.getDocument(name))
+        if check_saved(FreeCAD.getDocument(name)):
+            return  # se volvió a guardar: el STEP sale de ese segundo guardado
     except Exception:
         FreeCAD.Console.PrintLog("[SWUI fork] Aviso de retroceso:\n%s\n" % traceback.format_exc())
+    from swui.fork import step_copy
+
+    step_copy.after_save(name)
 
 
 def arrange_menu(menu):
@@ -573,6 +703,31 @@ class _RollToEnd(_RollForward):
     where = "end"
 
 
+class _MoveUp(_Command):
+    menu = "Mover arriba"
+    tip = "Cambia el orden: la operación se calcula antes que la de arriba"
+    direction = "up"
+
+    def target(self):
+        return _first(is_feature)
+
+    def Activated(self):
+        obj = self.target()
+        why = move_blocker(obj, self.direction)
+        if why:
+            from swui.compat import QtWidgets
+
+            QtWidgets.QMessageBox.information(FreeCADGui.getMainWindow(), "No se puede mover", why)
+            return
+        _transaction(obj.Document, self.menu, lambda: move(obj, self.direction))
+
+
+class _MoveDown(_MoveUp):
+    menu = "Mover abajo"
+    tip = "Cambia el orden: la operación se calcula después que la de abajo"
+    direction = "down"
+
+
 class _ParentChild(_Command):
     menu = "Padre/Hijo..."
     tip = "De qué depende esta operación y qué depende de ella"
@@ -590,7 +745,7 @@ COMMANDS = (
     (EDIT, _EditFeature), (EDIT_SKETCH, _EditSketch),
     (SUPPRESS, _Suppress), (UNSUPPRESS, _Unsuppress), (UNSUPPRESS_ALL, _UnsuppressAll),
     (ROLLBACK, _Rollback), (ROLL_FORWARD, _RollForward), (ROLL_END, _RollToEnd),
-    (PARENT_CHILD, _ParentChild),
+    (MOVE_UP, _MoveUp), (MOVE_DOWN, _MoveDown), (PARENT_CHILD, _ParentChild),
 )
 
 
