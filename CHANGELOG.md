@@ -177,6 +177,13 @@ Neueste Version oben. / Newest version first.
   desplegable de SW): un clic en una operación, plano o eje lo elige para el panel; el título lo
   pliega (`swui/fork/flyout_tree.py`). Matriz y Simetría nuevas arrancan con la lista de
   operaciones vacía, como SW (antes: toda la pieza).
+- **Geometría de referencia como SW**: *Plano* con Primera/Segunda/Tercera referencia y sus
+  relaciones (Coincidente, Paralelo, Perpendicular, Distancia con Invertir, Ángulo, Punto medio,
+  Tangente) y el estado *Totalmente definido*; *Eje* (Una línea/arista/eje, Dos planos, Dos
+  puntos, Superficie cilíndrica, Punto y cara) y *Punto* (Centro de arco, Centro de cara,
+  Intersección, Proyección, A lo largo de la curva) con la lista *Selecciones*. Por debajo, los
+  planos/ejes/puntos de referencia de FreeCAD (`swui/fork/ref_plane_panel.py`,
+  `ref_axis_point_panel.py`).
 - **Panel de Ángulo de salida** estilo SW: ángulo, *Plano neutro* (casilla rosada que espera una
   cara plana o un plano) y *Caras de salida*, con vista previa.
 - **Términos de SW** en los diálogos que siguen siendo de FreeCAD: barrido (Perfil, Trayecto,

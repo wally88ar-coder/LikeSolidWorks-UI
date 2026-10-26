@@ -81,6 +81,9 @@ def install(workbench=None):
         from swui.fork import ref_plane_panel
 
         ref_plane_panel.install()
+        from swui.fork import ref_axis_point_panel
+
+        ref_axis_point_panel.install()
         from swui.fork import native_terms
 
         native_terms.install()

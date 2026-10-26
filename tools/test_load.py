@@ -804,6 +804,15 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or rp.offer("plane", ["midplane"])[1] != "midplane" or "PartDesign::Plane" not in dup.PANELS):
         print("  FEHLER: fork: panel de plano de referencia")
         return False
+    ra = sys.modules["swui.fork.ref_axis_point_panel"]
+    if (ra.guess_axis(["plane", "plane"]) != "planes" or ra.resolve_axis("planes", ["plane", "plane"]) != ("IntersectionLine", [0, 1])
+            or ra.resolve_axis("point_face", ["vertex", "plane"]) != ("FaceNormal", [1, 0])
+            or ra.resolve_axis("line", ["edge"], True) != ("ObjectX", [0])
+            or ra.guess_point(["arc"]) != "arc_center" or ra.resolve_point("along", ["edge"]) != ("OnEdge", [0])
+            or ra.resolve_point("projection", ["vertex", "plane"]) != ("ProximityPoint1", [1, 0])
+            or "PartDesign::Line" not in dup.PANELS or "PartDesign::Point" not in dup.PANELS):
+        print("  FEHLER: fork: paneles de eje y punto de referencia")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
@@ -811,7 +820,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
     print("  Matrices : fork: paneles SW de matriz lineal/circular y simetría (espaciado, sólidos)")
     print("  Taladro  : fork: asistente SW (cara -> croquis de posiciones -> tipo, tamaño, tornillo)")
     print("  Diálogos : fork: ángulo de salida SW; términos SW en barrido, hélice y referencia")
-    print("  Plano    : fork: panel SW (primera/segunda/tercera referencia y relaciones)")
+    print("  Plano    : fork: panel SW (primera/segunda/tercera referencia y relaciones); eje y punto SW")
     return True
 
 

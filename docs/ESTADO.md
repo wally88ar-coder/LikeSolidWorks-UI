@@ -16,29 +16,16 @@
   pidió seguir decidiendo con criterio: las dudas quedaron en "Preguntas para el usuario".
   Nada subido a origin (commits locales en master).
 
-## Preguntas para el usuario (decisiones tomadas por Claude mientras no estaba)
-- Matriz/Simetría sin nada elegido: FreeCAD arranca copiando **toda la pieza** ("Sólidos"
-  tildado); en SW la lista arranca vacía. Dejé lo de FreeCAD (se ve algo enseguida); al tocar una
-  operación pasa solo a "Operaciones". ¿Lo prefiere vacío como SW?
-- Matriz lineal vieja guardada con "Longitud total" (modo Extent de FreeCAD): al editarla pasa a
-  "Espaciado" con el mismo resultado (salvo que la longitud tenga ecuación). ¿OK?
-- Mientras un panel está abierto, el árbol queda en la pestaña Modelo (escondido): las
-  operaciones se eligen tocando sus caras. SW muestra un árbol flotante sobre la vista; no lo hice.
-  ¿Lo necesita?
-- Taladro: el orden queda **Posiciones primero** (cara + puntos) y **Tipo después**; en SW 2018 se
-  arranca por Tipo y después Posiciones (se puede ir y volver). Lo hice así porque FreeCAD necesita
-  el croquis antes de crear el taladro. ¿Le molesta?
-- Taladro: "Rosca modelada" apagada de fábrica (la rosca de verdad pesa mucho en FreeCAD); queda
-  como en SW la rosca cosmética, pero FreeCAD no dibuja la rosca cosmética: el agujero se ve al
-  Ø de la broca. Tampoco sale en planos (TechDraw) como rosca. ¿Necesita la rosca en los planos?
-- Plano de referencia: hoy solo cambié textos del editor de FreeCAD. Un panel como el de SW
-  (Primera/Segunda/Tercera referencia con botones Paralelo, Perpendicular, Coincidente, A
-  distancia, Ángulo) es posible sobre los mismos modos de FreeCAD, pero es un trabajo mediano.
-  ¿Lo usa seguido como para hacerlo?
-- Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
-  `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
-  tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
-  la arista de arriba del tetón; croquis totalmente definidos).
+## Preguntas para el usuario
+Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
+como SW: **hecho**; 2) matriz vieja en Longitud total -> Espaciado: OK; 3) ver el árbol con el panel
+abierto: **hecho** (árbol flotante sobre la vista); 4) taladro Posiciones antes de Tipo: OK;
+6) plano de referencia con panel como SW: **hecho** (y también eje y punto, por coherencia).
+Pendiente:
+- 5) Rosca en planos: el usuario preguntó si hablaba de la hélice o de la representación
+  simplificada de dibujo. Se le respondió: la representación simplificada (círculo de 3/4 fino,
+  líneas de rosca en lateral/corte), que FreeCAD 1.1.4 tiene en TechDraw solo a mano agujero por
+  agujero; se ofreció que salga sola para los agujeros roscados. Esperando respuesta.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
@@ -95,6 +82,17 @@ Avance:
 - Ángulo de salida: **hecho** como panel propio (`DraftPanel` en `dress_up_panel.py`; es un
   DressUp como el redondeo). Probado en FreeCAD real: cara lateral preelegida, plano neutro =
   cara de abajo (la casilla pasa sola a la lista), 5°, OK.
+- Árbol flotante (`swui/fork/flyout_tree.py`): con cualquier panel SW abierto, arriba a la
+  izquierda de la vista (Origen plegado, operaciones con su croquis colgado); clic = elegir.
+  Probado en FreeCAD real: simetría con "Vista lateral" y la operación elegidas desde ahí.
+- Plano de referencia SW (`swui/fork/ref_plane_panel.py`): probado en FreeCAD real: distancia 10
+  sobre la cara (z=20) e Invertir (z=0), ángulo 30° por una arista de la cara, punto medio entre
+  Planta y la cara (z=5), tres vértices, y editar vuelve a mostrar lo elegido (propiedad oculta
+  `SWUI_PlaneSpec`, nombre estable). Ángulo y punto medio se calculan al aceptar (no siguen si se
+  mueve la arista/el segundo plano dentro de la pieza). Sin "Número de planos" ni "Proyectar".
+- Eje y punto SW (`swui/fork/ref_axis_point_panel.py`): probados: eje de cara cilíndrica (por su
+  borde circular: el modo por inercia salía torcido con la cara cortada), dos planos, eje Y; punto
+  en centro de arco y al 25 % de una arista.
 - Barrido, hélice, geometría de referencia: **términos SW** sobre el diálogo nativo
   (`swui/fork/native_terms.py`, por objectName y listas por texto). Barrido: el botón del
   trayecto queda prendido si ya hay perfil. Probado en FreeCAD real (textos y botón).
@@ -286,6 +284,7 @@ Etapas:
   tablas/funciones del original desde afuera (sin editar sus archivos) para no generar
   conflictos al traer novedades de upstream.
 - Lo que sirve a todos va en ramas limpias para PR; antes de abrir PR/issue, consultar al usuario.
+- `SWUI_PlaneSpec` (texto JSON en los planos hechos con el panel SW): nombre estable (2026-10-27).
 - **Nombres internos estables (2026-10-25):** el nombre de clase/módulo con que se guarda en el
   archivo cada objeto propio del fork (p. ej. mover/rotar cara, FeaturePython) no cambia nunca. Si
   algún día hay que cambiarlo, dejar un alias y convertir los objetos viejos al abrir el archivo.
