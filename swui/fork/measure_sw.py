@@ -1,0 +1,522 @@
+# -*- coding: utf-8 -*-
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# SPDX-FileCopyrightText: 2026 wally88ar-coder
+"""
+Medir como en SOLIDWORKS (fase 3, pestaña Evaluar; barra espaciadora).
+
+Ventanita flotante "Medir": cada clic en la vista SUMA un elemento (como SW, sin
+Ctrl); un clic sobre uno ya elegido lo saca; clic en el vacío borra todo. Mide en
+la posición real (también en ensamblajes):
+- un vértice: X, Y, Z;  una arista: longitud (círculo/arco: diámetro, radio, centro);
+- una cara: área y perímetro (cilindro: diámetro);  varias aristas/caras: totales;
+- dos elementos: distancia mínima con dX/dY/dZ (o centro a centro si son círculos o
+  cilindros, como SW), distancia normal entre caras planas paralelas y ángulo entre
+  rectas/planos. La distancia se dibuja en la vista mientras la ventana está abierta.
+Reemplaza al Medir de FreeCAD (Std_Measure, que en 1.1.4 sale en inglés) en la cinta
+y en la barra espaciadora.
+"""
+
+import math
+
+import FreeCAD
+import FreeCADGui
+
+from swui.compat import QtCore, QtGui, QtWidgets
+
+COMMAND = "SWUI_Measure"
+PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Measure"
+DEFAULT_DECIMALS = 2  # como SW
+CLEAR_MS = 60  # espera para saber si un "borrar selección" fue un clic en el vacío
+TOL = 1e-7
+LINE_COLOR = (0.85, 0.35, 0.0)  # naranja, como las cotas de medir de SW
+
+_window = None
+
+
+# --- Cuentas (con formas de Part; las de vectores se prueban sin FreeCAD) -----
+
+
+def fmt(value, decimals=DEFAULT_DECIMALS, unit="mm"):
+    from swui.fork.mass_props import fmt as number
+
+    return number(value, decimals) + (unit and " " + unit or "")
+
+
+def _v(p):
+    return FreeCAD.Vector(p[0], p[1], p[2]) if not hasattr(p, "x") else p
+
+
+def angle_between(d1, d2, lines=True):
+    """Ángulo en grados entre dos direcciones (rectas: 0-90 como SW muestra entre aristas)."""
+    a = math.degrees(_v(d1).getAngle(_v(d2)))
+    if lines and a > 90:
+        a = 180 - a
+    return a
+
+
+def kind_of(shape):
+    """'vertex', 'line', 'circle', 'edge', 'plane', 'cylinder', 'face', 'solid' u 'other'."""
+    st = shape.ShapeType
+    if st == "Vertex":
+        return "vertex"
+    if st == "Edge":
+        name = type(shape.Curve).__name__
+        if name in ("Line", "LineSegment"):
+            return "line"
+        if name in ("Circle", "ArcOfCircle"):
+            return "circle"
+        return "edge"
+    if st == "Face":
+        name = type(shape.Surface).__name__
+        if name == "Plane":
+            return "plane"
+        if name == "Cylinder":
+            return "cylinder"
+        return "face"
+    if shape.Solids:
+        return "solid"
+    return "other"
+
+
+def _center_item(shape, kind):
+    """Para centro a centro: ('point', p) de un círculo, ('axis', p, dir) de un cilindro."""
+    if kind == "circle":
+        return ("point", shape.Curve.Center)
+    if kind == "cylinder":
+        return ("axis", shape.Surface.Center, shape.Surface.Axis)
+    return None
+
+
+def _point_line(p, base, d):
+    d = _v(d).normalize()
+    w = _v(p) - _v(base)
+    foot = _v(base) + d * w.dot(d)
+    return (_v(p) - foot).Length, foot
+
+
+def center_distance(a, b):
+    """(distancia, punto1, punto2) entre centros/ejes, o None (ejes que se cruzan)."""
+    if a[0] == "point" and b[0] == "point":
+        return (_v(b[1]) - _v(a[1])).Length, a[1], b[1]
+    if a[0] == "point" or b[0] == "point":
+        pt, ax = (a, b) if a[0] == "point" else (b, a)
+        dist, foot = _point_line(pt[1], ax[1], ax[2])
+        return (dist, pt[1], foot) if a[0] == "point" else (dist, foot, pt[1])
+    if angle_between(a[2], b[2]) < 1e-6:  # ejes paralelos
+        dist, foot = _point_line(a[1], b[1], b[2])
+        return dist, a[1], foot
+    return None
+
+
+def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
+    """
+    shapes = formas globales elegidas. Devuelve (renglones [(texto, valor)], línea a dibujar
+    (p1, p2) o None). mode: "center" (centro a centro para círculos, como SW) o "min"; decimals: decimales.
+    """
+    rows, line = [], None
+
+    def f(value, unit="mm"):
+        return fmt(value, decimals, unit)
+
+    if not shapes:
+        return [("Elegí vértices, aristas o caras en la vista.", "")], None
+    kinds = [kind_of(s) for s in shapes]
+    if len(shapes) == 1:
+        s, k = shapes[0], kinds[0]
+        if k == "vertex":
+            p = s.Point
+            rows += [("X", f(p.x)), ("Y", f(p.y)), ("Z", f(p.z))]
+        elif k in ("line", "edge"):
+            rows.append(("Longitud", f(s.Length)))
+        elif k == "circle":
+            c = s.Curve
+            closed = s.isClosed()
+            rows += [("Diámetro", f(2 * c.Radius)), ("Radio", f(c.Radius))]
+            if not closed:
+                rows += [("Longitud del arco", f(s.Length)),
+                         ("Ángulo", f(math.degrees(s.LastParameter - s.FirstParameter), unit="°"))]
+            else:
+                rows.append(("Perímetro", f(s.Length)))
+            rows.append(("Centro", "%s; %s; %s" % (f(c.Center.x, unit=""), f(c.Center.y, unit=""),
+                                                   f(c.Center.z, unit=""))))
+        elif k in ("plane", "cylinder", "face"):
+            rows.append(("Área", f(s.Area, unit="mm²")))
+            if k == "cylinder":
+                rows.insert(0, ("Diámetro", f(2 * s.Surface.Radius)))
+            else:  # todos los bordes, también los de los agujeros (como SW)
+                rows.append(("Perímetro", f(sum(e.Length for e in s.Edges if not e.isSeam(s)))))
+        elif k == "solid":
+            rows += [("Volumen", f(s.Volume, unit="mm³")), ("Área de superficie", f(s.Area, unit="mm²"))]
+        else:
+            rows.append(("No se puede medir este elemento.", ""))
+        return rows, None
+    if len(shapes) > 2:
+        if all(k in ("line", "circle", "edge") for k in kinds):
+            return [("Longitud total", f(sum(s.Length for s in shapes)))], None
+        if all(k in ("plane", "cylinder", "face") for k in kinds):
+            return [("Área total", f(sum(s.Area for s in shapes), unit="mm²"))], None
+        return [("Para medir distancias, elegí dos elementos.", "")], None
+    a, b = shapes
+    ka, kb = kinds
+    if mode == "center":
+        ca, cb = _center_item(a, ka), _center_item(b, kb)
+        if ca and cb:
+            found = center_distance(ca, cb)
+            if found:
+                dist, p1, p2 = found
+                rows.append(("Distancia centro a centro", f(dist)))
+                line = (p1, p2)
+    if not rows:
+        dist, pairs, _info = a.distToShape(b)
+        p1, p2 = pairs[0]
+        rows.append(("Distancia" if dist > TOL else "Distancia (se tocan)", f(dist)))
+        line = (p1, p2) if dist > TOL else None
+        if ka == kb == "plane":
+            na, nb = a.Surface.Axis, b.Surface.Axis
+            if angle_between(na, nb) < 1e-6:
+                normal = abs((_v(b.Surface.Position) - _v(a.Surface.Position)).dot(_v(na).normalize()))
+                rows.append(("Distancia normal", f(normal)))
+    if line is not None:
+        d = _v(line[1]) - _v(line[0])
+        rows += [("dX", f(abs(d.x))), ("dY", f(abs(d.y))), ("dZ", f(abs(d.z)))]
+    dirs = []
+    for s, k in ((a, ka), (b, kb)):
+        if k == "line":
+            dirs.append((s.Curve.Direction, True))
+        elif k == "plane":
+            dirs.append((s.Surface.Axis, False))
+    if len(dirs) == 2:
+        (d1, l1), (d2, l2) = dirs
+        if l1 and l2:
+            ang = angle_between(d1, d2)
+        elif not l1 and not l2:
+            ang = angle_between(d1, d2)
+        else:
+            ang = abs(90 - angle_between(d1, d2))  # recta con plano
+        if ang > 1e-6 or not any(r[0] == "Distancia normal" for r in rows):
+            rows.append(("Ángulo", f(ang, unit="°")))
+    return rows, line
+
+
+# --- Selección que suma (como SW) -------------------------------------------
+
+
+def toggle_pick(picks, pick):
+    """Clic: suma el elemento; si ya estaba, lo saca (como SW)."""
+    if pick in picks:
+        return [p for p in picks if p != pick]
+    return picks + [pick]
+
+
+class _SelObserver:
+    def __init__(self, window):
+        self.w = window
+
+    def addSelection(self, doc, obj, sub, _pnt):
+        self.w.on_add(doc, obj, sub)
+
+    def removeSelection(self, doc, obj, sub):
+        self.w.on_remove(doc, obj, sub)
+
+    def setSelection(self, doc):
+        pass
+
+    def clearSelection(self, doc):
+        self.w.on_clear()
+
+
+class _MeasureWindow(QtWidgets.QDialog):
+    def __init__(self):
+        mw = FreeCADGui.getMainWindow()
+        super().__init__(mw)
+        self.setWindowFlags(QtCore.Qt.WindowType.Tool | QtCore.Qt.WindowType.WindowStaysOnTopHint)
+        self.setWindowTitle("Medir")
+        # que no se quede con el teclado: la barra espaciadora tiene que seguir cerrándola
+        self.setAttribute(QtCore.Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.picks = []  # [(documento, objeto raíz, subnombre completo)]
+        self.busy = False
+        self.pending_clear = False
+        self.node = None
+        box = QtWidgets.QVBoxLayout(self)
+        box.setContentsMargins(6, 6, 6, 6)
+        bar = QtWidgets.QHBoxLayout()
+        self.cb_mode = QtWidgets.QComboBox()
+        self.cb_mode.addItems(["Arcos/círculos: centro a centro", "Arcos/círculos: distancia mínima"])
+        self.cb_mode.setCurrentIndex(FreeCAD.ParamGet(PARAMS).GetInt("Mode", 0))
+        self.cb_mode.currentIndexChanged.connect(self._mode)
+        self.sp_dec = QtWidgets.QSpinBox()
+        self.sp_dec.setRange(0, 6)
+        self.sp_dec.setValue(FreeCAD.ParamGet(PARAMS).GetInt("Decimals", DEFAULT_DECIMALS))
+        self.sp_dec.setToolTip("Decimales")
+        self.sp_dec.valueChanged.connect(self._decimals)
+        bar.addWidget(self.cb_mode, 1)
+        bar.addWidget(QtWidgets.QLabel("Dec.:"))
+        bar.addWidget(self.sp_dec)
+        box.addLayout(bar)
+        self.lb_sel = QtWidgets.QLabel()
+        self.lb_sel.setWordWrap(True)
+        box.addWidget(self.lb_sel)
+        self.table = QtWidgets.QTableWidget(0, 2)
+        self.table.horizontalHeader().setVisible(False)
+        self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(20)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
+        box.addWidget(self.table, 1)
+        row = QtWidgets.QHBoxLayout()
+        b_clear = QtWidgets.QPushButton("Borrar selecciones")
+        b_copy = QtWidgets.QPushButton("Copiar")
+        b_clear.clicked.connect(lambda *_a: self.clear())
+        b_copy.clicked.connect(self._copy)
+        row.addWidget(b_clear)
+        row.addWidget(b_copy)
+        box.addLayout(row)
+        for w in (self.cb_mode, self.sp_dec, self.table, b_clear, b_copy):
+            w.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
+        self.resize(300, 260)
+        self._place(mw)
+        self.observer = _SelObserver(self)
+        FreeCADGui.Selection.addObserver(self.observer)
+        self._take_current()
+
+    def _place(self, mw):
+        """Arriba a la izquierda de la vista 3D, como aparece la de SW."""
+        try:
+            area = mw.findChild(QtWidgets.QMdiArea)
+            if area is not None:
+                top_left = area.mapToGlobal(QtCore.QPoint(20, 20))
+                self.move(top_left)
+        except Exception:
+            pass
+
+    # --- selección
+
+    def _take_current(self):
+        try:
+            for sel in FreeCADGui.Selection.getSelectionEx("", 0):
+                for sub in (sel.SubElementNames or [""]):
+                    self.picks = toggle_pick(self.picks, (sel.DocumentName, sel.ObjectName, sub))
+        except Exception:
+            pass
+        self.update_result()
+
+    def on_add(self, doc, obj, sub):
+        if self.busy:
+            return
+        self.pending_clear = False
+        QtCore.QTimer.singleShot(0, lambda: self._absorb(doc, obj, sub))
+
+    def _absorb(self, doc, obj, sub):
+        """
+        Lo que llegó al observador es la cara resuelta (objeto interno, sin la posición en el
+        ensamblaje): se busca en la selección la ruta completa desde la raíz y se suma esa.
+        """
+        pick = None
+        try:
+            for sel in FreeCADGui.Selection.getSelectionEx("", 0):
+                for full in (sel.SubElementNames or [""]):
+                    if sel.DocumentName == doc and (full == sub or full.endswith("." + sub) or
+                                                    (not sub and sel.ObjectName == obj)):
+                        pick = (sel.DocumentName, sel.ObjectName, full)
+        except Exception:
+            pass
+        if pick is None:
+            pick = (doc, obj, sub)
+        self.picks = toggle_pick(self.picks, pick)
+        self._reselect()
+
+    def on_remove(self, doc, obj, sub):
+        if self.busy:
+            return
+        self.picks = [p for p in self.picks if p != (doc, obj, sub)]
+        QtCore.QTimer.singleShot(0, self.update_result)
+
+    def on_clear(self):
+        if self.busy:
+            return
+        self.pending_clear = True
+        QtCore.QTimer.singleShot(CLEAR_MS, self._maybe_clear)
+
+    def _maybe_clear(self):
+        if self.pending_clear:  # nadie sumó nada: fue un clic en el vacío
+            self.pending_clear = False
+            self.picks = []
+            self.update_result()
+
+    def _reselect(self):
+        """Vuelve a marcar en la vista todo lo elegido (FreeCAD borró lo anterior al hacer clic)."""
+        self.busy = True
+        try:
+            FreeCADGui.Selection.clearSelection()
+            for doc, obj, sub in self.picks:
+                try:
+                    FreeCADGui.Selection.addSelection(doc, obj, sub)
+                except Exception:
+                    pass
+        finally:
+            self.busy = False
+        self.update_result()
+
+    def clear(self):
+        self.picks = []
+        self.busy = True
+        try:
+            FreeCADGui.Selection.clearSelection()
+        finally:
+            self.busy = False
+        self.update_result()
+
+    # --- resultado
+
+    def _shapes(self):
+        out, names = [], []
+        for doc, obj, sub in self.picks:
+            try:
+                root = FreeCAD.getDocument(doc).getObject(obj)
+                shape = root.getSubObject(sub) if sub else root.Shape
+                if shape is None or shape.isNull():
+                    continue
+                out.append(shape)
+                element = sub.split(".")[-1] if sub else ""
+                names.append("%s de %s" % (_element_name(element), _owner_label(root, sub)) if element
+                             else root.Label)
+            except Exception:
+                continue
+        return out, names
+
+    def update_result(self):
+        shapes, names = self._shapes()
+        mode = "center" if self.cb_mode.currentIndex() == 0 else "min"
+        try:
+            rows, line = measure(shapes, mode, self.sp_dec.value())
+        except Exception as exc:
+            rows, line = [("No se pudo medir: %s" % exc, "")], None
+        self.lb_sel.setText("\n".join(names) if names else "Clic en vértices, aristas o caras (clic en el vacío borra).")
+        self.table.setRowCount(len(rows))
+        for i, (label, value) in enumerate(rows):
+            self.table.setItem(i, 0, QtWidgets.QTableWidgetItem(label))
+            self.table.setItem(i, 1, QtWidgets.QTableWidgetItem(value))
+        self.table.resizeColumnToContents(0)
+        self._draw(line)
+
+    def _copy(self, *_a):
+        lines = ["%s: %s" % (self.table.item(i, 0).text(), self.table.item(i, 1).text())
+                 for i in range(self.table.rowCount())]
+        QtWidgets.QApplication.clipboard().setText("\n".join(lines))
+
+    def _mode(self, i):
+        FreeCAD.ParamGet(PARAMS).SetInt("Mode", int(i))
+        self.update_result()
+
+    def _decimals(self, value):
+        FreeCAD.ParamGet(PARAMS).SetInt("Decimals", int(value))
+        self.update_result()
+
+    # --- línea en la vista
+
+    def _draw(self, line):
+        self._undraw()
+        if line is None:
+            return
+        try:
+            from pivy import coin
+
+            view = FreeCADGui.ActiveDocument.ActiveView
+            node = coin.SoAnnotation()
+            color = coin.SoBaseColor()
+            color.rgb = LINE_COLOR
+            style = coin.SoDrawStyle()
+            style.lineWidth = 2
+            coords = coin.SoCoordinate3()
+            p1, p2 = line
+            coords.point.setValues(0, 2, [(p1.x, p1.y, p1.z), (p2.x, p2.y, p2.z)])
+            lines = coin.SoLineSet()
+            marks = coin.SoMarkerSet()
+            marks.markerIndex = coin.SoMarkerSet.CIRCLE_FILLED_7_7
+            for child in (color, style, coords, lines, marks):
+                node.addChild(child)
+            view.getSceneGraph().addChild(node)
+            self.node = (view, node)
+        except Exception:
+            self.node = None
+
+    def _undraw(self):
+        if self.node is not None:
+            view, node = self.node
+            try:
+                view.getSceneGraph().removeChild(node)
+            except Exception:
+                pass
+        self.node = None
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key.Key_Escape:
+            self.close()
+            return
+        super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        global _window
+        self._undraw()
+        try:
+            FreeCADGui.Selection.removeObserver(self.observer)
+        except Exception:
+            pass
+        _window = None
+        super().closeEvent(event)
+
+
+def _owner_label(root, sub):
+    """A quién pertenece: en un ensamblaje el componente (Pieza1), en una pieza la operación."""
+    tokens = sub.split(".")[:-1]
+    if not tokens:
+        return root.Label
+    try:
+        if root.TypeId in ("Assembly::AssemblyObject", "App::Part"):
+            return root.getSubObject(tokens[0] + ".", retType=1).Label
+        return root.getSubObject(".".join(tokens) + ".", retType=1).Label
+    except Exception:
+        return root.Label
+
+
+def _element_name(element):
+    for prefix, name in (("Vertex", "Vértice"), ("Edge", "Arista"), ("Face", "Cara")):
+        if element.startswith(prefix):
+            return "%s<%s>" % (name, element[len(prefix):])
+    return element
+
+
+def toggle():
+    """Abrir la ventana Medir (o cerrarla si ya está abierta: barra espaciadora)."""
+    global _window
+    if _window is not None:
+        try:
+            _window.close()
+        except Exception:
+            pass
+        _window = None
+        return None
+    _window = _MeasureWindow()
+    _window.show()
+    return _window
+
+
+class _MeasureCommand:
+    def GetResources(self):
+        from swui import paths
+
+        return {"MenuText": "Medir", "ToolTip": "Medir distancias, ángulos, longitudes y áreas (como SW). "
+                "Cada clic suma un elemento; clic en el vacío borra.", "Pixmap": paths.icon("fork/measure") or ""}
+
+    def IsActive(self):
+        return FreeCAD.ActiveDocument is not None
+
+    def Activated(self):
+        toggle()
+
+
+def install():
+    try:
+        FreeCADGui.addCommand(COMMAND, _MeasureCommand())
+    except Exception:
+        pass  # ya registrado

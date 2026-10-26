@@ -8,7 +8,7 @@ Teclas de SOLIDWORKS para reconstruir y medir.
   todo. Si quedan errores se abre "¿Qué es incorrecto?". En FreeCAD, Ctrl+B
   es "Zoom de ventana" (Std_ViewBoxZoom): ese atajo se quita mientras se está
   en LikeSolidWorks UI y se devuelve al salir.
-- Barra espaciadora: Medir (Std_Measure), como la tiene configurada el
+- Barra espaciadora: Medir (el estilo SW del fork, measure_sw.py), como la tiene configurada el
   usuario en su SW. En FreeCAD la barra es "Alternar visibilidad"
   (Std_ToggleVisibility): ese atajo se quita mientras tanto (ocultar sigue en
   el clic derecho).
@@ -27,7 +27,7 @@ from swui.compat import QtGui, QtWidgets
 REBUILD = "SWUI_Rebuild"
 FORCE_REBUILD = "SWUI_ForceRebuild"
 WHATS_WRONG = "SWUI_WhatsWrong"
-MEASURE = "Std_Measure"
+MEASURE = "SWUI_Measure"  # Medir estilo SW (measure_sw.py)
 
 _actions = []
 _hidden = []  # (QAction, atajos) de FreeCAD quitados mientras tanto
