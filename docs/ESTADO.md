@@ -17,8 +17,9 @@
 - **Próximo paso:** que el usuario pruebe la fase 2 con una pieza suya (lista sugerida: chaflán,
   matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el plano en
   el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia / en
-  ángulo / punto medio cambiando una cota, eje en un cilindro). Después elige fase: 1 chapa
-  (recomendada; pedirle piezas STEP de chapa), 3 Evaluar, 4 mover/rotar cara, 5 ensamblaje.
+  ángulo / punto medio cambiando una cota, eje en un cilindro).
+- **Fase 3 — Evaluar: analizada con el usuario (2026-10-26), sin código.** Plan y respuestas en
+  "Plan: fase 3". Falta su OK para arrancar por el punto 1 (Material).
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
@@ -29,6 +30,44 @@ Pendiente:
 - 5) Rosca en planos: **sí, la quiere** (representación simplificada: círculo de 3/4 fino de
   frente, líneas finas en lateral/corte). Decidido: va con el trabajo de planos (ver Falta).
 - Pedido a FreeCAD (planos en ángulo / punto medio): el usuario lo dejó por ahora.
+
+## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26, sin código)
+Verificado en 1.1.4 sin GUI:
+- Material: `ShapeMaterial` (Materials::PropertyMaterial) ya existe en Body y en todo Part::Feature;
+  biblioteca System de ~200 materiales (nombres en inglés/DIN; varios de "Appearance" y
+  "Machining" sin densidad; con densidad p. ej. Steel-Generic 7,9e-6 kg/mm³, Aluminum-6061-T6,
+  Copper-Generic). Comandos `Std_SetMaterial` / `Std_SetAppearance` en `lib/MatGui.pyd`.
+  **El archivo guarda solo el UUID del material**: si al abrir no está en la biblioteca, FreeCAD
+  dice "Material not found" y lo deja en "Default" (densidad 1 g/cm³) sin más aviso (probado).
+- Propiedades físicas: `Shape.Volume/Area/CenterOfMass/MatrixOfInertia` y
+  `Solid.PrincipalProperties` (momentos, ejes, radios de giro) andan. No hay `Std_MassProperties`
+  en 1.1.4 (llega en 26.3).
+- Ecuaciones: expresiones (`ExpressionEngine`), `App::VarSet` (`Std_VarSet`) y Spreadsheet.
+- Medir: `Std_Measure` (MeasureGui) trae `Measure_es-AR.qm` compilado; aun así el usuario ve el
+  panel en inglés (causa sin ver: probar en GUI).
+
+Respuestas del usuario (2026-10-26): los materiales propios **los agrega él después** (la ventana
+tiene que dejar crear y editar materiales); asignar material **nunca cambia el color** (no le
+gusta eso de SW); masa en **kg**; usa **variables globales y ecuaciones entre cotas**; Medir
+**como el de SW** (panel propio, no solo traducir).
+
+Orden propuesto (cada parte termina en una versión que prueba el usuario):
+1. Material: ventana estilo SW (categorías a la izquierda, propiedades a la derecha), crear y
+   editar materiales propios (biblioteca User de FreeCAD, archivos .FCMat nativos). Asigna con
+   `ShapeMaterial` sin tocar la apariencia. Por el problema del UUID: el addon guarda además una
+   copia del material en el Body (propiedad oculta, nombre estable a decidir, p. ej.
+   `SWUI_MaterialCopy`, JSON con nombre y propiedades) y al abrir un archivo cuyo material no está
+   en la biblioteca avisa y ofrece recrearlo (importa al compartir piezas con amigos).
+2. Propiedades físicas estilo SW: densidad, masa (kg), volumen, área, CDG, ejes y momentos
+   principales, momentos en el CDG y en el origen; pieza entera o sólidos elegidos; en ensamblaje
+   suma cada pieza con su material (posición global). Si existe `Std_MassProperties` (26.3+), cede.
+3. Franja Material / Ecuaciones / Sólidos (n) arriba del árbol (clic abre 1 y 4).
+4. Ecuaciones estilo SW: variables globales, cotas con ecuación, ecuaciones (nombre, valor,
+   comentario). Por debajo expresiones + un VarSet de nombre estable. Cotas con nombre tipo SW
+   ("D1@Croquis1") a mostrar sobre los nombres de FreeCAD (a definir).
+5. Medir estilo SW: panel propio (distancia, mínima/máxima, entre centros, dX/dY/dZ, ángulo,
+   radio/diámetro, longitud, área) en pieza y ensamblaje, sobre la medición de Part/Measure.
+Límite avisado: no hay configuraciones (ni valor de ecuación por configuración).
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
