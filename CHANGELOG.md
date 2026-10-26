@@ -113,7 +113,9 @@ Neueste Version oben. / Newest version first.
   de una arista o vértice de la pieza se **resalta en naranja** (primero vértices); al hacer
   clic se trae sola como referencia (lo mismo que *Convertir entidades*) y el clic cae justo
   sobre ella: la cota o la línea quedan enganchadas aunque no se apunte exacto. También una
-  arista que coincide con un eje del croquis (gana la arista, como en SW). Antes había que
+  arista que coincide con un eje del croquis (gana la arista, como en SW). **Sin herramienta**
+  (seleccionando) también: elegir un punto del croquis y después una arista del sólido la
+  suma a la selección, y el panel *Agregar relaciones* ofrece *Sobre entidad*. Antes había que
   traerla a mano; FreeCAD 1.1.4 no deja tocar el modelo desde el croquis. No trae aristas de
   operaciones posteriores al croquis. Desde FreeCAD 26.3, que ya lo hace, queda lo nativo
   (`swui/fork/sketch_model_edges.py`).

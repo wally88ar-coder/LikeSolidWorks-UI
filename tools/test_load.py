@@ -723,9 +723,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or me.choose((60, 75), verts, edges_s) != (("Pad", "Edge5"), (60.0, 80.0))
             or me.closest_on_segment((5, 5), (0, 0), (0, 0))[0] != math.hypot(5, 5)
             or me.qt_point(500, 352, 491) != (500.0, 139.0)
-            or not me.sketch_owns("Sk2", ["Edge1"], "Sk2") or me.sketch_owns("Sk2", ["V_Axis"], "Sk2")
-            or me.sketch_owns("Pad", ["Edge1"], "Sk2") or not me.sketch_owns("Sk2", ["ExternalEdge1"], "Sk2")
-            or me.coin_point(500, 139, 491) != (500, 352) or me.coin_point(10, 0, 100, 1.5) != (15, 150)
+            or me.external_index(_Sk(), "Extruir1", "Edge10") != 1 or me.external_index(_Sk(), "Extruir1", "Edge2")            or me.coin_point(500, 139, 491) != (500, 352) or me.coin_point(10, 0, 100, 1.5) != (15, 150)
             or not me.already(_Sk(), "Extruir1", "Edge10") or me.already(_Sk(), "Extruir1", "Edge2")
             or me._filter is None):
         print("  FEHLER: fork: aristas del modelo en el croquis (qué se toma bajo el mouse)")

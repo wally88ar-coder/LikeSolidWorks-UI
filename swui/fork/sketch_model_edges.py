@@ -10,16 +10,20 @@ FreeCAD 1.1.4 el croquis solo ve lo suyo: primero hay que traer la arista con
 "Convertir entidades" (Sketcher_Projection). Acá:
 
 - Con una herramienta del croquis activa (cota, relación, línea, círculo...;
-  FreeCAD les pone un cursor dibujado: BitmapCursor), al pasar el mouse a
-  menos de SNAP_PX píxeles de una arista o vértice del sólido, se resalta en
-  naranja (primero vértices, como SW).
+  FreeCAD les pone un cursor dibujado: BitmapCursor) o sin herramienta
+  (flecha: seleccionando, p. ej. un punto del croquis + una arista del sólido
+  para hacerlos coincidentes), al pasar el mouse a menos de SNAP_PX píxeles de
+  una arista o vértice del sólido, se resalta en naranja (primero vértices,
+  como SW). Arrastrando con un botón apretado no se resalta nada.
 - Al hacer clic con algo resaltado: si el croquis no la tiene, se agrega como
   referencia (lo mismo que Convertir entidades: nada propio del addon queda en
   el archivo) y el clic se manda justo sobre ella, así la herramienta la toma
   aunque no se haya apuntado exacto.
-- Si lo que está bajo el mouse es del propio croquis, manda el croquis (no se
-  resalta nada). Salvo los ejes y el origen del croquis: una arista del sólido
-  encima de un eje se resalta igual.
+- Si hay algo del propio croquis a menos del radio de selección de FreeCAD
+  (View/PickRadius, 5 px), manda el croquis (no se resalta nada). Se mide en
+  pantalla: la preselección de FreeCAD sin herramienta no siempre está al día.
+  Los ejes del croquis no cuentan: una arista del sólido encima de un eje se
+  resalta igual (y una vez traída, FreeCAD también la prefiere al eje).
 - Candidatas: las aristas de las operaciones visibles del cuerpo del croquis
   y del objeto donde está apoyado. No se traen las de operaciones que dependen
   del croquis (sería una dependencia circular). Entre aristas superpuestas en
@@ -46,7 +50,6 @@ SNAP_PX = 10  # distancia de enganche en píxeles
 POINTS_PER_EDGE = 16
 HIGHLIGHT = (1.0, 0.55, 0.0)  # naranja (resaltado de look_sw)
 LINE_WIDTH = 4
-AXES = ("H_Axis", "V_Axis", "RootPoint")  # ejes y origen del croquis
 
 _filter = None
 _state = {"sketch": None, "cands": None, "camera": None, "screen": None, "hot": None, "node": None}
@@ -125,6 +128,17 @@ def already(sketch, obj, sub):
     return False
 
 
+def external_index(sketch, obj, sub):
+    """Número de la referencia en el croquis (ExternalEdgeN, desde 1), o None."""
+    n = 0
+    for target, subs in getattr(sketch, "ExternalGeometry", []) or []:
+        for s in subs:
+            n += 1
+            if getattr(target, "Name", target) == obj and s == sub:
+                return n
+    return None
+
+
 def depends_on(obj, sketch):
     """¿obj depende del croquis? (traerlo armaría una dependencia circular)"""
     try:
@@ -143,27 +157,6 @@ def _editing_sketch():
     except Exception:
         return None
     return obj if obj is not None and getattr(obj, "TypeId", "") == SKETCH else None
-
-
-def sketch_owns(pre_object, pre_subs, sketch_name):
-    """
-    ¿Lo preseleccionado es del croquis (y manda el croquis)? Los ejes y el origen del
-    croquis no cuentan: una arista del sólido encima de un eje gana, como en SW (y una
-    vez traída, FreeCAD también la prefiere al eje).
-    """
-    if pre_object != sketch_name:
-        return False
-    return not all(s in AXES for s in pre_subs) if pre_subs else True
-
-
-def _sketch_preselected(sketch):
-    try:
-        pre = FreeCADGui.Selection.getPreselection()
-        if pre is None or pre.Object is None:
-            return False
-        return sketch_owns(pre.Object.Name, list(pre.SubElementNames), sketch.Name)
-    except Exception:
-        return False
 
 
 def _global_shape(obj):
@@ -334,8 +327,11 @@ def bring(sketch, obj_name, sub):
 
 
 def _active(viewport):
-    """Croquis en edición con una herramienta activa (o None)."""
-    if viewport.cursor().shape() != QtCore.Qt.CursorShape.BitmapCursor:
+    """
+    Croquis en edición, con una herramienta activa (cursor dibujado) o seleccionando
+    (flecha: para elegir la arista y relacionarla con algo del croquis, como en SW).
+    """
+    if viewport.cursor().shape() not in (QtCore.Qt.CursorShape.BitmapCursor, QtCore.Qt.CursorShape.ArrowCursor):
         return None
     try:
         if FreeCADGui.activeWorkbench().name() != WB_NAME:
@@ -343,6 +339,72 @@ def _active(viewport):
     except Exception:
         return None
     return _editing_sketch()
+
+
+def _sketch_near(view, sketch, coin, radius):
+    """
+    ¿Hay algo del croquis (líneas, puntos, referencias ya traídas; no los ejes) a menos
+    de radius del mouse? Se mide en pantalla en vez de mirar la preselección de FreeCAD,
+    que sin herramienta no siempre está al día.
+    """
+    plc = sketch.getGlobalPlacement()
+    shapes = []
+    for geo in list(sketch.Geometry) + list(getattr(sketch, "ExternalGeo", [])[2:]):
+        try:
+            shapes.append(geo.toShape())
+        except Exception:
+            pass
+    for shape in shapes:
+        for v in shape.Vertexes:
+            q = view.getPointOnViewport(plc.multVec(v.Point))
+            if math.hypot(coin[0] - q[0], coin[1] - q[1]) <= radius:
+                return True
+        for e in shape.Edges:
+            try:
+                pts = [tuple(view.getPointOnViewport(plc.multVec(p))) for p in e.discretize(Number=POINTS_PER_EDGE)]
+            except Exception:
+                continue
+            hit = closest_on_polyline(coin, pts)
+            if hit is not None and hit[0] <= radius:
+                return True
+    return False
+
+
+def _pick_radius():
+    try:
+        return FreeCAD.ParamGet("User parameter:BaseApp/Preferences/View").GetFloat("PickRadius", 5.0)
+    except Exception:
+        return 5.0
+
+
+def _hot_at(viewport, pos):
+    """Arista/vértice del modelo enganchable en pos (Qt) del viewport, o None."""
+    sketch = _active(viewport)
+    if sketch is None:
+        _state["sketch"] = None  # al volver al croquis se recalculan las candidatas
+        return None
+    ratio = viewport.devicePixelRatioF()
+    view = FreeCADGui.ActiveDocument.ActiveView
+    coin = coin_point(pos.x(), pos.y(), viewport.height(), ratio)
+    if _sketch_near(view, sketch, coin, _pick_radius() * ratio):
+        return None  # manda el croquis
+    return _find(view, sketch, coin, ratio)
+
+
+def _hover(viewport, pos, dragging):
+    """Resaltar (o dejar de resaltar) lo que está cerca del mouse."""
+    try:
+        hot = None if dragging else _hot_at(viewport, pos)
+        old = _state["hot"]
+        if (hot and hot[:2]) != (old and old[:2]):
+            view = FreeCADGui.ActiveDocument.ActiveView
+            if hot is None:
+                _hide(view)
+            else:
+                _show(view, hot[0], hot[1])
+        _state["hot"] = hot
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] Arista del modelo:\n%s\n" % traceback.format_exc())
 
 
 def _send(viewport, kind, pos, button, buttons, modifiers):
@@ -354,43 +416,50 @@ class _Filter(QtCore.QObject):
     def __init__(self):
         super().__init__()
         self.busy = False  # mientras se reenvía el clic
+        self.swallow_release = False  # el soltar del clic que ya se atendió
 
     def eventFilter(self, viewport, event):
         if self.busy:
             return False
         t = event.type()
+        if t == QtCore.QEvent.Type.MouseButtonRelease and self.swallow_release:
+            self.swallow_release = False
+            return True
         if t not in (QtCore.QEvent.Type.MouseMove, QtCore.QEvent.Type.MouseButtonPress):
             if t == QtCore.QEvent.Type.Leave:
                 _hide()
                 _state["hot"] = None
             return False
         try:
-            sketch = _active(viewport)
-            view = FreeCADGui.ActiveDocument.ActiveView if sketch is not None else None
             pos = event.position() if hasattr(event, "position") else QtCore.QPointF(event.pos())
-            ratio = viewport.devicePixelRatioF()
-            hot = None
-            if sketch is None:
-                _state["sketch"] = None  # al volver a una herramienta se recalculan las candidatas
-            elif not _sketch_preselected(sketch):
-                coin_pos = coin_point(pos.x(), pos.y(), viewport.height(), ratio)
-                hot = _find(view, sketch, coin_pos, ratio)
             if t == QtCore.QEvent.Type.MouseMove:
-                old = _state["hot"]
-                if (hot and hot[:2]) != (old and old[:2]):
-                    if hot is None:
-                        _hide(view)
-                    else:
-                        _show(view, hot[0], hot[1])
-                _state["hot"] = hot
+                # Después de que el croquis vea el movimiento (su preselección queda al día)
+                dragging = event.buttons() != QtCore.Qt.MouseButton.NoButton
+                QtCore.QTimer.singleShot(0, lambda: _hover(viewport, QtCore.QPointF(pos), dragging))
                 return False
             # Clic
-            if hot is None or event.button() != QtCore.Qt.MouseButton.LeftButton:
+            if event.button() != QtCore.Qt.MouseButton.LeftButton:
                 return False
+            hot = _hot_at(viewport, pos)
+            if hot is None:
+                return False
+            view = FreeCADGui.ActiveDocument.ActiveView
+            sketch = _editing_sketch()
+            ratio = viewport.devicePixelRatioF()
             obj, sub, q = hot
             bring(sketch, obj, sub)
             _hide(view)
             _state["hot"] = None
+            if viewport.cursor().shape() == QtCore.Qt.CursorShape.ArrowCursor:
+                # Sin herramienta (seleccionando): se suma a la selección, como en SW, para
+                # relacionarla con lo ya elegido. El croquis elegiría al soltar el botón lo
+                # que tenía bajo el mouse (desactualizado): ese soltar no le llega.
+                index = external_index(sketch, obj, sub)
+                if index:
+                    FreeCADGui.Selection.addSelection(sketch.Document.Name, sketch.Name,
+                                                      "ExternalEdge%d" % index)
+                self.swallow_release = True
+                return True
             x, y = qt_point(q[0], q[1], viewport.height(), ratio)
             snapped = QtCore.QPointF(x, y)
             self.busy = True
