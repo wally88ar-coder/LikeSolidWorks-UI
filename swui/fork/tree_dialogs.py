@@ -25,7 +25,7 @@ WAITING = "waiting"
 # (texto que aparece en el mensaje de FreeCAD, explicación). Se busca en orden.
 EXPLAIN = (
     ("subshape not found", "Perdió la cara o arista donde estaba apoyado (cambió o desapareció). "
-                           "Hay que elegir otra: editar el croquis o la operación y volver a seleccionarla."),
+                           "Usá «Reparar referencias...»: si puede, la vuelve a encontrar sola."),
     ("total length of zero", "La profundidad es cero."),
     ("Base feature's TopoShape is invalid", "No hay sólido antes de esta operación (lo de arriba está "
                                             "suprimido, vacío o con error): no tiene sobre qué trabajar."),
@@ -136,12 +136,22 @@ def show_whats_wrong(doc=None):
         lst.addItem("No hay errores.")
     box.addWidget(lst)
     row = QtWidgets.QHBoxLayout()
+    repair = QtWidgets.QPushButton("Reparar referencias...")
     edit = QtWidgets.QPushButton("Editar")
     close = QtWidgets.QPushButton("Cerrar")
+    row.addWidget(repair)
     row.addStretch(1)
     row.addWidget(edit)
     row.addWidget(close)
     box.addLayout(row)
+
+    def do_repair(*_a):
+        from swui.fork import repair_refs
+
+        dialog.close()
+        repair_refs.show_dialog(doc)
+
+    repair.clicked.connect(do_repair)
 
     def chosen():
         item = lst.currentItem()

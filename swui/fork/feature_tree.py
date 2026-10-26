@@ -65,6 +65,7 @@ ROLL_END = "SWUI_RollToEnd"
 PARENT_CHILD = "SWUI_ParentChild"
 MOVE_UP = "SWUI_MoveUp"
 MOVE_DOWN = "SWUI_MoveDown"
+REPAIR = "SWUI_RepairReferences"  # repair_refs.COMMAND (solo en el menú si la operación tiene error)
 
 # Ancla del menú: lo nuestro va antes de este comando (arriba de todo).
 ANCHOR = {"Tree": "Std_Placement", "View": "Std_ViewFitAll"}
@@ -568,6 +569,8 @@ def menu_commands(objs):
     if rolled_back(features(body), body.Tip):
         out += [ROLL_FORWARD, ROLL_END]
     out.append(PARENT_CHILD)
+    if "Invalid" in list(getattr(obj, "State", [])):
+        out.append(REPAIR)
     return out
 
 

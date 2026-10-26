@@ -724,6 +724,10 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or me._filter is None):
         print("  FEHLER: fork: aristas del modelo en el croquis (qué se toma bajo el mouse)")
         return False
+    rr = sys.modules["swui.fork.repair_refs"]
+    if rr.COMMAND not in commands or ft.REPAIR != rr.COMMAND:
+        print("  FEHLER: fork: reparar referencias (comando)")
+        return False
     # Cotas con doble clic (instant_dims): formato y lectura de valores como SW en castellano
     idm = sys.modules["swui.fork.instant_dims"]
     if (idm.fmt(100.0) != "100" or idm.fmt(12.5) != "12,5" or idm.fmt(0.1234) != "0,123"

@@ -136,7 +136,10 @@ Etapas:
     Muestra cotas de croquis (Distance/X/Y, Radius, Diameter, Angle) y de Pad/Pocket (Length),
     Fillet, Chamfer, Revolution/Groove. No: arrastrar cotas, Hole, croquis anidados en el árbol
     (doble clic en un croquis hijo sigue abriendo el croquis).
-  - "Reparar referencias" y "Chequear carpeta": pendientes.
+  - Reparar referencias: **hecho** (`swui/fork/repair_refs.py`), probado en FreeCAD real (apoyo
+    perdido reparado solo; redondeo con arista perdida abre su diálogo). Falta que lo pruebe él.
+    No reconstruye solo las aristas de un redondeo (no se sabe cuáles eran una vez perdidas).
+  - "Chequear carpeta": pendiente.
 - Descartado: carpetas, reconstruir tras un error. Configuraciones: mucho después.
 
 ## FreeCAD 26.3 (la que antes se iba a llamar 1.2)

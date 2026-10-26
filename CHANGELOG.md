@@ -136,6 +136,12 @@ Neueste Version oben. / Newest version first.
   deshacer. Las cotas atadas a una ecuación se marcan con Σ. Esc o un clic en otro lado las
   esconde. Como en SW, el doble clic ya no abre el diálogo: para eso, clic derecho → *Editar
   operación* (`swui/fork/instant_dims.py`).
+- **Reparar referencias…** (menú *LikeSolidWorks UI*, botón en "¿Qué es incorrecto?" y clic
+  derecho de una operación con error): lista los croquis/planos que perdieron la cara donde
+  se apoyaban, los redondeos/chaflanes que perdieron aristas y los croquis con referencias
+  del modelo perdidas. Si hay una sola cara plana donde estaba el croquis, lo reapoya solo;
+  si no, abre el editor de apoyo de FreeCAD o el diálogo de la operación para volver a
+  elegir (`swui/fork/repair_refs.py`).
 - *Desactivar supresión con dependientes* también devuelve los redondeos/chaflanes de la
   operación (antes quedaban suprimidos). "¿Qué es incorrecto?" explica el error de una
   operación sin sólido antes (por ejemplo, un corte con la base suprimida).
