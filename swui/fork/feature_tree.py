@@ -163,12 +163,37 @@ def _is_container(obj):
     return getattr(obj, "TypeId", "") in (BODY, "App::Origin", "App::Part")
 
 
+def _is_dress_up(obj):
+    try:
+        return bool(obj.isDerivedFrom(DRESS_UP))
+    except Exception:
+        return False
+
+
 def parents(obj):
+    """
+    Padres en el sentido de SW. En un redondeo/chaflán, Base es siempre el sólido
+    anterior (como BaseFeature): su padre real es la operación que creó las aristas.
+    """
+    if _is_dress_up(obj):
+        out = [o for o in links(obj) if not _is_container(o) and not _is_base_of(obj, o)]
+        return out + [c for c in dress_up_creators(obj) if c not in out]
     return [o for o in links(obj) if not _is_container(o)]
 
 
+def _is_base_of(dress_up, obj):
+    try:
+        return dress_up.Base[0] is obj
+    except Exception:
+        return False
+
+
 def children(obj):
-    return [o for o in getattr(obj, "InList", []) if not _is_container(o) and obj in links(o)]
+    cands = list(getattr(obj, "InList", []))
+    body = body_of(obj)
+    if body is not None:
+        cands += [f for f in features(body) if _is_dress_up(f) and f not in cands]
+    return [o for o in cands if not _is_container(o) and o is not obj and obj in parents(o)]
 
 
 def dependents(obj):
@@ -279,12 +304,132 @@ def move_blocker(feature, direction):
     return None
 
 
+DRESS_UP = "PartDesign::DressUp"  # redondeo, chaflán, ángulo de salida, vaciado
+
+
+def _dress_ups(body):
+    return [f for f in features(body) if f.isDerivedFrom(DRESS_UP)]
+
+
+def _picked(feature):
+    """[(sub, forma)] de las aristas/caras elegidas en un redondeo, chaflán..."""
+    try:
+        base, subs = feature.Base
+        shape = base.Shape
+    except Exception:
+        return []
+    out = []
+    for sub in subs:
+        try:
+            out.append((sub, shape.getElement(sub).copy()))
+        except Exception:
+            out.append((sub, None))
+    return out
+
+
+def _vertex(point):
+    import Part
+
+    return Part.Vertex(point)
+
+
+def _mid(shape):
+    """Un punto en el medio de la arista (o el centro de la cara)."""
+    if shape.ShapeType == "Edge":
+        return _vertex(shape.valueAt((shape.FirstParameter + shape.LastParameter) / 2.0))
+    return _vertex(shape.CenterOfMass)
+
+
+def same_curve(e1, e2):
+    """¿Las dos aristas están sobre la misma recta / circunferencia / curva?"""
+    try:
+        c1, c2 = e1.Curve, e2.Curve
+    except Exception:
+        return False
+    kind = type(c1).__name__
+    if kind != type(c2).__name__:
+        return False
+    try:
+        if kind == "Line":
+            d1 = c1.Direction
+            return _parallel(d1, c2.Direction) and _on_axis(c2.Location, c1.Location, d1)
+        if kind == "Circle":
+            return (_parallel(c1.Axis, c2.Axis) and (c1.Center - c2.Center).Length < TOL * 1000
+                    and abs(c1.Radius - c2.Radius) < TOL * 1000)
+    except Exception:
+        return False
+    return True  # otras curvas: alcanza con que se superpongan
+
+
+def _overlap(a, b):
+    """¿Las dos aristas (o caras) se superponen? (el medio de una está sobre la otra)"""
+    try:
+        return a.distToShape(_mid(b))[0] < TOL * 1000 or b.distToShape(_mid(a))[0] < TOL * 1000
+    except Exception:
+        return False
+
+
+def remap(old, shape):
+    """
+    Dónde quedó cada arista/cara elegida en la forma nueva: [nombres]. Una arista
+    partida en pedazos da todos los pedazos; una que desapareció no da nada.
+    """
+    names = []
+    for _sub, geo in old:
+        if geo is None:
+            continue
+        if geo.ShapeType == "Edge":
+            pool, prefix, same = shape.Edges, "Edge", same_curve
+        else:
+            pool, prefix, same = shape.Faces, "Face", same_surface
+        for i, cand in enumerate(pool):
+            name = "%s%d" % (prefix, i + 1)
+            if name not in names and same(geo, cand) and _overlap(geo, cand):
+                names.append(name)
+    return names
+
+
+def dress_up_creators(dress_up):
+    """Operaciones que crearon las aristas/caras elegidas en un redondeo, chaflán..."""
+    try:
+        base = dress_up.Base[0]
+        feats = features(body_of(dress_up))
+        before = feats[:feats.index(base)]
+    except Exception:
+        return []
+    out = []
+    for _sub, geo in _picked(dress_up):
+        if geo is None:
+            continue
+        found = base
+        for f in reversed(before):
+            if _suppressed(f):
+                continue
+            try:
+                hit = remap([(None, geo)], f.Shape)
+            except Exception:
+                hit = []
+            if not hit:
+                break
+            found = f
+        if found not in out:
+            out.append(found)
+    return out
+
+
 def move(feature, direction):
-    """Mover una operación (con su croquis) un lugar arriba o abajo, sin perder la barra."""
+    """
+    Mover una operación (con su croquis) un lugar arriba o abajo, sin perder la barra.
+    Los redondeos/chaflanes se apoyan en el sólido anterior por número de arista: al
+    cambiar el orden, esos números cambian y FreeCAD redondearía otra arista (o daría
+    error). Acá se vuelven a buscar las mismas aristas por su forma, como en SW.
+    Devuelve [(operación, aristas que no se encontraron)].
+    """
     body = body_of(feature)
     feats = features(body)
     other = feats[feats.index(feature) + (-1 if direction == "up" else 1)]
     at_end, tip = not rolled_back(feats, body.Tip), body.Tip
+    picked = {f.Name: _picked(f) for f in _dress_ups(body)}
     sketch = _profile_sketch(feature)
     body.removeObject(feature)
     body.insertObject(feature, other, direction == "down")
@@ -293,6 +438,20 @@ def move(feature, direction):
         body.insertObject(sketch, feature, False)  # el croquis queda justo antes de su operación
     feats = features(body)
     set_tip(body, feats[-1] if at_end else tip)
+    lost = []
+    for f in _dress_ups(body):  # en orden: cada uno sobre el sólido ya recalculado
+        old = picked.get(f.Name) or []
+        if not old:
+            continue
+        base = f.Base[0]
+        base.recompute(True)
+        names = remap(old, base.Shape)
+        if names and names != list(f.Base[1]):
+            f.Base = (base, names)
+        if not names:
+            lost.append((f, [s for s, _g in old]))
+        f.recompute(True)
+    return lost
 
 
 # --- Cara -> operación que la creó --------------------------------------
@@ -712,14 +871,33 @@ class _MoveUp(_Command):
         return _first(is_feature)
 
     def Activated(self):
+        from swui.compat import QtWidgets
+
         obj = self.target()
         why = move_blocker(obj, self.direction)
+        mw = FreeCADGui.getMainWindow()
         if why:
-            from swui.compat import QtWidgets
-
-            QtWidgets.QMessageBox.information(FreeCADGui.getMainWindow(), "No se puede mover", why)
+            QtWidgets.QMessageBox.information(mw, "No se puede mover", why)
             return
-        _transaction(obj.Document, self.menu, lambda: move(obj, self.direction))
+        doc = obj.Document
+        broken_before = set(_broken(doc))
+        lost = _transaction(doc, self.menu, lambda: move(obj, self.direction)) or []
+        broken = [doc.getObject(n).Label for n in _broken(doc) if n not in broken_before]
+        lines = ["%s perdió las aristas o caras que tenía elegidas." % f.Label for f, _s in lost]
+        lines += ["%s quedó con error." % label for label in broken
+                  if label not in [f.Label for f, _s in lost]]
+        if lines:
+            answer = QtWidgets.QMessageBox.question(
+                mw, "Mover", "\n".join(lines) + "\n\n¿Deshacer el cambio de orden?",
+                QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No)
+            if answer == QtWidgets.QMessageBox.StandardButton.Yes:
+                doc.undo()
+                doc.recompute()
+
+
+def _broken(doc):
+    """Nombres de las operaciones con error."""
+    return [o.Name for o in doc.Objects if "Invalid" in o.State or "Error" in o.State]
 
 
 class _MoveDown(_MoveUp):

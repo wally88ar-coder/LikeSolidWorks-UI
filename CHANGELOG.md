@@ -121,6 +121,12 @@ Neueste Version oben. / Newest version first.
   (`swui/fork/sketch_model_edges.py`).
 - Árbol: un croquis suelto debajo de la última operación ya no aparece en gris (solo lo que
   queda debajo de la barra).
+- **Mover arriba / abajo con redondeos y chaflanes en el medio**: FreeCAD los apoya en el
+  sólido anterior por número de arista, y al cambiar el orden esos números cambian (el
+  redondeo quedaba en otra arista sin avisar, o con error). Ahora se vuelven a buscar las
+  mismas aristas por su forma, como en SW. El padre de un redondeo es la operación que creó
+  sus aristas (no la de justo arriba): ya se puede mover un redondeo por encima de un corte
+  que no lo afecta. Si después de mover algo queda con error, avisa y ofrece deshacer.
 
 ## 0.10.0 — 2026-10-18
 
