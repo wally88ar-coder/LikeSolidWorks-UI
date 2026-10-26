@@ -9,9 +9,10 @@ Dibujo sobre el árbol de operaciones, como el FeatureManager de SOLIDWORKS (eta
   la punta (feature_tree.set_tip, se puede deshacer).
 - Lo que queda debajo de la barra se ve en gris, como en SW. Lo suprimido
   también (FreeCAD 26.3 ya lo tacha solo: desde esa versión no se pinta).
-- Cara elegida en la vista 3D: un marco naranja en la operación que la creó
-  (feature_tree.creator). FreeCAD marca además en azul la última operación
-  (la que se ve); eso no se puede cambiar sin tocar FreeCAD.
+- Cara elegida en la vista 3D: la operación que la creó (feature_tree.creator)
+  se marca como en SW 2018: fondo celeste con borde azul sobre ícono y nombre.
+  FreeCAD marca además en azul la última operación (la que se ve); eso no se
+  puede cambiar sin tocar FreeCAD.
 
 Cómo: un widget transparente encima del área del árbol (hermano del viewport,
 así no se corre al desplazar) que pinta usando visualItemRect de cada renglón,
@@ -33,7 +34,9 @@ BAR_FILL = "#f2c200"
 BAR_LINE = "#6b5600"
 BAR_HEIGHT = 4
 GRAB = 5  # px alrededor de la barra donde se la puede agarrar
-MARK = "#ff8c00"
+MARK_FILL = "#a6c8e3"  # celeste del FeatureManager de SW 2018 (medido en captura del usuario)
+MARK_LINE = "#4288b5"
+ICON = 16  # ícono del objeto (sin el ojo)
 NATIVE_SUPPRESSED_FROM = 26  # FreeCAD 26.3 tacha lo suprimido
 
 _overlays = {}  # tree -> _Overlay
@@ -108,6 +111,25 @@ def _obj(doc, item):
     return found[0] if found else None
 
 
+def label_box(x, y, height, icon_w, text_w):
+    """
+    Recuadro del ícono + nombre de un renglón, como el resaltado de SW (sin el ojo de
+    FreeCAD). Medido en FreeCAD 1.1.4: el ícono compuesto (ojo + ícono, ICON px) empieza
+    4 px después del borde del renglón y el texto 6 px después del ícono.
+    """
+    left = x + 4 + max(icon_w - ICON, 0) - 2
+    right = x + 4 + icon_w + 6 + text_w + 3
+    return (left, y, right - left, height)
+
+
+def _icon_width(item):
+    try:
+        sizes = item.icon(0).availableSizes()
+        return sizes[0].width() if sizes else ICON
+    except Exception:
+        return ICON
+
+
 def _last_visible(item):
     while item.isExpanded() and item.childCount():
         item = item.child(item.childCount() - 1)
@@ -138,7 +160,9 @@ def body_rows(tree):
                     if not rect.isValid():
                         continue
                     bottom = tree.visualItemRect(_last_visible(child)).bottom() + 1
-                    box = (rect.x(), rect.y(), rect.width(), rect.height())
+                    box = label_box(rect.x(), rect.y(), rect.height(), _icon_width(child),
+                                    QtGui.QFontMetrics(child.font(0)).horizontalAdvance(child.text(0)))
+                    box += (rect.x(),)  # inicio del renglón (ahí arranca la barra de retroceso)
                     rows.append((cobj, box, rect.top(), bottom, ft.is_feature(cobj)))
                 out.append((obj, rows))
             return  # dentro de un cuerpo no hay otros cuerpos
@@ -204,15 +228,19 @@ class _Overlay(QtWidgets.QWidget):
         for body, rows in body_rows(self.tree):
             for top, bottom in _greyed(body, rows):
                 p.fillRect(0, top, width, bottom - top, grey)
-            for obj, (x, y0, w, h), _top, _bottom, _f in rows:
+            for obj, (x, y0, w, h, _row_x), _top, _bottom, _f in rows:
                 if obj in _mark:
-                    p.setPen(QtGui.QPen(QtGui.QColor(MARK), 2))
+                    # "Multiplicar": el celeste tiñe el fondo y el texto negro sigue negro
+                    p.setCompositionMode(QtGui.QPainter.CompositionMode.CompositionMode_Multiply)
+                    p.fillRect(x, y0, min(w, width - x), h, QtGui.QColor(MARK_FILL))
+                    p.setCompositionMode(QtGui.QPainter.CompositionMode.CompositionMode_SourceOver)
+                    p.setPen(QtGui.QPen(QtGui.QColor(MARK_LINE), 1))
                     p.setBrush(QtCore.Qt.BrushStyle.NoBrush)
-                    p.drawRect(x + 1, y0 + 1, min(w, width) - 3, h - 3)
+                    p.drawRect(x, y0, min(w, width - x) - 1, h - 1)
             y = self.drag[1] if self.drag and self.drag[0] is body else bar_y(_gaps_of(rows), body.Tip)
             if y is None or not rows:
                 continue
-            left = rows[0][1][0]
+            left = rows[0][1][4]
             p.setPen(QtGui.QPen(QtGui.QColor(BAR_LINE), 1))
             p.setBrush(QtGui.QColor(BAR_FILL))
             p.drawRect(left, y - BAR_HEIGHT // 2, width - left - 3, BAR_HEIGHT)
@@ -361,7 +389,7 @@ def _scroll_to(obj):
     """Desplazar el árbol hasta el renglón de obj (si está a la vista en un cuerpo abierto)."""
     for tree in _overlays:
         for _body, rows in body_rows(tree):
-            for o, (x, y, w, h), *_r in rows:
+            for o, (x, y, w, h, _row_x), *_r in rows:
                 if o is obj:
                     height = tree.viewport().height()
                     if 0 <= y and y + h <= height:

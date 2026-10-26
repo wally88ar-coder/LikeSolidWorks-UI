@@ -102,9 +102,9 @@ Neueste Version oben. / Newest version first.
 - **Árbol, etapa B**: **barra de retroceso** amarilla debajo de la última operación, que
   se arrastra con el mouse (manito) como en SW; lo que queda debajo se ve **en gris**, y lo
   suprimido también. Clic derecho *Mover arriba* / *Mover abajo* (con su croquis); si
-  rompería una dependencia, avisa por qué no se puede. Al elegir una cara en la vista, un
-  **marco naranja** marca en el árbol la operación que la creó (FreeCAD sigue marcando en
-  azul la última). Menú *LikeSolidWorks UI → Guardar también STEP* (apagado de fábrica):
+  rompería una dependencia, avisa por qué no se puede. Al elegir una cara en la vista, la
+  operación que la creó se marca en el árbol **como en SW 2018: fondo celeste con borde
+  azul** sobre ícono y nombre (FreeCAD sigue marcando en azul la última). Menú *LikeSolidWorks UI → Guardar también STEP* (apagado de fábrica):
   al guardar deja al lado un `.step` con el mismo nombre, como resguardo sin historial.
   Código en `swui/fork/tree_overlay.py` y `step_copy.py`.
 - **Aristas y vértices del modelo dentro del croquis, como en SW**: con una herramienta
