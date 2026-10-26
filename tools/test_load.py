@@ -801,7 +801,8 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or rp.resolve([("vertex", "coincident")] * 3) != ("ThreePointsPlane", [0, 1, 2], None)
             or rp.resolve([("edge", "coincident")]) is not None
             or rp.pick_mode("ParallelPlane", ["TangentPlane"]) != "TangentPlane"
-            or rp.offer("plane", ["midplane"])[1] != "midplane" or "PartDesign::Plane" not in dup.PANELS):
+            or rp.offer("plane", ["midplane"])[1] != "midplane" or "PartDesign::Plane" not in dup.PANELS
+            or not any(isinstance(o, rp._RecomputeObserver) for o in sys.modules["FreeCAD"]._observers)):
         print("  FEHLER: fork: panel de plano de referencia")
         return False
     ra = sys.modules["swui.fork.ref_axis_point_panel"]

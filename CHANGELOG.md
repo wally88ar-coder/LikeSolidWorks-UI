@@ -183,7 +183,8 @@ Neueste Version oben. / Newest version first.
   puntos, Superficie cilíndrica, Punto y cara) y *Punto* (Centro de arco, Centro de cara,
   Intersección, Proyección, A lo largo de la curva) con la lista *Selecciones*. Por debajo, los
   planos/ejes/puntos de referencia de FreeCAD (`swui/fork/ref_plane_panel.py`,
-  `ref_axis_point_panel.py`).
+  `ref_axis_point_panel.py`). Los planos *En ángulo* y *Punto medio* (FreeCAD no los tiene) los
+  recalcula el addon en cada reconstrucción: siguen a la pieza y a lo que se apoya en ellos.
 - **Panel de Ángulo de salida** estilo SW: ángulo, *Plano neutro* (casilla rosada que espera una
   cara plana o un plano) y *Caras de salida*, con vista previa.
 - **Términos de SW** en los diálogos que siguen siendo de FreeCAD: barrido (Perfil, Trayecto,

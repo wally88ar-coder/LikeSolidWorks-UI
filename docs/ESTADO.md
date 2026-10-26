@@ -88,8 +88,15 @@ Avance:
 - Plano de referencia SW (`swui/fork/ref_plane_panel.py`): probado en FreeCAD real: distancia 10
   sobre la cara (z=20) e Invertir (z=0), ángulo 30° por una arista de la cara, punto medio entre
   Planta y la cara (z=5), tres vértices, y editar vuelve a mostrar lo elegido (propiedad oculta
-  `SWUI_PlaneSpec`, nombre estable). Ángulo y punto medio se calculan al aceptar (no siguen si se
-  mueve la arista/el segundo plano dentro de la pieza). Sin "Número de planos" ni "Proyectar".
+  `SWUI_PlaneSpec`, nombre estable). Ángulo y punto medio: FreeCAD no tiene esos modos (ni hay
+  pedido abierto, buscado 2026-10-27); el addon los recalcula después de cada reconstrucción
+  (`resync`, observador de documento) y reconstruye una vez más si un plano se movió. Decidido con
+  el usuario. Probado: espesor de la placa 10 -> 20 -> 5 y deshacer; el plano en ángulo sigue a la
+  arista, el punto medio a la cara, y un croquis apoyado en el plano medio los sigue. Sin addon el
+  plano queda donde estaba la última vez. Si una versión futura trae modos nativos
+  (`NATIVE_MODES`, nombres supuestos), el panel los usa. "Número de planos" y "Proyectar": no
+  (el usuario no los ve críticos). Borrador de pedido para FreeCAD en
+  `docs/pedidos/freecad_planos_angulo_punto_medio.md` (sin publicar; publicar solo con OK).
 - Eje y punto SW (`swui/fork/ref_axis_point_panel.py`): probados: eje de cara cilíndrica (por su
   borde circular: el modo por inercia salía torcido con la cara cortada), dos planos, eje Y; punto
   en centro de arco y al 25 % de una arista.

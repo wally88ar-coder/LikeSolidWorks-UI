@@ -208,6 +208,147 @@ def _allowed(support):
         return []
 
 
+# --- Ubicar el plano (lo usan el panel y el recálculo al reconstruir) ---
+
+# Si una versión futura de FreeCAD trae estos modos, se usan los de FreeCAD (nombres probables:
+# no existen en 1.1.4 ni hay pedido abierto al 2026-10-27; revisar al actualizar).
+NATIVE_MODES = {"angle": ("AngleToFace", "PlaneAtAngle"), "mid": ("MidPlane", "Midplane", "MiddlePlane")}
+
+
+def _entry_ref(doc, entry):
+    ref = entry.get("ref")
+    if ref is None:
+        obj = doc.getObject(entry.get("obj", ""))
+        ref = (obj, entry.get("sub", "")) if obj is not None else None
+    return ref
+
+
+def _frame(obj):
+    """Marco de la adjunción sin el desfase (Placement = marco * desfase)."""
+    return obj.Placement.multiply(obj.AttachmentOffset.inverse())
+
+
+def moving_offset(obj, extra, entries, refs):
+    """Desfase de un plano En ángulo / Punto medio según la geometría de ahora (o un problema)."""
+    first = entries[0]
+    frame = _frame(obj)
+    if extra == "angle":
+        deg = 90.0 if first["rel"] == PERPENDICULAR else first["value"]
+        if first.get("flip"):
+            deg = -deg
+        p, d = _line_geo(*refs[1])
+        offset = angle_offset(frame, p, d, deg)
+        return offset if offset is not None else "La arista tiene que ser paralela al plano para el ángulo."
+    p2, _n2 = _plane_geo(*refs[1])
+    z = frame.inverse().multVec(p2).z / 2.0
+    return FreeCAD.Placement(FreeCAD.Vector(0, 0, z), FreeCAD.Rotation())
+
+
+def place(obj, entries):
+    """
+    Ubicar el plano según lo elegido. entries: [{ref|obj+sub, kind, rel, value, flip}].
+    Devuelve "" o el problema.
+    """
+    plan = resolve([(e["kind"], e["rel"]) for e in entries])
+    if plan is None:
+        return "Faltan referencias o relaciones para ubicar el plano."
+    mode, order, extra = plan
+    refs = [_entry_ref(obj.Document, entries[i]) for i in order]
+    if None in refs:
+        return "Una referencia ya no existe."
+    ordered = [entries[i] for i in order]
+    allowed_all = _allowed(refs)
+    native = next((m for m in NATIVE_MODES.get(extra, ()) if m in allowed_all), None)
+    if native:  # FreeCAD ya lo sabe hacer: usar lo suyo (sigue la pieza sin el addon)
+        obj.AttachmentSupport = refs
+        obj.MapMode = native
+        return ""
+    support = [refs[0]] if extra in ("angle", "mid") else refs
+    mode = pick_mode(mode, _allowed(support))
+    if mode is None:
+        return "FreeCAD no acepta esa combinación de referencias para un plano."
+    obj.AttachmentSupport = support
+    obj.MapMode = mode
+    offset = FreeCAD.Placement()
+    first = ordered[0]
+    if extra == "offset" and first["rel"] == DISTANCE:
+        z = first["value"] * (-1 if first.get("flip") else 1)
+        offset = FreeCAD.Placement(FreeCAD.Vector(0, 0, z), FreeCAD.Rotation())
+    elif extra in ("angle", "mid"):
+        obj.AttachmentOffset = FreeCAD.Placement()
+        obj.recompute()
+        offset = moving_offset(obj, extra, ordered, refs)
+        if isinstance(offset, str):
+            return offset
+    obj.AttachmentOffset = offset
+    return ""
+
+
+# --- Recalcular al reconstruir (En ángulo / Punto medio siguen a la pieza) ---
+
+TOL = 1e-7
+_resync = {"busy": False}
+
+
+def _same(a, b):
+    return (a.Base - b.Base).Length < TOL and a.Rotation.isSame(b.Rotation, TOL)
+
+
+def resync(doc):
+    """
+    Planos En ángulo / Punto medio hechos con el panel: si la arista o la segunda cara se
+    movieron, nuevo desfase. Devuelve los planos cambiados.
+    """
+    changed = []
+    for obj in doc.Objects:
+        if obj.TypeId != PLANE or SPEC_PROP not in obj.PropertiesList or obj.MapMode == "Deactivated":
+            continue
+        try:
+            entries = json.loads(getattr(obj, SPEC_PROP) or "[]")
+            plan = resolve([(e["kind"], e["rel"]) for e in entries])
+            if plan is None or plan[2] not in ("angle", "mid") or obj.MapMode in sum(NATIVE_MODES.values(), ()):
+                continue
+            mode, order, extra = plan
+            refs = [_entry_ref(doc, entries[i]) for i in order]
+            if None in refs:
+                continue
+            offset = moving_offset(obj, extra, [entries[i] for i in order], refs)
+            if isinstance(offset, str) or _same(offset, obj.AttachmentOffset):
+                continue
+            obj.AttachmentOffset = offset
+            changed.append(obj)
+        except Exception:
+            FreeCAD.Console.PrintWarning("[SWUI fork] Plano %s: no se pudo recalcular.\n" % obj.Label)
+    return changed
+
+
+def _after_recompute(doc_name):
+    if _resync["busy"] or dp._state.get("panel") is not None:
+        return
+    try:
+        doc = FreeCAD.getDocument(doc_name)
+    except Exception:
+        return
+    _resync["busy"] = True
+    try:
+        for _i in range(2):  # una pasada más para lo que cuelga del plano (y otra si encadena)
+            if not resync(doc):
+                break
+            doc.recompute()
+    finally:
+        _resync["busy"] = False
+
+
+class _RecomputeObserver:
+    def slotRecomputedDocument(self, doc):
+        if _resync["busy"]:
+            return
+        from swui.compat import QtCore
+
+        name = doc.Name
+        QtCore.QTimer.singleShot(0, lambda: _after_recompute(name))
+
+
 # --- Panel -------------------------------------------------------------
 
 
@@ -402,47 +543,15 @@ class PlanePanel(dp.SwPanel):
         return not any(g.ref for g in self.groups)
 
     def _apply(self):
-        used = [g for g in self.groups if g.ref]
-        plan = resolve(self._items())
-        if plan is None:
+        entries = [g.spec() for g in self.groups if g.ref]
+        if resolve([(e["kind"], e["rel"]) for e in entries]) is None:
             self._status(False)
-            return "" if not used else "Faltan referencias o relaciones para ubicar el plano."
-        mode, order, extra = plan
-        refs = [used[i].ref for i in order]
-        support = [refs[0]] if extra in ("angle", "mid") else refs
-        mode = pick_mode(mode, _allowed(support))
-        if mode is None:
-            self._status(False)
-            return "FreeCAD no acepta esa combinación de referencias para un plano."
-        obj = self.obj
-        obj.AttachmentSupport = support
-        obj.MapMode = mode
-        offset = FreeCAD.Placement()
-        first = used[order[0]]
-        if extra == "offset" and first.rel == DISTANCE:
-            z = first.value.value() * (-1 if first.flip.isChecked() else 1)
-            offset = FreeCAD.Placement(FreeCAD.Vector(0, 0, z), FreeCAD.Rotation())
-        elif extra in ("angle", "mid"):
-            obj.AttachmentOffset = FreeCAD.Placement()
-            obj.recompute()
-            frame = obj.Placement
-            if extra == "angle":
-                deg = 90.0 if first.rel == PERPENDICULAR else first.value.value()
-                if first.flip.isChecked():
-                    deg = -deg
-                p, d = _line_geo(*refs[1])
-                offset = angle_offset(frame, p, d, deg)
-                if offset is None:
-                    self._status(False)
-                    return "La arista tiene que ser paralela al plano para el ángulo."
-            else:
-                p2, _n2 = _plane_geo(*refs[1])
-                z = frame.inverse().multVec(p2).z / 2.0
-                offset = FreeCAD.Placement(FreeCAD.Vector(0, 0, z), FreeCAD.Rotation())
-        obj.AttachmentOffset = offset
-        self._save_spec()
-        self._status(True)
-        return ""
+            return "" if not entries else "Faltan referencias o relaciones para ubicar el plano."
+        problem = place(self.obj, entries)
+        self._status(not problem)
+        if not problem:
+            self._save_spec()
+        return problem
 
     def _save_spec(self):
         obj = self.obj
@@ -473,5 +582,12 @@ class PlanePanel(dp.SwPanel):
         return [dp._lines_node(shapes, dp.PICKED_COLOR, dp.LINE_WIDTH)] if shapes else []
 
 
+_observer = None
+
+
 def install():
+    global _observer
     dp.PANELS[PLANE] = PlanePanel
+    if _observer is None:
+        _observer = _RecomputeObserver()
+        FreeCAD.addDocumentObserver(_observer)
