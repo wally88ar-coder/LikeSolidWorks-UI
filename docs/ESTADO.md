@@ -145,6 +145,12 @@ Decisiones para revisar con el usuario (las tomó Claude trabajando solo; ver ta
     cilindro, esfera) hasta una cara plana, arista recta o vértice ("Distancia desde el centro");
     si el eje corta el plano o ninguno es circular, la mínima. Probado en FreeCAD real (agujero
     con redondeo y cara lateral: 45 mm).
+    Pedido del usuario (2026-10-26, captura de SW): dibujar las proyecciones como SW. Hecho:
+    línea de la distancia negra con recuadro "Dist." y escalera dX roja -> dY verde -> dZ azul
+    desde el primer punto, cada tramo con su recuadro (rótulo de color + valor); los recuadros
+    siguen a la cámara (como las cotas con doble clic), no tapan los clics y bajan un renglón si
+    se pisan. Casilla "Mostrar dX, dY, dZ en la vista" (prendida de fábrica, se recuerda).
+    Probado en FreeCAD real: isométrica y de frente.
 17. FreeCAD recuerda un material borrado hasta reiniciar: el addon lo oculta de la lista.
 
 Para que pruebe el usuario (fase 3): asignar un material de FreeCAD y uno propio nuevo (ver que

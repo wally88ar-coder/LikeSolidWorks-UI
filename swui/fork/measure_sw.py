@@ -11,7 +11,8 @@ la posición real (también en ensamblajes):
 - una cara: área y perímetro (cilindro: diámetro);  varias aristas/caras: totales;
 - dos elementos: distancia mínima con dX/dY/dZ (o centro a centro si son círculos o
   cilindros, como SW), distancia normal entre caras planas paralelas y ángulo entre
-  rectas/planos. La distancia se dibuja en la vista mientras la ventana está abierta.
+  rectas/planos. La distancia se dibuja en la vista mientras la ventana está abierta, con
+  la escalera de proyecciones dX (roja), dY (verde) y dZ (azul) y sus recuadros, como SW.
 - distancia máxima (tercera opción): entre bordes de agujeros como SW, y entre cualquier
   otra cosa la máxima real (max_distance.py: FreeCAD no la trae).
 Reemplaza al Medir de FreeCAD (Std_Measure, que en 1.1.4 sale en inglés) en la cinta
@@ -30,7 +31,11 @@ PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Measure"
 DEFAULT_DECIMALS = 2  # como SW
 CLEAR_MS = 60  # espera para saber si un "borrar selección" fue un clic en el vacío
 TOL = 1e-7
-LINE_COLOR = (0.85, 0.35, 0.0)  # naranja, como las cotas de medir de SW
+MAIN_COLOR = (0.05, 0.05, 0.05)  # línea de la distancia: negra, como SW
+AXIS_COLORS = {"x": (0.88, 0.1, 0.05), "y": (0.0, 0.55, 0.0), "z": (0.05, 0.25, 0.9)}  # dX rojo, dY verde, dZ azul
+TAG_COLORS = {"dist": "#000000", "x": "#e0261b", "y": "#108a10", "z": "#1f4fe0"}
+LABEL_QSS = "QLabel { background: #ffffff; border: 1px solid #808080; padding: 0px; font-size: 9pt; }"
+FOLLOW_MS = 40  # cada cuánto se reubican los recuadros si se movió la cámara
 
 _window = None
 
@@ -254,6 +259,22 @@ def measure(shapes, mode="center", decimals=DEFAULT_DECIMALS):
 # --- Selección que suma (como SW) -------------------------------------------
 
 
+def projections(p1, p2, tol=TOL):
+    """
+    Escalera de proyecciones como SW: desde p1, dX (paralela a X), después dY, después dZ hasta
+    p2. [(eje, desde, hasta)] sin los tramos nulos. p1, p2: (x, y, z).
+    """
+    a, out = tuple(p1), []
+    for k, axis in enumerate("xyz"):
+        b = list(a)
+        b[k] = p2[k]
+        b = tuple(b)
+        if abs(b[k] - a[k]) > tol:
+            out.append((axis, a, b))
+        a = b
+    return out
+
+
 def toggle_pick(picks, pick):
     """Clic: suma el elemento; si ya estaba, lo saca (como SW)."""
     if pick in picks:
@@ -290,6 +311,11 @@ class _MeasureWindow(QtWidgets.QDialog):
         self.busy = False
         self.pending_clear = False
         self.node = None
+        self.labels = []  # [(QLabel, punto 3D donde se ancla, tramo)]
+        self.camera = None
+        self.follow = QtCore.QTimer(self)
+        self.follow.setInterval(FOLLOW_MS)
+        self.follow.timeout.connect(self._follow)
         box = QtWidgets.QVBoxLayout(self)
         box.setContentsMargins(6, 6, 6, 6)
         bar = QtWidgets.QHBoxLayout()
@@ -306,6 +332,10 @@ class _MeasureWindow(QtWidgets.QDialog):
         bar.addWidget(QtWidgets.QLabel("Dec.:"))
         bar.addWidget(self.sp_dec)
         box.addLayout(bar)
+        self.cb_xyz = QtWidgets.QCheckBox("Mostrar dX, dY, dZ en la vista")
+        self.cb_xyz.setChecked(FreeCAD.ParamGet(PARAMS).GetBool("ShowXYZ", True))
+        self.cb_xyz.toggled.connect(self._xyz)
+        box.addWidget(self.cb_xyz)
         self.lb_sel = QtWidgets.QLabel()
         self.lb_sel.setWordWrap(True)
         box.addWidget(self.lb_sel)
@@ -324,7 +354,7 @@ class _MeasureWindow(QtWidgets.QDialog):
         row.addWidget(b_clear)
         row.addWidget(b_copy)
         box.addLayout(row)
-        for w in (self.cb_mode, self.sp_dec, self.table, b_clear, b_copy):
+        for w in (self.cb_mode, self.sp_dec, self.cb_xyz, self.table, b_clear, b_copy):
             w.setFocusPolicy(QtCore.Qt.FocusPolicy.NoFocus)
         self.resize(300, 260)
         self._place(mw)
@@ -450,7 +480,8 @@ class _MeasureWindow(QtWidgets.QDialog):
             self.table.setItem(i, 0, QtWidgets.QTableWidgetItem(label))
             self.table.setItem(i, 1, QtWidgets.QTableWidgetItem(value))
         self.table.resizeColumnToContents(0)
-        self._draw(line)
+        main = rows[0][1] if rows and line is not None else ""
+        self._draw(line, main, dict(rows))
 
     def _copy(self, *_a):
         lines = ["%s: %s" % (self.table.item(i, 0).text(), self.table.item(i, 1).text())
@@ -465,35 +496,114 @@ class _MeasureWindow(QtWidgets.QDialog):
         FreeCAD.ParamGet(PARAMS).SetInt("Decimals", int(value))
         self.update_result()
 
-    # --- línea en la vista
+    def _xyz(self, on):
+        FreeCAD.ParamGet(PARAMS).SetBool("ShowXYZ", bool(on))
+        self.update_result()
 
-    def _draw(self, line):
+    # --- línea en la vista (como SW: distancia negra y escalera dX roja, dY verde, dZ azul)
+
+    def _draw(self, line, main_text="", values=None):
         self._undraw()
         if line is None:
             return
+        values = values or {}
+        p1, p2 = (line[0].x, line[0].y, line[0].z), (line[1].x, line[1].y, line[1].z)
+        segments = [("dist", p1, p2)]
+        if self.cb_xyz.isChecked():
+            segments += projections(p1, p2)
         try:
             from pivy import coin
 
             view = FreeCADGui.ActiveDocument.ActiveView
             node = coin.SoAnnotation()
-            color = coin.SoBaseColor()
-            color.rgb = LINE_COLOR
-            style = coin.SoDrawStyle()
-            style.lineWidth = 2
-            coords = coin.SoCoordinate3()
-            p1, p2 = line
-            coords.point.setValues(0, 2, [(p1.x, p1.y, p1.z), (p2.x, p2.y, p2.z)])
-            lines = coin.SoLineSet()
-            marks = coin.SoMarkerSet()
-            marks.markerIndex = coin.SoMarkerSet.CIRCLE_FILLED_7_7
-            for child in (color, style, coords, lines, marks):
-                node.addChild(child)
+            for kind, a, b in segments:
+                part = coin.SoSeparator()
+                color = coin.SoBaseColor()
+                color.rgb = MAIN_COLOR if kind == "dist" else AXIS_COLORS[kind]
+                style = coin.SoDrawStyle()
+                style.lineWidth = 2
+                coords = coin.SoCoordinate3()
+                coords.point.setValues(0, 2, [a, b])
+                for child in (color, style, coords, coin.SoLineSet()):
+                    part.addChild(child)
+                if kind == "dist":
+                    marks = coin.SoMarkerSet()
+                    marks.markerIndex = coin.SoMarkerSet.CIRCLE_FILLED_7_7
+                    part.addChild(marks)
+                node.addChild(part)
             view.getSceneGraph().addChild(node)
             self.node = (view, node)
         except Exception:
             self.node = None
+            return
+        texts = {"dist": ("Dist.", main_text), "x": ("dX", values.get("dX", "")),
+                 "y": ("dY", values.get("dY", "")), "z": ("dZ", values.get("dZ", ""))}
+        self._make_labels([(kind, a, b) + texts[kind] for kind, a, b in segments])
+
+    def _make_labels(self, items):
+        """Recuadros como SW (rótulo de color + valor), encima de la vista, que no tapan los clics."""
+        from swui.fork import instant_dims
+
+        vp = instant_dims._viewport()
+        if vp is None:
+            return
+        for kind, a, b, tag, value in items:
+            if not value:
+                continue
+            label = QtWidgets.QLabel(vp)
+            label.setTextFormat(QtCore.Qt.TextFormat.RichText)
+            label.setText('<span style="background:%s; color:#ffffff;">&nbsp;%s&nbsp;</span>'
+                          '<span>&nbsp;%s&nbsp;</span>' % (TAG_COLORS[kind], tag, value))
+            label.setStyleSheet(LABEL_QSS)
+            label.setAttribute(QtCore.Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+            label.adjustSize()
+            label.show()
+            mid = tuple((a[k] + b[k]) / 2 for k in range(3))
+            self.labels.append((label, mid, kind))
+        self.camera = None
+        self._follow()
+        self.follow.start()
+
+    def _follow(self):
+        """Reubica los recuadros si se movió la cámara (giro, zoom, encuadre)."""
+        if not self.labels or self.node is None:
+            return
+        try:
+            from swui.fork import instant_dims, sketch_model_edges
+
+            view, vp = self.node[0], instant_dims._viewport()
+            key = (sketch_model_edges._camera_key(view), vp.size().width(), vp.size().height())
+            if key == self.camera:
+                return
+            self.camera = key
+            ratio = vp.devicePixelRatioF()
+            placed = []
+            for label, mid, kind in self.labels:
+                x, y = view.getPointOnViewport(FreeCAD.Vector(*mid))
+                if kind == "dist":  # arriba del medio de la línea
+                    dx, dy = -label.width() / 2, -label.height() - 6
+                else:  # al costado del tramo
+                    dx, dy = 8, 6
+                rect = QtCore.QRect(int(x / ratio + dx), int(vp.height() - y / ratio + dy),
+                                    label.width(), label.height())
+                for _try in range(len(placed)):  # si pisa a otro recuadro, un renglón más abajo
+                    if not any(rect.intersects(r) for r in placed):
+                        break
+                    rect.translate(0, label.height() + 2)
+                placed.append(rect)
+                label.move(rect.x(), rect.y())
+        except Exception:
+            pass
 
     def _undraw(self):
+        self.follow.stop()
+        for label, _mid, _kind in self.labels:
+            try:
+                label.hide()
+                label.deleteLater()
+            except Exception:
+                pass
+        self.labels = []
         if self.node is not None:
             view, node = self.node
             try:

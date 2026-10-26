@@ -217,6 +217,9 @@ Neueste Version oben. / Newest version first.
   entre cualquier otra geometría, con cálculo propio exacto (`swui/fork/max_distance.py`).
   *Centro a centro* también entre un agujero y una cara plana, arista recta o vértice (desde el
   eje del agujero, como SW).
+  En la vista, como SW: línea de la distancia con su recuadro y la escalera de proyecciones
+  dX (roja), dY (verde) y dZ (azul) con sus valores; siguen al girar el modelo (casilla para
+  apagarlas).
 - **Franja Ecuaciones / Sólidos(n) / Material** arriba del árbol, como las carpetas del
   FeatureManager (`swui/fork/tree_strip.py`).
 

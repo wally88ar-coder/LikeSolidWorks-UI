@@ -870,6 +870,10 @@ def _check_feature_tree(commands, mw, layout, hooked):
     groups_ = lay_.EVALUIEREN[1]
     flat_ = [e[0] for g in groups_ for e in g if isinstance(e, tuple)]
     if (ms.toggle_pick([1, 2], 2) != [1] or ms.toggle_pick([1], 2) != [1, 2] or "Std_Measure" in flat_
+            or ms.projections((0.0, 0.0, 0.0), (70.0, 30.0, 10.0))
+            != [("x", (0.0, 0.0, 0.0), (70.0, 0.0, 0.0)), ("y", (70.0, 0.0, 0.0), (70.0, 30.0, 0.0)),
+                ("z", (70.0, 30.0, 0.0), (70.0, 30.0, 10.0))]
+            or [k for k, _a, _b in ms.projections((0.0, 0.0, 0.0), (0.0, 5.0, 0.0))] != ["y"]
             or flat_[:4] != ["SWUI_Measure", "SWUI_MassProperties", "SWUI_Equations", "SWUI_Material"]
             or tsp.rows_for(None) != [] or ms.COMMAND != rk.MEASURE):
         print("  FEHLER: fork: medir / pestaña Evaluar / franja del árbol", flat_)
