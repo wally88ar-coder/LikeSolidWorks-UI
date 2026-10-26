@@ -6,8 +6,10 @@
 **Fase 0 — Puesta en marcha: terminada y probada por el usuario** ("ahora sí se parece más a SW").
 Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
 **Fase 1 (chapa) cajoneada por un tiempo** a pedido del usuario. Próximo trabajo: lo que él pida.
-Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25),
-probadas en FreeCAD real con la plantilla; falta que las pruebe el usuario**. Etapa C sin empezar.
+Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25)**.
+El usuario probó la barra de retroceso arrastrable con gris debajo ("quedó muy bien", capturas
+del 2026-10-25); el resto de A y B, probado con la plantilla, sin confirmación suya todavía.
+Etapa C sin empezar.
 
 ## Entorno del usuario
 - FreeCAD 1.1.4 en `D:\Freecad` (Python: `D:\Freecad\bin\python.exe`). Hay además un FreeCAD
