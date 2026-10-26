@@ -96,7 +96,8 @@ Avance:
   plano queda donde estaba la última vez. Si una versión futura trae modos nativos
   (`NATIVE_MODES`, nombres supuestos), el panel los usa. "Número de planos" y "Proyectar": no
   (el usuario no los ve críticos). Borrador de pedido para FreeCAD en
-  `docs/pedidos/freecad_planos_angulo_punto_medio.md` (sin publicar; publicar solo con OK).
+  `docs/pedidos/freecad_planos_angulo_punto_medio.md`: guía de puntos para que lo escriba el
+  usuario (FreeCAD no acepta pedidos escritos por IA, AI_POLICY.md; Claude no lo publica).
 - Eje y punto SW (`swui/fork/ref_axis_point_panel.py`): probados: eje de cara cilíndrica (por su
   borde circular: el modo por inercia salía torcido con la cara cortada), dos planos, eje Y; punto
   en centro de arco y al 25 % de una arista.
