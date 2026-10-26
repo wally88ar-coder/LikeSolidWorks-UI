@@ -109,11 +109,13 @@ Neueste Version oben. / Newest version first.
   al guardar deja al lado un `.step` con el mismo nombre, como resguardo sin historial.
   Código en `swui/fork/tree_overlay.py` y `step_copy.py`.
 - **Aristas y vértices del modelo dentro del croquis, como en SW**: con una herramienta
-  activa (cota inteligente, relaciones, línea, círculo…) un clic sobre una arista o vértice
-  de la pieza la trae sola como referencia (lo mismo que *Convertir entidades*) y el clic
-  sigue: la cota o la línea quedan enganchadas a ella. Antes había que traerla a mano; FreeCAD
-  1.1.4 no deja tocar el modelo desde el croquis. No trae aristas de operaciones posteriores
-  al croquis. Desde FreeCAD 26.3, que ya lo hace, queda lo nativo
+  activa (cota inteligente, relaciones, línea, círculo…), al pasar el mouse a menos de 10 px
+  de una arista o vértice de la pieza se **resalta en naranja** (primero vértices); al hacer
+  clic se trae sola como referencia (lo mismo que *Convertir entidades*) y el clic cae justo
+  sobre ella: la cota o la línea quedan enganchadas aunque no se apunte exacto. También una
+  arista que coincide con un eje del croquis (gana la arista, como en SW). Antes había que
+  traerla a mano; FreeCAD 1.1.4 no deja tocar el modelo desde el croquis. No trae aristas de
+  operaciones posteriores al croquis. Desde FreeCAD 26.3, que ya lo hace, queda lo nativo
   (`swui/fork/sketch_model_edges.py`).
 - Árbol: un croquis suelto debajo de la última operación ya no aparece en gris (solo lo que
   queda debajo de la barra).

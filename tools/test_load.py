@@ -710,14 +710,21 @@ def _check_feature_tree(commands, mw, layout, hooked):
         return False
     # Aristas del modelo en el croquis (se traen solas al tocarlas con una herramienta)
     me = sys.modules["swui.fork.sketch_model_edges"]
-    hits = [{"Object": "Pad", "Component": "Face6"}, {"Object": "Sk2", "Component": "Edge1"},
-            {"Object": "Pad", "Component": "Edge10"}, {"Object": "Pad", "Component": "Vertex3"}]
-
     class _Sk:
         ExternalGeometry = [(pad, ("Edge10",))]
 
-    if (me.pick(hits, "Sk2") != ("Pad", "Vertex3") or me.pick(hits[:3], "Sk2") != ("Pad", "Edge10")
-            or me.pick(hits[:2], "Sk2") is not None or me.pick([{"Object": "Sk2", "Component": "Edge1"}], "Sk2")
+    verts = [(("Pad", "Vertex1"), (100, 100), 0.0)]
+    # dos aristas superpuestas en pantalla: gana la que está sobre el plano del croquis (lejanía 0)
+    edges_s = [(("Pad", "Edge3"), [(0, 50), (200, 50)], 10.0), (("Pad", "Edge4"), [(0, 50), (200, 50)], 0.0),
+               (("Pad", "Edge5"), [(0, 80), (200, 80)], 0.0)]
+    if (me.choose((105, 96), verts, edges_s) != (("Pad", "Vertex1"), (100, 100))
+            or me.choose((60, 57), verts, edges_s) != (("Pad", "Edge4"), (60.0, 50.0))
+            or me.choose((60, 65), verts, edges_s) is not None
+            or me.choose((60, 75), verts, edges_s) != (("Pad", "Edge5"), (60.0, 80.0))
+            or me.closest_on_segment((5, 5), (0, 0), (0, 0))[0] != math.hypot(5, 5)
+            or me.qt_point(500, 352, 491) != (500.0, 139.0)
+            or not me.sketch_owns("Sk2", ["Edge1"], "Sk2") or me.sketch_owns("Sk2", ["V_Axis"], "Sk2")
+            or me.sketch_owns("Pad", ["Edge1"], "Sk2") or not me.sketch_owns("Sk2", ["ExternalEdge1"], "Sk2")
             or me.coin_point(500, 139, 491) != (500, 352) or me.coin_point(10, 0, 100, 1.5) != (15, 150)
             or not me.already(_Sk(), "Extruir1", "Edge10") or me.already(_Sk(), "Extruir1", "Edge2")
             or me._filter is None):
