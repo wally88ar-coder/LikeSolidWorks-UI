@@ -1,6 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-26 (cuarta sesión: fase 3 hecha, trabajando solo). Commits locales sin subir a `origin`.
+Última actualización: 2026-10-26 (cuarta sesión: fase 3 hecha, trabajando solo). Todo subido a `origin`.
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
