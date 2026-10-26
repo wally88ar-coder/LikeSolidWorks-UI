@@ -94,6 +94,11 @@
   sintético en el mismo punto: el croquis la preselecciona y el clic la toma. No usar
   `view.getCursorPos()` (es el cursor real, no el del evento). Dos Esc seguidos cierran el croquis.
   `view.getPointOnViewport` da puntos fuera de la ventana si la cámara no los muestra (ajustar antes).
+  Es rápido (~0,05 ms por punto): proyectar aristas discretizadas una vez por posición de cámara.
+  Resaltar en la vista: pivy `SoAnnotation` (encima de todo) con SoLineSet/SoMarkerSet agregado a
+  `view.getSceneGraph()`. Forma global con los mismos índices: `Part.getShape(raíz, "Pad.")` usando
+  `obj.getParents()`. Una referencia externa encima de un eje del croquis le gana al eje en la
+  preselección.
 - `PySide.QtTest` no existe en el envoltorio de FreeCAD: `from PySide6.QtTest import QTest`.
   Los íconos del árbol y la vista 3D se refrescan después: capturar ~1 s más tarde.
 - Videos: medir cuadro a cuadro con ffmpeg a 30 fps en gris crudo + numpy (caja de píxeles
