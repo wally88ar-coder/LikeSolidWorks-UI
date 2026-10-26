@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Propiedades físicas</title>
+  <circle cx="32" cy="15" r="8" fill="none" stroke="#1b1b1b" stroke-width="7"/>
+  <circle cx="32" cy="15" r="8" fill="none" stroke="#f4f4f4" stroke-width="3.6"/>
+  <path d="M14 26 H50 L58 58 H6 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <text x="32.0" y="51.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="bold" text-anchor="middle" fill="#3d8bff" stroke="#1b1b1b" stroke-width="0.6" paint-order="stroke">kg</text>
+</svg>

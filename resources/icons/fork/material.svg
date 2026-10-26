@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Material</title>
+  <path d="M8 20 L32 32 V58 L8 46 Z" fill="#8b9099" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M56 20 L32 32 V58 L56 46 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M32 8 L56 20 L32 32 L8 20 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M20 16 L38 25" stroke="#3d8bff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M22 20 L40 29" stroke="#3d8bff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <path d="M24 24 L42 33" stroke="#3d8bff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+</svg>

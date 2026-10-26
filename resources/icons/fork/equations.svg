@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Ecuaciones</title>
+  <path d="M38 10 H8 L24 32 L8 54 H38" stroke="#1b1b1b" stroke-width="7.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/><path d="M38 10 H8 L24 32 L8 54 H38" stroke="#f4f4f4" stroke-width="4.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+  <text x="51.0" y="32.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="bold" text-anchor="middle" fill="#3d8bff" stroke="#1b1b1b" stroke-width="0.6" paint-order="stroke">=</text>
+  <text x="51.0" y="54.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="bold" text-anchor="middle" fill="#3d8bff" stroke="#1b1b1b" stroke-width="0.6" paint-order="stroke">x</text>
+</svg>
