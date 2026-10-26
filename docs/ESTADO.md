@@ -140,7 +140,11 @@ Etapas:
     Probado en FreeCAD real (3 de 3 corridas; en una corrida anterior el clic no las mostró, sin
     causa clara).
   - Reparar referencias: **hecho** (`swui/fork/repair_refs.py`), probado en FreeCAD real (apoyo
-    perdido reparado solo; redondeo con arista perdida abre su diálogo). Falta que lo pruebe él.
+    perdido reparado solo; redondeo con arista perdida abre su diálogo). Probado por el usuario
+    (2026-10-26): el croquis se reapoya solo, OK. El caso del redondeo no lo pudo terminar: no
+    entendió cómo elegir la arista nueva en el diálogo nativo de FreeCAD (botón "Seleccionar"
+    que hay que prender). Argumento para adaptar el diálogo de redondeo en la fase 2.
+    El usuario dio por cerrada la etapa C así (Chequear carpeta sin probar por él).
     No reconstruye solo las aristas de un redondeo (no se sabe cuáles eran una vez perdidas).
   - Chequear carpeta: **hecho** (`swui/fork/folder_check.py`), probado en FreeCAD real con una
     carpeta de prueba (pieza buena, una con apoyo roto y una abierta; el archivo roto no se
