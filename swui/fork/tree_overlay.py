@@ -159,17 +159,15 @@ def _gaps_of(rows):
 
 
 def _greyed(body, rows):
-    """Renglones a atenuar: debajo de la barra, o suprimidos."""
+    """Renglones a atenuar: los que quedan debajo de la barra, o suprimidos."""
     from swui.fork import feature_tree as ft
 
-    group = list(body.Group)
-    tip = body.Tip
-    cut = group.index(tip) if tip in group else -1
+    y = bar_y(_gaps_of(rows), body.Tip)
     native = _native_suppressed()
     out = []
-    for obj, item, top, bottom, feat in rows:
-        after = obj in group and group.index(obj) > cut
-        if after or (feat and not native and ft._suppressed(obj)):
+    for obj, _box, top, bottom, feat in rows:
+        below = y is not None and top >= y
+        if below or (feat and not native and ft._suppressed(obj)):
             out.append((top, bottom))
     return out
 

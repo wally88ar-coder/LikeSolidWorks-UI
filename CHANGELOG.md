@@ -108,6 +108,15 @@ Neueste Version oben. / Newest version first.
   azul la última). Menú *LikeSolidWorks UI → Guardar también STEP* (apagado de fábrica):
   al guardar deja al lado un `.step` con el mismo nombre, como resguardo sin historial.
   Código en `swui/fork/tree_overlay.py` y `step_copy.py`.
+- **Aristas y vértices del modelo dentro del croquis, como en SW**: con una herramienta
+  activa (cota inteligente, relaciones, línea, círculo…) un clic sobre una arista o vértice
+  de la pieza la trae sola como referencia (lo mismo que *Convertir entidades*) y el clic
+  sigue: la cota o la línea quedan enganchadas a ella. Antes había que traerla a mano; FreeCAD
+  1.1.4 no deja tocar el modelo desde el croquis. No trae aristas de operaciones posteriores
+  al croquis. Desde FreeCAD 26.3, que ya lo hace, queda lo nativo
+  (`swui/fork/sketch_model_edges.py`).
+- Árbol: un croquis suelto debajo de la última operación ya no aparece en gris (solo lo que
+  queda debajo de la barra).
 
 ## 0.10.0 — 2026-10-18
 

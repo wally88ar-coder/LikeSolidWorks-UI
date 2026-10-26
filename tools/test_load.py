@@ -708,8 +708,24 @@ def _check_feature_tree(commands, mw, layout, hooked):
             != ["PartDesign::Body", "Part::Feature", "App::Part"] or sc.enabled() or sc.COMMAND not in commands):
         print("  FEHLER: fork: guardar también STEP (nombre, qué se exporta, apagado de fábrica)")
         return False
+    # Aristas del modelo en el croquis (se traen solas al tocarlas con una herramienta)
+    me = sys.modules["swui.fork.sketch_model_edges"]
+    hits = [{"Object": "Pad", "Component": "Face6"}, {"Object": "Sk2", "Component": "Edge1"},
+            {"Object": "Pad", "Component": "Edge10"}, {"Object": "Pad", "Component": "Vertex3"}]
+
+    class _Sk:
+        ExternalGeometry = [(pad, ("Edge10",))]
+
+    if (me.pick(hits, "Sk2") != ("Pad", "Vertex3") or me.pick(hits[:3], "Sk2") != ("Pad", "Edge10")
+            or me.pick(hits[:2], "Sk2") is not None or me.pick([{"Object": "Sk2", "Component": "Edge1"}], "Sk2")
+            or me.coin_point(500, 139, 491) != (500, 352) or me.coin_point(10, 0, 100, 1.5) != (15, 150)
+            or not me.already(_Sk(), "Extruir1", "Edge10") or me.already(_Sk(), "Extruir1", "Edge2")
+            or me._filter is None):
+        print("  FEHLER: fork: aristas del modelo en el croquis (qué se toma bajo el mouse)")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
+    print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
     return True
 
 
