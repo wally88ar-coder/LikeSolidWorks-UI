@@ -161,6 +161,12 @@ Neueste Version oben. / Newest version first.
   (`swui/fork/dress_up_panel.py`).
 - **Panel de Chaflán** igual al de redondeo, con los tipos de SW: *Ángulo-distancia* o
   *Distancia-distancia* (con *Distancia igual*) e *Invertir dirección*.
+- **Paneles de Matriz lineal, Matriz circular y Simetría** estilo SW: casillas de selección
+  (la activa en rosado; arista, eje o cara plana; en la circular también una cara cilíndrica
+  como eje), *Dirección 2*, *Espaciado* e *Instancias*, *Separación igual*, *Operaciones y caras*
+  (clic en una cara suma la operación que la creó), *Sólidos* (toda la pieza) y vista previa con
+  las copias en amarillo. Se apaga la vista previa magenta de FreeCAD mientras el panel está
+  abierto (`swui/fork/pattern_panel.py`).
 
 ## 0.10.0 — 2026-10-18
 

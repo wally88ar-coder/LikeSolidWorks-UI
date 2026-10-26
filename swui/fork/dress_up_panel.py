@@ -456,6 +456,7 @@ class SwPanel:
         except Exception:
             pass
         self._undraw()
+        _restore_native_preview(getattr(self, "old_preview", None))
         _state["panel"] = None
 
     def _nothing(self):
@@ -745,14 +746,47 @@ def _take_over(doc_name, obj_name):
         vp = FreeCADGui.getDocument(doc_name).getInEdit()
         if obj is None or vp is None or vp.Object != obj or _state["panel"] is not None:
             return
+        old_preview = _hide_native_preview()
         FreeCADGui.Control.closeDialog()
         panel = PANELS[obj.TypeId](obj)
+        panel.old_preview = old_preview
         _state["panel"] = panel
         FreeCADGui.Control.showDialog(panel)
     except Exception:
         _state["panel"] = None
         FreeCAD.Console.PrintError("[SWUI fork] Panel de operación:\n%s\n" % traceback.format_exc())
         _native(doc_name, obj_name)
+
+
+PREVIEW_PARAM = "User parameter:BaseApp/Preferences/Mod/PartDesign/Preview"
+
+
+def _hide_native_preview():
+    """
+    Apagar la "vista previa superpuesta" de FreeCAD (herramientas en magenta
+    transparente; con un corte Por todo, columnas que tapan la pieza): se apaga
+    con la casilla de su diálogo, todavía abierto. Devuelve la preferencia vieja
+    para devolverla al cerrar (_restore_native_preview).
+    """
+    try:
+        old = FreeCAD.ParamGet(PREVIEW_PARAM).GetBool("ShowTransparentPreview", True)
+    except Exception:
+        return None
+    try:
+        for box in FreeCADGui.getMainWindow().findChildren(QtWidgets.QCheckBox, "showTransparentPreviewCheckBox"):
+            if box.isChecked():
+                box.setChecked(False)
+    except Exception:
+        pass
+    return old
+
+
+def _restore_native_preview(old):
+    if old is not None:
+        try:
+            FreeCAD.ParamGet(PREVIEW_PARAM).SetBool("ShowTransparentPreview", old)
+        except Exception:
+            pass
 
 
 def _native(doc_name, obj_name):

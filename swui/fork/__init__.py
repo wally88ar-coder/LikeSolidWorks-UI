@@ -73,11 +73,12 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Cotas con doble clic:\n%s\n" % traceback.format_exc())
     try:
-        from swui.fork import dress_up_panel
+        from swui.fork import dress_up_panel, pattern_panel
 
         dress_up_panel.install()
+        pattern_panel.install()
     except Exception:
-        FreeCAD.Console.PrintError("[SWUI fork] Panel de redondeo:\n%s\n" % traceback.format_exc())
+        FreeCAD.Console.PrintError("[SWUI fork] Paneles de operación SW:\n%s\n" % traceback.format_exc())
     try:
         from swui.fork import sketch_model_edges
 

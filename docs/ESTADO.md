@@ -14,7 +14,14 @@
   chaflán y el resto, decidiendo con criterio y anotando dudas en "Preguntas para el usuario".
 
 ## Preguntas para el usuario (decisiones tomadas por Claude mientras no estaba)
-- (vacío por ahora)
+- Matriz/Simetría sin nada elegido: FreeCAD arranca copiando **toda la pieza** ("Sólidos"
+  tildado); en SW la lista arranca vacía. Dejé lo de FreeCAD (se ve algo enseguida); al tocar una
+  operación pasa solo a "Operaciones". ¿Lo prefiere vacío como SW?
+- Matriz lineal vieja guardada con "Longitud total" (modo Extent de FreeCAD): al editarla pasa a
+  "Espaciado" con el mismo resultado (salvo que la longitud tenga ecuación). ¿OK?
+- Mientras un panel está abierto, el árbol queda en la pestaña Modelo (escondido): las
+  operaciones se eligen tocando sus caras. SW muestra un árbol flotante sobre la vista; no lo hice.
+  ¿Lo necesita?
 - Pieza de prueba armada por Claude (pedida por el usuario), útil para probar el árbol:
   `C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd` (base 100x60x10,
   tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
@@ -58,6 +65,13 @@ Avance:
   segunda arista, distancia 4, Ángulo-distancia 30°, Distancia-distancia 4/2, OK, editar y
   Cancelar, y el redondeo sigue abriendo su panel. FreeCAD muestra flechas rojas de dirección
   (sirven como la flecha de SW). Falta que lo pruebe el usuario.
+- Matriz lineal, circular y Simetría: **hechas** (`swui/fork/pattern_panel.py`, base común
+  `SwPanel` en `dress_up_panel.py`). Probadas en FreeCAD real: lineal con arista X, 25 x 3,
+  dirección 2 (arista Y, 30 x 2), sumar el corte tocando su cara, OK; circular con la cara del
+  agujero como eje (se usa su borde circular: FreeCAD pide arista), 4 iguales en 360°, Cancelar;
+  simetría con una cara lateral como plano, OK. La "vista previa superpuesta" magenta de FreeCAD
+  (con un corte Por todo tapaba la pieza) se apaga mientras el panel está abierto y se devuelve
+  la preferencia al cerrar. Falta que lo pruebe el usuario.
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

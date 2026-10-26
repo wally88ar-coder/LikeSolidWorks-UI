@@ -762,10 +762,18 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or dup.chamfer_type(False, False) != "Two distances"):
         print("  FEHLER: fork: panel de redondeo/chaflán (nombres, selección, enganche, tipos)")
         return False
+    # Paneles de matriz y simetría (pattern_panel): espaciado SW desde la longitud total, nombres
+    pp = sys.modules["swui.fork.pattern_panel"]
+    if (pp.spacing_from_extent(100.0, 5) != 25.0 or pp.spacing_from_extent(30.0, 1) != 30.0
+            or pp.sub_name("Edge4") != "Arista" or pp.sub_name("H_Axis") != "eje H"
+            or "PartDesign::LinearPattern" not in dup.PANELS or "PartDesign::Mirrored" not in dup.PANELS):
+        print("  FEHLER: fork: paneles de matriz y simetría")
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
     print("  Redondeo : fork: paneles SW de redondeo y chaflán (Arista<1>, clic agrega/saca, tipos de chaflán)")
+    print("  Matrices : fork: paneles SW de matriz lineal/circular y simetría (espaciado, sólidos)")
     return True
 
 
