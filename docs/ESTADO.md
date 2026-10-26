@@ -9,7 +9,7 @@
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
 - **Fase 1 (chapa) sigue cajoneada.**
-- **Fase 2 — Flujos de pieza: hecha por Claude (2026-10-26/27), falta que la pruebe el usuario**
+- **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
   salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
   barrido, hélice y referencia. Detalle en "Plan: fase 2" > Avance. El usuario se fue a dormir y
@@ -22,10 +22,9 @@ como SW: **hecho**; 2) matriz vieja en Longitud total -> Espaciado: OK; 3) ver e
 abierto: **hecho** (árbol flotante sobre la vista); 4) taladro Posiciones antes de Tipo: OK;
 6) plano de referencia con panel como SW: **hecho** (y también eje y punto, por coherencia).
 Pendiente:
-- 5) Rosca en planos: el usuario preguntó si hablaba de la hélice o de la representación
-  simplificada de dibujo. Se le respondió: la representación simplificada (círculo de 3/4 fino,
-  líneas de rosca en lateral/corte), que FreeCAD 1.1.4 tiene en TechDraw solo a mano agujero por
-  agujero; se ofreció que salga sola para los agujeros roscados. Esperando respuesta.
+- 5) Rosca en planos: **sí, la quiere** (representación simplificada: círculo de 3/4 fino de
+  frente, líneas finas en lateral/corte). Decidido: va con el trabajo de planos (ver Falta).
+- Pedido a FreeCAD (planos en ángulo / punto medio): el usuario lo dejó por ahora.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
 Idea: paneles propios estilo PropertyManager de SW, con la lista de aristas/caras/operaciones
@@ -261,6 +260,11 @@ Etapas:
   Opción hablada: separarlo y dejarlo oculto como la Vista de informe.
 - Ejes rojo/verde del croquis (SW no los muestra): sin ajuste simple en FreeCAD.
 - Plantillas de rótulo en español; decimales con coma en "Formato de línea".
+- **Trabajo de planos (TechDraw)**, cuando se encare: rosca simplificada automática para los
+  agujeros roscados del asistente para taladro (FreeCAD 1.1.4 trae a mano
+  `TechDraw_ExtensionThreadHoleBottom/HoleSide/BoltBottom/BoltSide`, que hacen líneas cosméticas
+  que NO siguen a la pieza): el addon las pone solo al crear/actualizar vistas, con el Ø nominal,
+  y las rehace si cambia el modelo; además esos 4 botones en la pestaña Dibujo.
 - Color de las piezas (gris de SW): no se tocó; pedir captura si el usuario lo quiere.
 
 ## Problemas reportados por el usuario (todos resueltos)
