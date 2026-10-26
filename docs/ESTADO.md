@@ -48,8 +48,12 @@ Avance:
   Reparar referencias con arista perdida (en rojo, Supr, arista nueva, OK, sin problemas).
   "Propagación tangente" marcada y fija (OpenCASCADE siempre la hace). Sin "Radio variable" ni
   "Retroceso" (FreeCAD no los tiene). El radio con ecuación se muestra bloqueado.
-  Falta que lo pruebe el usuario. FreeCAD además dibuja en magenta el borde de las caras
+  Probado por el usuario: OK. FreeCAD además dibuja en magenta el borde de las caras
   redondeadas mientras el panel está abierto (es suyo, del modo edición).
+- Chaflán: **hecho** (mismo módulo, `ChamferPanel`). Probado en FreeCAD real: arista preelegida,
+  segunda arista, distancia 4, Ángulo-distancia 30°, Distancia-distancia 4/2, OK, editar y
+  Cancelar, y el redondeo sigue abriendo su panel. FreeCAD muestra flechas rojas de dirección
+  (sirven como la flecha de SW). Falta que lo pruebe el usuario.
 
 ## Pruebas del usuario (árbol y croquis)
 Probado por él, OK: barra de retroceso arrastrable con gris, mover arriba/abajo, marca de la

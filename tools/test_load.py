@@ -757,13 +757,15 @@ def _check_feature_tree(commands, mw, layout, hooked):
     gui_ = sys.modules["FreeCADGui"]
     if (dup.sw_names(["Edge3", "Face1", "Edge7"]) != ["Arista<1>", "Cara<1>", "Arista<2>"]
             or dup.toggle(["Edge1"], "Edge2") != ["Edge1", "Edge2"] or dup.toggle(["Edge1", "Edge2"], "Edge1") != ["Edge2"]
-            or not any(isinstance(o, dup._EditObserver) for o in gui_._doc_observers)):
-        print("  FEHLER: fork: panel de redondeo (nombres, selección, enganche)")
+            or not any(isinstance(o, dup._EditObserver) for o in gui_._doc_observers)
+            or dup.chamfer_type(True, True) != "Distance and Angle" or dup.chamfer_type(False, True) != "Equal distance"
+            or dup.chamfer_type(False, False) != "Two distances"):
+        print("  FEHLER: fork: panel de redondeo/chaflán (nombres, selección, enganche, tipos)")
         return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
-    print("  Redondeo : fork: panel SW (Arista<1>, clic agrega/saca, reemplaza al diálogo de FreeCAD)")
+    print("  Redondeo : fork: paneles SW de redondeo y chaflán (Arista<1>, clic agrega/saca, tipos de chaflán)")
     return True
 
 

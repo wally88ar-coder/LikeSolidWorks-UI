@@ -159,6 +159,8 @@ Neueste Version oben. / Newest version first.
   de FreeCAD desde la cinta, el menú, *Editar operación* y *Reparar referencias* (las
   referencias perdidas salen en rojo). Por debajo sigue siendo el redondeo de FreeCAD
   (`swui/fork/dress_up_panel.py`).
+- **Panel de Chaflán** igual al de redondeo, con los tipos de SW: *Ángulo-distancia* o
+  *Distancia-distancia* (con *Distancia igual*) e *Invertir dirección*.
 
 ## 0.10.0 — 2026-10-18
 

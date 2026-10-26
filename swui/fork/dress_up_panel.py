@@ -2,7 +2,11 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # SPDX-FileCopyrightText: 2026 wally88ar-coder
 """
-Panel de Redondeo como el PropertyManager de SOLIDWORKS 2018.
+Paneles de Redondeo y Chaflán como el PropertyManager de SOLIDWORKS 2018.
+
+Chaflán: "Ángulo-distancia" o "Distancia-distancia" (con "Distancia igual"),
+"Invertir dirección"; por debajo el ChamferType de FreeCAD. Lo que sigue vale
+para los dos (el texto habla del redondeo).
 
 El diálogo de FreeCAD pide prender un botón "Seleccionar" antes de tocar las
 aristas (el usuario no lo encontró al reparar un redondeo). Acá, como en SW:
@@ -35,6 +39,7 @@ QAction = getattr(QtGui, "QAction", None) or QtWidgets.QAction  # Qt6 / Qt5
 
 WB_NAME = "LikeSolidWorksUIWorkbench"
 FILLET = "PartDesign::Fillet"
+CHAMFER = "PartDesign::Chamfer"
 PREVIEW_COLOR = (1.0, 0.86, 0.0)  # amarillo de la vista previa de SW
 PICKED_COLOR = (0.26, 0.53, 0.71)  # celeste SW (#4288B5, igual que look_sw)
 CURRENT_COLOR = (1.0, 0.55, 0.0)  # naranja: renglón elegido en la lista
@@ -207,7 +212,24 @@ class _ListKeys(QtCore.QObject):
         return False
 
 
-class FilletPanel:
+def _spin(value, suffix, low, high, decimals=2):
+    box = QtWidgets.QDoubleSpinBox()
+    box.setDecimals(decimals)
+    box.setRange(low, high)
+    box.setSuffix(suffix)
+    box.setValue(value)
+    box.setKeyboardTracking(False)
+    return box
+
+
+class DressUpPanel:
+    """Lo común de Redondeo y Chaflán; cada uno agrega sus valores (_build_values / _apply_values)."""
+
+    TITLE = ""
+    TRANSACTION = ""
+    FAIL = ""
+    WHAT = ""  # "redondeo", "chaflán" (mensajes)
+
     def __init__(self, obj):
         self.obj = obj
         self.doc = obj.Document
@@ -220,7 +242,7 @@ class FilletPanel:
         self.visible = self._remember_visibility()
         self._build()
         if not self.doc.HasPendingTransaction:
-            self.doc.openTransaction("Editar redondeo")
+            self.doc.openTransaction(self.TRANSACTION)
         self.timer = QtCore.QTimer()
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.preview)
@@ -282,23 +304,11 @@ class FilletPanel:
 
     def _build(self):
         box = QtWidgets.QWidget()
-        box.setWindowTitle("Elementos a redondear")
+        box.setWindowTitle(self.TITLE)
         lay = QtWidgets.QVBoxLayout(box)
-
-        row = QtWidgets.QHBoxLayout()
-        row.addWidget(QtWidgets.QLabel("Radio:"))
-        self.radius = QtWidgets.QDoubleSpinBox()
-        self.radius.setDecimals(2)
-        self.radius.setRange(0.01, 100000.0)
-        self.radius.setSuffix(" mm")
-        self.radius.setValue(self.obj.Radius.Value)
-        self.radius.setKeyboardTracking(False)
-        if self._has_expression("Radius"):
-            self.radius.setEnabled(False)
-            self.radius.setToolTip("El radio está controlado por una ecuación")
-        self.radius.valueChanged.connect(lambda *_a: self.timer.start(PREVIEW_DELAY_MS))
-        row.addWidget(self.radius, 1)
-        lay.addLayout(row)
+        self.values = QtWidgets.QFormLayout()
+        self._build_values(self.values)
+        lay.addLayout(self.values)
 
         lay.addWidget(QtWidgets.QLabel("Aristas y caras (clic en la pieza):"))
         self.list = QtWidgets.QListWidget()
@@ -329,11 +339,33 @@ class FilletPanel:
         self.form = box
         self._fill_list()
 
+    def _build_values(self, form):
+        pass
+
+    def _apply_values(self):
+        pass
+
     def _has_expression(self, prop):
         try:
             return any(path == prop for path, _e in self.obj.ExpressionEngine)
         except Exception:
             return False
+
+    def _value_box(self, prop, suffix, low, high, kind="length"):
+        """Casilla para una propiedad del objeto; bloqueada si la controla una ecuación."""
+        box = _spin(getattr(self.obj, prop).Value, suffix, low, high)
+        if self._has_expression(prop):
+            box.setEnabled(False)
+            box.setToolTip("Controlado por una ecuación")
+        box.valueChanged.connect(self._changed)
+        return box
+
+    def _set(self, prop, value):
+        if not self._has_expression(prop) and abs(getattr(self.obj, prop).Value - value) > 1e-9:
+            setattr(self.obj, prop, value)
+
+    def _changed(self, *_a):
+        self.timer.start(PREVIEW_DELAY_MS)
 
     def _fill_list(self):
         row = self.list.currentRow()
@@ -417,17 +449,16 @@ class FilletPanel:
         try:
             if self.base is not None:
                 obj.Base = (self.base, self.subs)
-            if not self._has_expression("Radius"):
-                obj.Radius = self.radius.value()
+            self._apply_values()
             if any(self._missing(s) for s in self.subs):
                 problem = "Hay referencias que ya no existen (en rojo): borralas y elegí las nuevas."
             elif self.subs:
                 obj.recompute()
                 self.valid = obj.isValid() and not obj.Shape.isNull()
                 if not self.valid:
-                    problem = "FreeCAD no puede hacer el redondeo con este radio en estas aristas."
+                    problem = self.FAIL
         except Exception:
-            FreeCAD.Console.PrintError("[SWUI fork] Redondeo:\n%s\n" % traceback.format_exc())
+            FreeCAD.Console.PrintError("[SWUI fork] %s:\n%s\n" % (self.TRANSACTION, traceback.format_exc()))
             problem = "No se pudo calcular la vista previa."
         if self.valid:
             try:
@@ -476,7 +507,7 @@ class FilletPanel:
                 graph.addChild(node)
                 self.nodes.append(node)
         except Exception:
-            FreeCAD.Console.PrintError("[SWUI fork] Redondeo (dibujo):\n%s\n" % traceback.format_exc())
+            FreeCAD.Console.PrintError("[SWUI fork] Vista previa:\n%s\n" % traceback.format_exc())
 
     # --- cerrar
 
@@ -508,7 +539,7 @@ class FilletPanel:
         return True
 
     def _tip_or_self(self):
-        """El redondeo queda visible solo si es la punta del cuerpo."""
+        """La operación queda visible solo si es la punta del cuerpo."""
         from swui.fork import feature_tree as ft
 
         body = ft.body_of(self.obj)
@@ -525,10 +556,93 @@ class FilletPanel:
         return True
 
 
+class FilletPanel(DressUpPanel):
+    TITLE = "Elementos a redondear"
+    TRANSACTION = "Editar redondeo"
+    FAIL = "FreeCAD no puede hacer el redondeo con este radio en estas aristas."
+
+    def _build_values(self, form):
+        self.radius = self._value_box("Radius", " mm", 0.01, 100000.0)
+        form.addRow("Radio:", self.radius)
+
+    def _apply_values(self):
+        self._set("Radius", self.radius.value())
+
+
+# Tipos de chaflán de SW -> ChamferType de FreeCAD (los nombres internos de 1.1.4)
+EQUAL, TWO, ANGLE = "Equal distance", "Two distances", "Distance and Angle"
+
+
+def chamfer_type(angle_distance, equal):
+    """Opciones del panel SW -> ChamferType de FreeCAD."""
+    if angle_distance:
+        return ANGLE
+    return EQUAL if equal else TWO
+
+
+class ChamferPanel(DressUpPanel):
+    TITLE = "Parámetros del chaflán"
+    TRANSACTION = "Editar chaflán"
+    FAIL = "FreeCAD no puede hacer el chaflán con estas medidas en estas aristas."
+
+    def _build_values(self, form):
+        kind = self.obj.ChamferType
+        self.by_angle = QtWidgets.QRadioButton("Ángulo-distancia")
+        self.by_dist = QtWidgets.QRadioButton("Distancia-distancia")
+        (self.by_angle if kind == ANGLE else self.by_dist).setChecked(True)
+        types = QtWidgets.QVBoxLayout()
+        types.addWidget(self.by_angle)
+        types.addWidget(self.by_dist)
+        form.addRow(types)
+        self.flip = QtWidgets.QCheckBox("Invertir dirección")
+        self.flip.setChecked(bool(self.obj.FlipDirection))
+        form.addRow(self.flip)
+        self.equal = QtWidgets.QCheckBox("Distancia igual")
+        self.equal.setChecked(kind == EQUAL)
+        form.addRow(self.equal)
+        self.size = self._value_box("Size", " mm", 0.01, 100000.0)
+        self.size2 = self._value_box("Size2", " mm", 0.01, 100000.0)
+        self.angle = self._value_box("Angle", "°", 0.1, 179.9)
+        self.size_label = QtWidgets.QLabel("Distancia:")
+        self.size2_label = QtWidgets.QLabel("Distancia 2:")
+        self.angle_label = QtWidgets.QLabel("Ángulo:")
+        form.addRow(self.size_label, self.size)
+        form.addRow(self.size2_label, self.size2)
+        form.addRow(self.angle_label, self.angle)
+        for w in (self.by_angle, self.by_dist, self.flip, self.equal):
+            w.toggled.connect(self._changed)
+        self._update_rows()
+
+    def _update_rows(self):
+        angle = self.by_angle.isChecked()
+        two = not angle and not self.equal.isChecked()
+        self.equal.setVisible(not angle)
+        self.flip.setVisible(angle or two)  # con distancias iguales no cambia nada
+        self.size_label.setText("Distancia:" if angle or not two else "Distancia 1:")
+        for w in (self.size2, self.size2_label):
+            w.setVisible(two)
+        for w in (self.angle, self.angle_label):
+            w.setVisible(angle)
+
+    def _changed(self, *_a):
+        self._update_rows()
+        super()._changed()
+
+    def _apply_values(self):
+        kind = chamfer_type(self.by_angle.isChecked(), self.equal.isChecked())
+        if self.obj.ChamferType != kind:
+            self.obj.ChamferType = kind
+        if bool(self.obj.FlipDirection) != self.flip.isChecked():
+            self.obj.FlipDirection = self.flip.isChecked()
+        self._set("Size", self.size.value())
+        self._set("Size2", self.size2.value())
+        self._set("Angle", self.angle.value())
+
+
 # --- Enganche ----------------------------------------------------------
 
 
-PANELS = {FILLET: FilletPanel}
+PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel}
 
 
 def _in_workbench():
@@ -552,7 +666,7 @@ def _take_over(doc_name, obj_name):
         FreeCADGui.Control.showDialog(panel)
     except Exception:
         _state["panel"] = None
-        FreeCAD.Console.PrintError("[SWUI fork] Panel de redondeo:\n%s\n" % traceback.format_exc())
+        FreeCAD.Console.PrintError("[SWUI fork] Panel de operación:\n%s\n" % traceback.format_exc())
         _native(doc_name, obj_name)
 
 
@@ -567,7 +681,7 @@ def _native(doc_name, obj_name):
         gdoc.resetEdit()
         gdoc.setEdit(obj)
     except Exception:
-        FreeCAD.Console.PrintError("[SWUI fork] Diálogo de redondeo:\n%s\n" % traceback.format_exc())
+        FreeCAD.Console.PrintError("[SWUI fork] Diálogo de FreeCAD:\n%s\n" % traceback.format_exc())
     finally:
         _state["native"] = False
 
