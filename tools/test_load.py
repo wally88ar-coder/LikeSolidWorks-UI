@@ -724,6 +724,15 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or me._filter is None):
         print("  FEHLER: fork: aristas del modelo en el croquis (qué se toma bajo el mouse)")
         return False
+    # Cotas con doble clic (instant_dims): formato y lectura de valores como SW en castellano
+    idm = sys.modules["swui.fork.instant_dims"]
+    if (idm.fmt(100.0) != "100" or idm.fmt(12.5) != "12,5" or idm.fmt(0.1234) != "0,123"
+            or idm.fmt(90.0, "angle") != "90°" or idm.parse("12,5") != 12.5 or idm.parse(" 7 ") != 7.0
+            or idm.parse("") is not None or idm.perpendicular_away((0, 0), (10, 0), (5, 5)) != (-0.0, -1.0)
+            or idm.perpendicular_away((0, 0), (10, 0), (5, -5)) != (-0.0, 1.0)):
+        print("  FEHLER: fork: cotas con doble clic (formato, lectura, ubicación)",
+              idm.fmt(12.5), idm.perpendicular_away((0, 0), (10, 0), (5, 5)))
+        return False
     print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")

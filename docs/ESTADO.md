@@ -129,7 +129,14 @@ Etapas:
   superficie), "Guardar también STEP" (apagado de fábrica). Quedó para más adelante: reordenar
   arrastrando operaciones con el mouse. Límite: FreeCAD sigue marcando en azul la última operación
   al elegir una cara (no se puede cambiar sin tocar FreeCAD).
-- C (grande): cotas con doble clic, "Reparar referencias", franja (con fase 3), "Chequear carpeta".
+- C (grande), empezada 2026-10-26. Decisiones del usuario: doble clic como SW (muestra cotas, no
+  abre el diálogo); la franja Material/Ecuaciones/Sólidos pasa a la fase 3.
+  - Cotas con doble clic: **hecho** (`swui/fork/instant_dims.py`), probado en FreeCAD real con la
+    pieza de prueba (árbol y cara, Modificar 100→120, Esc, deshacer). Falta que lo pruebe él.
+    Muestra cotas de croquis (Distance/X/Y, Radius, Diameter, Angle) y de Pad/Pocket (Length),
+    Fillet, Chamfer, Revolution/Groove. No: arrastrar cotas, Hole, croquis anidados en el árbol
+    (doble clic en un croquis hijo sigue abriendo el croquis).
+  - "Reparar referencias" y "Chequear carpeta": pendientes.
 - Descartado: carpetas, reconstruir tras un error. Configuraciones: mucho después.
 
 ## FreeCAD 26.3 (la que antes se iba a llamar 1.2)

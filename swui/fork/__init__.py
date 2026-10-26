@@ -64,6 +64,12 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Árbol de operaciones:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import instant_dims
+
+        instant_dims.install()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Cotas con doble clic:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import sketch_model_edges
 
         sketch_model_edges.install()

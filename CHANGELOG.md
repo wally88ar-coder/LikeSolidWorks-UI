@@ -128,6 +128,14 @@ Neueste Version oben. / Newest version first.
   mismas aristas por su forma, como en SW. El padre de un redondeo es la operación que creó
   sus aristas (no la de justo arriba): ya se puede mover un redondeo por encima de un corte
   que no lo afecta. Si después de mover algo queda con error, avisa y ofrece deshacer.
+- **Cotas con doble clic (estilo Instant3D)**: doble clic en una operación o croquis del
+  árbol, o en una cara de la pieza (la operación que la creó), muestra sobre el modelo sus
+  cotas con líneas y flechas: las del croquis (distancias, Ø, R, ángulos) y las de la
+  operación (profundidad, radio de redondeo, distancia de chaflán, ángulo de revolución).
+  Clic en un valor abre **Modificar** (✓, ✗, ↻ reconstruir; acepta "12,5"); se puede
+  deshacer. Las cotas atadas a una ecuación se marcan con Σ. Esc o un clic en otro lado las
+  esconde. Como en SW, el doble clic ya no abre el diálogo: para eso, clic derecho → *Editar
+  operación* (`swui/fork/instant_dims.py`).
 - *Desactivar supresión con dependientes* también devuelve los redondeos/chaflanes de la
   operación (antes quedaban suprimidos). "¿Qué es incorrecto?" explica el error de una
   operación sin sólido antes (por ejemplo, un corte con la base suprimida).
