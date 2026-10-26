@@ -276,15 +276,23 @@ def unsuppress(obj, with_children=False):
             if is_feature(o) and _suppressed(o):
                 o.Suppressed = False
                 done.append(o)
-        sync_attachments(body.Group if body is not None else [obj] + dependents(obj))
+        # Recalcular ANTES de devolver el apoyo a los croquis: al cambiar MapMode, FreeCAD
+        # los ubica en el acto, y la operación recién devuelta todavía tendría su forma
+        # vacía ("subshape not found").
+        _recompute(obj)
+        if sync_attachments(body.Group if body is not None else [obj] + dependents(obj))[1]:
+            _recompute(obj)
         if not with_children:
             break
-        try:
-            obj.Document.recompute()
-        except Exception:
-            pass
         todo = [o for o in dependents(obj) if is_feature(o) and _suppressed(o) and o not in done]
     return done
+
+
+def _recompute(obj):
+    try:
+        obj.Document.recompute()
+    except Exception:
+        pass
 
 
 def ancestors(obj):

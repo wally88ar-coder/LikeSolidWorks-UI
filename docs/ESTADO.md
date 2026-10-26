@@ -17,7 +17,10 @@ corregido (ver CHANGELOG). **Mover arriba/abajo probado por el usuario con esa p
 OK" (2026-10-25).** Marco naranja (cara → operación) también probado por él: OK.
 Probando suprimir con esa pieza (sin GUI) apareció que "Desactivar supresión con dependientes"
 dejaba el redondeo suprimido (mientras el tetón está suprimido no se sabe qué arista usa):
-corregido, ahora va por tandas recalculando. Falta que el usuario pruebe suprimir.
+corregido, ahora va por tandas recalculando. El usuario probó suprimir (pasos 1-6 con esa pieza):
+anduvo, el tetón vuelve a su lugar. Salía un aviso rojo "subshape not found Pad.Face6" al
+desactivar la supresión de la base (el apoyo del croquis se devolvía antes de recalcular la
+base): corregido.
 Etapa C sin empezar.
 
 ## Entorno del usuario
