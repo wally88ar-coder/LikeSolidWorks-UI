@@ -52,6 +52,16 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Teclas N y F:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import feature_tree, rebuild_keys
+
+        feature_tree.install()
+        rebuild_keys.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [rebuild_keys.REBUILD, rebuild_keys.FORCE_REBUILD,
+                                        rebuild_keys.WHATS_WRONG])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Árbol de operaciones:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

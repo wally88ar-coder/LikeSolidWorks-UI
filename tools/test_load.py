@@ -510,6 +510,180 @@ def _check_qss(qss):
 # --- Ein Durchlauf ---------------------------------------------------
 
 
+def _check_feature_tree(commands, mw, layout, hooked):
+    """Fork: árbol de operaciones como el FeatureManager de SW (lógica con objetos falsos)."""
+    ft = sys.modules["swui.fork.feature_tree"]
+    rk = sys.modules["swui.fork.rebuild_keys"]
+    import importlib
+
+    td = importlib.import_module("swui.fork.tree_dialogs")  # se carga recién al abrir un diálogo
+
+    class _Obj:
+        """Objeto de Part Design falso: kind = feat / sketch / body; vínculos como propiedades."""
+
+        def __init__(self, name, kind, **links):
+            self.Name = self.Label = name
+            self.kind = kind
+            self.TypeId = "PartDesign::Body" if kind == "body" else "x"
+            self.props = dict(links)
+            self.extra = {}
+            self.Suppressed = False
+            self.MapMode = "FlatFace"
+            self.InList = []
+            self.body = None
+
+        def __getattr__(self, name):
+            props = self.__dict__.get("props", {})
+            if name in props:
+                return props[name]
+            if name in self.__dict__.get("extra", {}):
+                return self.__dict__["extra"][name]
+            raise AttributeError(name)
+
+        @property
+        def PropertiesList(self):
+            return list(self.props) + list(self.extra) + (["MapMode"] if self.kind == "sketch" else [])
+
+        def getTypeIdOfProperty(self, name):
+            return "App::PropertyLink" if name in self.props else "App::PropertyString"
+
+        def isDerivedFrom(self, t):
+            return {"PartDesign::Feature": self.kind == "feat", "Sketcher::SketchObject": self.kind == "sketch"}.get(t, False)
+
+        def getParentGeoFeatureGroup(self):
+            return self.body
+
+        def addProperty(self, _type, name, *_a):
+            self.extra[name] = ""
+
+        def setPropertyStatus(self, *_a):
+            pass
+
+        def removeProperty(self, name):
+            self.extra.pop(name, None)
+
+        def __setattr__(self, name, value):
+            if "extra" in self.__dict__ and name in self.__dict__["extra"]:
+                self.__dict__["extra"][name] = value
+            else:
+                object.__setattr__(self, name, value)
+
+    body = _Obj("Body", "body")
+    sk1 = _Obj("Croquis1", "sketch")
+    pad = _Obj("Extruir1", "feat", Profile=(sk1, []), BaseFeature=None, _Body=body)
+    sk2 = _Obj("Croquis2", "sketch", AttachmentSupport=[(pad, ("Face3",))])
+    pocket = _Obj("Corte1", "feat", Profile=(sk2, []), BaseFeature=pad, _Body=body)
+    fillet = _Obj("Redondeo1", "feat", Base=(pocket, ["Edge1"]), BaseFeature=pocket, _Body=body)
+    group = [sk1, pad, sk2, pocket, fillet]
+    for o in group:
+        o.body = body
+        o.InList = [p for p in group if o in ft.links(p) or getattr(p, "BaseFeature", None) is o] + [body]
+    body.Group, body.Tip = group, fillet
+    feats = ft.features(body)
+    if (feats != [pad, pocket, fillet] or ft.rollback_target(feats, pocket) is not pad
+            or ft.rollback_target(feats, pad) is not None or ft.forward_target(feats, None) is not pad
+            or ft.forward_target(feats, pad) is not pocket or ft.forward_target(feats, fillet) is not None
+            or ft.rolled_back(feats, fillet) or not ft.rolled_back(feats, pad)):
+        print("  FEHLER: fork: árbol: retroceder/avanzar (punta del cuerpo)")
+        return False
+    # Padres/hijos sin contar el "sólido anterior" (BaseFeature)
+    if (ft.parents(pocket) != [sk2] or ft.children(pad) != [sk2] or ft.dependents(pad) != [sk2, pocket, fillet]
+            or ft.parents(fillet) != [pocket] or ft.children(sk1) != [pad]):
+        print("  FEHLER: fork: árbol: padre/hijo", [o.Name for o in ft.dependents(pad)])
+        return False
+    # Suprimir como SW: también los dependientes; el croquis apoyado en la cara suprimida se suelta
+    done = ft.suppress(pad)
+    if (done != [pad, pocket, fillet] or sk2.MapMode != ft.OFF or getattr(sk2, ft.MAPMODE_PROP) != "FlatFace"
+            or ft.menu_commands([pad])[2:4] != [ft.UNSUPPRESS, ft.UNSUPPRESS_ALL]):
+        print("  FEHLER: fork: árbol: suprimir con dependientes", [o.Name for o in done], sk2.MapMode)
+        return False
+    ft.unsuppress(pad)  # sin dependientes: el apoyo vuelve, el corte sigue suprimido
+    if pad.Suppressed or not pocket.Suppressed or sk2.MapMode != "FlatFace" or ft.MAPMODE_PROP in sk2.PropertiesList:
+        print("  FEHLER: fork: árbol: desactivar supresión (apoyo del croquis devuelto)")
+        return False
+    ft.unsuppress(pad, with_children=True)
+    if pocket.Suppressed or fillet.Suppressed:
+        print("  FEHLER: fork: árbol: desactivar supresión con dependientes")
+        return False
+    menu = ft.menu_commands([pocket])
+    body.Tip = pad
+    menu_back = ft.menu_commands([sk2])
+    if (menu != [ft.EDIT, ft.EDIT_SKETCH, ft.SUPPRESS, ft.ROLLBACK, ft.PARENT_CHILD]
+            or menu_back != [ft.EDIT_SKETCH, ft.ROLL_FORWARD, ft.ROLL_END, ft.PARENT_CHILD]
+            or ft.menu_commands([body]) != []):
+        print("  FEHLER: fork: árbol: comandos del clic derecho", menu, menu_back)
+        return False
+    missing = [n for n, _c in ft.COMMANDS if n not in commands] + [
+        n for n in (rk.REBUILD, rk.FORCE_REBUILD, rk.WHATS_WRONG, rk.TOGGLE) if n not in commands]
+    if missing:
+        print("  FEHLER: fork: árbol: comandos sin registrar", missing)
+        return False
+    # Teclas: Ctrl+B, Ctrl+Q y (en 1.1) barra espaciadora; FreeCAD 26.3 ya oculta el cuerpo entero
+    fc = sys.modules["FreeCAD"]
+    old_version = fc.Version
+    try:
+        fc.Version = lambda: ["26", "3", "0", "x"]
+        new_keys = rk.keys()
+    finally:
+        fc.Version = old_version
+    if ([k for k, _c in rk.keys()] != ["Ctrl+B", "Ctrl+Q", "Space"] or [k for k, _c in new_keys] != ["Ctrl+B", "Ctrl+Q"]
+            or len(rk._actions) != 3 or not hooked(layout.enter, "_swui_rebuild")
+            or not hooked(layout.leave, "_swui_rebuild")):
+        print("  FEHLER: fork: teclas Ctrl+B / Ctrl+Q / barra espaciadora", len(mw.actions))
+        return False
+
+    class _Sel:
+        def __init__(self, obj, subs):
+            self.Object, self.SubElementNames = obj, subs
+
+    if (rk.bodies_to_toggle([_Sel(pocket, ["Face1"])]) != [body] or rk.bodies_to_toggle([_Sel(pocket, [])])
+            or rk.bodies_to_toggle([_Sel(sk2, ["Edge1"])])):
+        print("  FEHLER: fork: barra espaciadora con una cara oculta el cuerpo entero")
+        return False
+    if (td.explain("AttachEngine3D: subshape not found Pad.Face3").startswith("Perdió") is False
+            or td.explain("Cannot create a pad with a total length of zero.") != "La profundidad es cero."
+            or td.explain("Pocket: does not intersect") != "La operación no toca el sólido."
+            or td.explain("algo raro") != td.UNKNOWN_TEXT):
+        print("  FEHLER: fork: ¿Qué es incorrecto? (mensajes en palabras simples)")
+        return False
+    class _Act:
+        def __init__(self, name):
+            self.name, self.visible = name, True
+
+        def objectName(self):
+            return self.name
+
+        def isSeparator(self):
+            return self.name == "Separator"
+
+        def isVisible(self):
+            return self.visible
+
+        def setVisible(self, on):
+            self.visible = on
+
+    class _Menu:
+        def __init__(self, names):
+            self.acts = [_Act(n) for n in names]
+
+        def actions(self):
+            return list(self.acts)
+
+        def insertActions(self, before, moved):
+            rest = [a for a in self.acts if a not in moved]
+            i = rest.index(before)
+            self.acts = rest[:i] + list(moved) + rest[i:]
+
+    menu_q = _Menu(["", "Std_ToggleFreeze", ft.EDIT, ft.SUPPRESS, "Separator", "Std_Placement"])
+    if (not ft.arrange_menu(menu_q) or [a.name for a in menu_q.acts] != [ft.EDIT, ft.SUPPRESS, "Separator", "",
+                                                                       "Std_ToggleFreeze", "Std_Placement"]
+            or menu_q.acts[4].visible):
+        print("  FEHLER: fork: lo nuestro arriba del clic derecho y sin 'Toggle Freeze'")
+        return False
+    print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora")
+    return True
+
+
 def run(split_namespace):
     """
     Laedt InitGui.py einmal.
@@ -4399,10 +4573,13 @@ def run(split_namespace):
     if (near != (0, 0, -1) or up_top != (0.0, 1.0, 0.0) or flip != (0.0, 0.0, 1.0) or front != (0.0, 1.0, 0.0)
             or vk.straight_up((0, 1, 0), (0, 0, 1)) != (0.0, 0.0, 1.0)
             or tuple(round(x, 9) for x in right_) != (1.0, 0.0, 0.0) or back_ != (0, -1, 0)
-            or "SWUI_NormalTo" not in commands or len(mw.actions) != 2
+            or "SWUI_NormalTo" not in commands or len(vk._actions) != 2
             or not hooked(layout.enter, "_swui_keys") or not hooked(layout.leave, "_swui_keys")):
         print("  FEHLER: fork: teclas N y F (vista más cercana, arriba derecho, dar vuelta, comando)",
               near, up_top, flip, front, right_)
+        return False
+    # Fork: árbol de operaciones como SW (swui/fork/feature_tree.py, rebuild_keys.py, tree_dialogs.py)
+    if not _check_feature_tree(commands, mw, layout, hooked):
         return False
     if not fcp[op.OWN_PARAMS].get(op.BACKUP_KEY):
         print("  FEHLER: keine Sicherung der Panel-Einstellungen")

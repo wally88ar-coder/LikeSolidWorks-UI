@@ -82,6 +82,24 @@ Neueste Version oben. / Newest version first.
   escribe normalmente. Solo dentro de LikeSolidWorks UI (`swui/fork/view_keys.py`).
 - Panel para elegir plano: los planos de un cuerpo creado desde la página de Inicio
   también se llaman Planta / Alzado / Vista lateral.
+- **Árbol de operaciones como el FeatureManager de SW (etapa A)**. Clic derecho sobre una
+  operación (en el árbol o sobre una cara), arriba de todo: *Editar operación*, *Editar
+  croquis*, *Suprimir* (también lo que depende de ella, como en SW), *Desactivar supresión*
+  (con o sin dependientes), *Retroceder* (la barra queda justo antes de la operación),
+  *Avanzar*, *Avanzar hasta el final* y *Padre/Hijo…*. Por debajo, la "punta" del cuerpo y
+  la supresión nativas de FreeCAD; se puede deshacer. "Toggle Freeze" se oculta del menú:
+  en 1.1.4 cuelga FreeCAD al guardar.
+- **Ctrl+B** reconstruye y **Ctrl+Q** fuerza la reconstrucción de todo; si quedan errores
+  se abre **¿Qué es incorrecto?** (también en el menú *LikeSolidWorks UI*), con el
+  mensaje de FreeCAD explicado en palabras simples. Dentro de LikeSolidWorks UI, Ctrl+B
+  deja de ser el zoom de ventana de FreeCAD.
+- **Barra espaciadora** con una cara elegida en la vista: oculta o muestra el cuerpo
+  entero, como en SW (FreeCAD 1.1 ocultaba solo la última operación). Desde FreeCAD 26.3,
+  que ya lo hace, queda la tecla de FreeCAD.
+- Al crear un cuerpo, el árbol muestra abiertos el cuerpo y su Origen (Planta, Alzado,
+  Vista lateral a la vista). Al guardar una pieza retrocedida, aviso con *Avanzar hasta el
+  final y guardar*. Código en `swui/fork/feature_tree.py`, `rebuild_keys.py` y
+  `tree_dialogs.py`.
 
 ## 0.10.0 — 2026-10-18
 
