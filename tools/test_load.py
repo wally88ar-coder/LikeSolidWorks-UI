@@ -728,6 +728,13 @@ def _check_feature_tree(commands, mw, layout, hooked):
     if rr.COMMAND not in commands or ft.REPAIR != rr.COMMAND:
         print("  FEHLER: fork: reparar referencias (comando)")
         return False
+    fck = sys.modules["swui.fork.folder_check"]
+    report = fck.summarize([("C:/p/a.FCStd", "ok", []), ("C:/p/sub/b.FCStd", "error", ["Croquis2: perdió su cara"])],
+                           "C:/p")
+    if (fck.COMMAND not in commands or "2 piezas, 1 con problemas" not in report
+            or "b.FCStd: CON ERRORES" not in report or "    Croquis2: perdió su cara" not in report):
+        print("  FEHLER: fork: chequear carpeta (comando / informe)", report)
+        return False
     # Cotas con doble clic (instant_dims): formato y lectura de valores como SW en castellano
     idm = sys.modules["swui.fork.instant_dims"]
     if (idm.fmt(100.0) != "100" or idm.fmt(12.5) != "12,5" or idm.fmt(0.1234) != "0,123"

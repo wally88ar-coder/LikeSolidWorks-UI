@@ -6,7 +6,7 @@
 **Fase 0 — Puesta en marcha: terminada y probada por el usuario** ("ahora sí se parece más a SW").
 Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
 **Fase 1 (chapa) cajoneada por un tiempo** a pedido del usuario. Próximo trabajo: lo que él pida.
-Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25)**.
+Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25), etapa C hecha (2026-10-26, sin la franja, que pasó a la fase 3)**.
 El usuario probó la barra de retroceso arrastrable con gris debajo ("quedó muy bien", capturas
 del 2026-10-25); el resto de A y B, probado con la plantilla, sin confirmación suya todavía.
 Pieza de prueba para mover operaciones (pedida por el usuario), armada por Claude en
@@ -139,7 +139,11 @@ Etapas:
   - Reparar referencias: **hecho** (`swui/fork/repair_refs.py`), probado en FreeCAD real (apoyo
     perdido reparado solo; redondeo con arista perdida abre su diálogo). Falta que lo pruebe él.
     No reconstruye solo las aristas de un redondeo (no se sabe cuáles eran una vez perdidas).
-  - "Chequear carpeta": pendiente.
+  - Chequear carpeta: **hecho** (`swui/fork/folder_check.py`), probado en FreeCAD real con una
+    carpeta de prueba (pieza buena, una con apoyo roto y una abierta; el archivo roto no se
+    modifica; informe .txt). Falta que lo pruebe él.
+  - Franja Material/Ecuaciones/Sólidos: pasada a la fase 3 (decisión del usuario).
+  Con esto la etapa C quedó hecha (salvo la franja).
 - Descartado: carpetas, reconstruir tras un error. Configuraciones: mucho después.
 
 ## FreeCAD 26.3 (la que antes se iba a llamar 1.2)

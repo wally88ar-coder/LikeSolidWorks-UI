@@ -142,6 +142,11 @@ Neueste Version oben. / Newest version first.
   del modelo perdidas. Si hay una sola cara plana donde estaba el croquis, lo reapoya solo;
   si no, abre el editor de apoyo de FreeCAD o el diálogo de la operación para volver a
   elegir (`swui/fork/repair_refs.py`).
+- **Chequear carpeta…** (menú *LikeSolidWorks UI*), para el día que se cambia de versión de
+  FreeCAD: abre sin mostrar cada pieza de una carpeta (y subcarpetas), la recalcula entera,
+  junta errores y referencias perdidas y la cierra **sin guardar**; las piezas abiertas no se
+  tocan. Lista con doble clic para abrir y *Guardar informe* (.txt en la carpeta)
+  (`swui/fork/folder_check.py`).
 - *Desactivar supresión con dependientes* también devuelve los redondeos/chaflanes de la
   operación (antes quedaban suprimidos). "¿Qué es incorrecto?" explica el error de una
   operación sin sólido antes (por ejemplo, un corte con la base suprimida).
