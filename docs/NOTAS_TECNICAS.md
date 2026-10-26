@@ -87,6 +87,10 @@
   BaseFeature solo; si se saca la punta, la punta pasa a la anterior (volver a ponerla).
   `Shape.getElementHistory` no devuelve nada útil en 1.1.4: para "qué operación creó esta cara"
   se compara geometría (misma superficie en la operación anterior).
+- Redondeo/chaflán (`PartDesign::DressUp`): `Base` = (sólido anterior, ["EdgeN"...]) y FreeCAD
+  lo sigue al cambiar BaseFeature, pero con los MISMOS números de arista: al reordenar quedan en
+  otra arista o con error. `feature_tree.move` guarda la forma de cada arista antes y las vuelve a
+  buscar por forma (misma recta/circunferencia y superpuestas) en el sólido nuevo.
 - Croquis en edición: el modelo no se puede preseleccionar, pero `view.getObjectsInfo((x, y))`
   (coordenadas Coin: y desde abajo, píxeles reales = Qt * devicePixelRatio) devuelve también las
   aristas cercanas del sólido. Con una herramienta del croquis activa el cursor del viewport es

@@ -9,6 +9,11 @@ Después se hicieron retoques de interfaz pedidos por el usuario (ver "Hecho").
 Árbol de operaciones estilo SW (sección "Plan" abajo): **etapas A y B hechas (2026-10-25)**.
 El usuario probó la barra de retroceso arrastrable con gris debajo ("quedó muy bien", capturas
 del 2026-10-25); el resto de A y B, probado con la plantilla, sin confirmación suya todavía.
+Pieza de prueba para mover operaciones (pedida por el usuario), armada por Claude en
+`C:\Users\Windows\Documents\FreeCAD pruebas\Prueba mover operaciones.FCStd`: base 100x60x10,
+tetón Ø20x15 sobre su cara, corte Ø30 Por todo desde Planta que pisa el tetón, redondeo R2 en
+la arista de arriba del tetón. Al prepararla apareció que mover rompía/cambiaba los redondeos:
+corregido (ver CHANGELOG).
 Etapa C sin empezar.
 
 ## Entorno del usuario
