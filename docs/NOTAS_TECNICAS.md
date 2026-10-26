@@ -129,3 +129,20 @@
   cancelar, `abortTransaction()` primero y después `resetEdit()`. Sin selección,
   `PartDesign_Fillet` crea igual el redondeo (vacío, con error) sobre la punta y lo pone en edición.
 - En el envoltorio de PySide de FreeCAD 1.1 (Qt6), `QAction` está en `QtGui`, no en `QtWidgets`.
+- Paneles SW sobre operaciones nativas (`swui/fork/dress_up_panel.py`): base `SwPanel` +
+  registro `PANELS` {TypeId: clase}; `pattern_panel.py` y `hole_panel.py` suman los suyos en su
+  `install()`. Para un tipo nuevo: subclase con `_build` (self.form), `_apply` (valores al objeto,
+  devuelve un problema o ""), `_pick(obj, sub)` y registrarla.
+- La "vista previa superpuesta" magenta de Part Design es la preferencia
+  `Mod/PartDesign/Preview/ShowTransparentPreview`; se apaga con la casilla
+  `showTransparentPreviewCheckBox` del diálogo nativo antes de cerrarlo y se devuelve al cerrar.
+- `PartDesign_LinearPattern/PolarPattern/Mirrored/Draft/Hole` crean el objeto y lo ponen en edición
+  igual que el redondeo (sin selección: matriz/simetría arrancan en "Whole shape"). La matriz
+  circular pide una ARISTA como eje ("Axis reference must be an edge"): una cara cilíndrica se
+  cambia por un borde circular suyo. `ThreadSize` del taladro: "M6x1.0" (no "M6"); con
+  `ThreadType` "None" el tamaño es "---". Las tablas de tornillos están en
+  `<recursos>/Mod/PartDesign/Resources/Hole/*.json` (`cut_type` counterbore/countersink).
+- Taladro sin selección: `pick_plane.FEATURE_COMMANDS` (del original) se extiende desde el fork
+  con `PartDesign_Hole`, y `pick_plane.arm` se envuelve para prender `Sketcher_CreatePoint`.
+- En las pruebas: no llamar `dump` a una función propia (la plantilla ya tiene `dump()`); una lista
+  guardada en el log se vuelca al final (guardar copias: `list(...)`).

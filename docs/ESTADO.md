@@ -9,9 +9,12 @@
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
 - **Fase 1 (chapa) sigue cajoneada.**
-- **Fase 2 — Flujos de pieza: empezada 2026-10-26.** Ver "Plan: fase 2" abajo. Redondeo
-  probado por el usuario (2026-10-26, "anda OK"). El usuario se fue a dormir y pidió seguir con
-  chaflán y el resto, decidiendo con criterio y anotando dudas en "Preguntas para el usuario".
+- **Fase 2 — Flujos de pieza: hecha por Claude (2026-10-26/27), falta que la pruebe el usuario**
+  salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
+  matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
+  barrido, hélice y referencia. Detalle en "Plan: fase 2" > Avance. El usuario se fue a dormir y
+  pidió seguir decidiendo con criterio: las dudas quedaron en "Preguntas para el usuario".
+  Nada subido a origin (commits locales en master).
 
 ## Preguntas para el usuario (decisiones tomadas por Claude mientras no estaba)
 - Matriz/Simetría sin nada elegido: FreeCAD arranca copiando **toda la pieza** ("Sólidos"
