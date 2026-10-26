@@ -614,31 +614,15 @@ def _check_feature_tree(commands, mw, layout, hooked):
         print("  FEHLER: fork: árbol: comandos del clic derecho", menu, menu_back)
         return False
     missing = [n for n, _c in ft.COMMANDS if n not in commands] + [
-        n for n in (rk.REBUILD, rk.FORCE_REBUILD, rk.WHATS_WRONG, rk.TOGGLE) if n not in commands]
+        n for n in (rk.REBUILD, rk.FORCE_REBUILD, rk.WHATS_WRONG) if n not in commands]
     if missing:
         print("  FEHLER: fork: árbol: comandos sin registrar", missing)
         return False
-    # Teclas: Ctrl+B, Ctrl+Q y (en 1.1) barra espaciadora; FreeCAD 26.3 ya oculta el cuerpo entero
-    fc = sys.modules["FreeCAD"]
-    old_version = fc.Version
-    try:
-        fc.Version = lambda: ["26", "3", "0", "x"]
-        new_keys = rk.keys()
-    finally:
-        fc.Version = old_version
-    if ([k for k, _c in rk.keys()] != ["Ctrl+B", "Ctrl+Q", "Space"] or [k for k, _c in new_keys] != ["Ctrl+B", "Ctrl+Q"]
+    # Teclas: Ctrl+B, Ctrl+Q y barra espaciadora = Medir (como en el SW del usuario)
+    if (rk.keys() != [("Ctrl+B", rk.REBUILD), ("Ctrl+Q", rk.FORCE_REBUILD), ("Space", "Std_Measure")]
             or len(rk._actions) != 3 or not hooked(layout.enter, "_swui_rebuild")
             or not hooked(layout.leave, "_swui_rebuild")):
-        print("  FEHLER: fork: teclas Ctrl+B / Ctrl+Q / barra espaciadora", len(mw.actions))
-        return False
-
-    class _Sel:
-        def __init__(self, obj, subs):
-            self.Object, self.SubElementNames = obj, subs
-
-    if (rk.bodies_to_toggle([_Sel(pocket, ["Face1"])]) != [body] or rk.bodies_to_toggle([_Sel(pocket, [])])
-            or rk.bodies_to_toggle([_Sel(sk2, ["Edge1"])])):
-        print("  FEHLER: fork: barra espaciadora con una cara oculta el cuerpo entero")
+        print("  FEHLER: fork: teclas Ctrl+B / Ctrl+Q / barra espaciadora (Medir)", len(mw.actions))
         return False
     if (td.explain("AttachEngine3D: subshape not found Pad.Face3").startswith("Perdió") is False
             or td.explain("Cannot create a pad with a total length of zero.") != "La profundidad es cero."
@@ -729,7 +713,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or me._filter is None):
         print("  FEHLER: fork: aristas del modelo en el croquis (qué se toma bajo el mouse)")
         return False
-    print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora")
+    print("  Árbol    : fork: retroceder, suprimir con dependientes, padre/hijo, Ctrl+B/Q, barra espaciadora = Medir")
     print("  Árbol    : fork: mover arriba/abajo, barra de retroceso arrastrable, guardar también STEP")
     print("  Croquis  : fork: aristas y vértices del modelo se traen solos al tocarlos con una herramienta")
     return True

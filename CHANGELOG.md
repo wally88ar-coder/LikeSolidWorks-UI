@@ -93,9 +93,8 @@ Neueste Version oben. / Newest version first.
   se abre **¿Qué es incorrecto?** (también en el menú *LikeSolidWorks UI*), con el
   mensaje de FreeCAD explicado en palabras simples. Dentro de LikeSolidWorks UI, Ctrl+B
   deja de ser el zoom de ventana de FreeCAD.
-- **Barra espaciadora** con una cara elegida en la vista: oculta o muestra el cuerpo
-  entero, como en SW (FreeCAD 1.1 ocultaba solo la última operación). Desde FreeCAD 26.3,
-  que ya lo hace, queda la tecla de FreeCAD.
+- **Barra espaciadora = Medir** (como la tiene el usuario en su SW). Dentro de LikeSolidWorks
+  UI deja de ser "Alternar visibilidad" de FreeCAD (ocultar sigue en el clic derecho).
 - Al crear un cuerpo, el árbol muestra abiertos el cuerpo y su Origen (Planta, Alzado,
   Vista lateral a la vista). Al guardar una pieza retrocedida, aviso con *Avanzar hasta el
   final y guardar*. Código en `swui/fork/feature_tree.py`, `rebuild_keys.py` y

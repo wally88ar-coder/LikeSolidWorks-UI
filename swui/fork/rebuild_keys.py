@@ -2,17 +2,16 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # SPDX-FileCopyrightText: 2026 wally88ar-coder
 """
-Teclas de SOLIDWORKS para reconstruir y ocultar.
+Teclas de SOLIDWORKS para reconstruir y medir.
 
 - Ctrl+B: reconstruir (lo que cambió). Ctrl+Q: forzar la reconstrucción de
   todo. Si quedan errores se abre "¿Qué es incorrecto?". En FreeCAD, Ctrl+B
   es "Zoom de ventana" (Std_ViewBoxZoom): ese atajo se quita mientras se está
   en LikeSolidWorks UI y se devuelve al salir.
-- Barra espaciadora con una cara/arista elegida en la vista 3D: oculta o
-  muestra el cuerpo entero, como en SW (FreeCAD 1.1 oculta solo la última
-  operación y deja ver la pieza a medio hacer). Con algo elegido en el árbol,
-  hace lo de siempre (Std_ToggleVisibility). FreeCAD 26.3 ya lo hace así:
-  desde esa versión la tecla queda la de FreeCAD.
+- Barra espaciadora: Medir (Std_Measure), como la tiene configurada el
+  usuario en su SW. En FreeCAD la barra es "Alternar visibilidad"
+  (Std_ToggleVisibility): ese atajo se quita mientras tanto (ocultar sigue en
+  el clic derecho).
 
 Las teclas son acciones propias en la ventana principal (como N y F en
 view_keys.py) y existen solo dentro de LikeSolidWorks UI.
@@ -28,27 +27,15 @@ from swui.compat import QtGui, QtWidgets
 REBUILD = "SWUI_Rebuild"
 FORCE_REBUILD = "SWUI_ForceRebuild"
 WHATS_WRONG = "SWUI_WhatsWrong"
-TOGGLE = "SWUI_ToggleVisibility"
-NATIVE_TOGGLE = "Std_ToggleVisibility"
-NATIVE_SPACE_FROM = 26  # versión de FreeCAD que ya oculta el cuerpo entero con la barra
+MEASURE = "Std_Measure"
 
 _actions = []
 _hidden = []  # (QAction, atajos) de FreeCAD quitados mientras tanto
 
 
 def keys():
-    """(tecla, comando) según la versión de FreeCAD."""
-    out = [("Ctrl+B", REBUILD), ("Ctrl+Q", FORCE_REBUILD)]
-    if not native_space():
-        out.append(("Space", TOGGLE))
-    return out
-
-
-def native_space():
-    try:
-        return int(FreeCAD.Version()[0]) >= NATIVE_SPACE_FROM
-    except Exception:
-        return False
+    """(tecla, comando)."""
+    return [("Ctrl+B", REBUILD), ("Ctrl+Q", FORCE_REBUILD), ("Space", MEASURE)]
 
 
 def rebuild(force=False):
@@ -67,35 +54,6 @@ def rebuild(force=False):
 
     if tree_dialogs.problems(doc):
         tree_dialogs.show_whats_wrong(doc)
-
-
-def bodies_to_toggle(selection):
-    """
-    Cuerpos a ocultar/mostrar: solo si TODO lo elegido es una cara/arista/vértice
-    (o sea, se eligió en la vista 3D) de una operación de sólido de un cuerpo.
-    """
-    from swui.fork import feature_tree as ft
-
-    out = []
-    for sel in selection:
-        if not sel.SubElementNames or not ft.is_feature(sel.Object):
-            return []
-        body = ft.body_of(sel.Object)
-        if body is None:
-            return []
-        if body not in out:
-            out.append(body)
-    return out
-
-
-def toggle_visibility():
-    bodies = bodies_to_toggle(FreeCADGui.Selection.getSelectionEx())
-    if not bodies:
-        FreeCADGui.runCommand(NATIVE_TOGGLE)
-        return
-    FreeCADGui.Selection.clearSelection()
-    for body in bodies:
-        body.ViewObject.Visibility = not body.ViewObject.Visibility
 
 
 class _Rebuild:
@@ -133,24 +91,12 @@ class _WhatsWrong:
         tree_dialogs.show_whats_wrong()
 
 
-class _ToggleVisibility:
-    def GetResources(self):
-        return {"MenuText": "Ocultar/mostrar",
-                "ToolTip": "Con una cara elegida en la vista: oculta o muestra el cuerpo entero"}
-
-    def IsActive(self):
-        return True
-
-    def Activated(self):
-        toggle_visibility()
-
-
 def install():
     """Comandos y teclas mientras se está en LikeSolidWorks UI."""
     from swui import layout
 
     for name, command in ((REBUILD, _Rebuild()), (FORCE_REBUILD, _ForceRebuild()),
-                          (WHATS_WRONG, _WhatsWrong()), (TOGGLE, _ToggleVisibility())):
+                          (WHATS_WRONG, _WhatsWrong())):
         try:
             FreeCADGui.addCommand(name, command)
         except Exception:

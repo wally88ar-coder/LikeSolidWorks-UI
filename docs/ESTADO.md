@@ -21,6 +21,11 @@ corregido, ahora va por tandas recalculando. El usuario probó suprimir (pasos 1
 anduvo, el tetón vuelve a su lugar. Salía un aviso rojo "subshape not found Pad.Face6" al
 desactivar la supresión de la base (el apoyo del croquis se devolvía antes de recalcular la
 base): corregido.
+Ctrl+B / Ctrl+Q probados por el usuario: OK. "Guardar también STEP" probado: el .step abrió en
+SW 2018 sin errores (Diagnóstico de importación). Barra espaciadora: andaba, pero el usuario
+la tiene en SW para **Medir** (nunca la usó para ocultar): cambiada a Std_Measure (probado en
+FreeCAD real). El panel de Medir de FreeCAD sale en inglés (Measurement, Mode, Result):
+pendiente para la fase 3 (Evaluar).
 Etapa C sin empezar.
 
 ## Entorno del usuario
@@ -106,8 +111,8 @@ Puntos (qué hace el addon / qué pasa con la 26.3):
 Etapas:
 - A (rápida) — **HECHA** (`swui/fork/feature_tree.py`, `rebuild_keys.py`, `tree_dialogs.py`):
   menú contextual SW (editar, retroceder/avanzar, suprimir, Padre/Hijo), Ctrl+B / Ctrl+Q,
-  "¿Qué es incorrecto?", Origen abierto, aviso de pieza retrocedida, ocultar Body con la barra
-  espaciadora, regla de nombres estables. Suprimir también suprime los dependientes (como SW) y
+  "¿Qué es incorrecto?", Origen abierto, aviso de pieza retrocedida, barra espaciadora (al
+  final: Medir, a pedido del usuario), regla de nombres estables. Suprimir también suprime los dependientes (como SW) y
   suelta el apoyo de los croquis/planos sobre caras suprimidas (MapMode "Deactivated", modo
   guardado en `SWUI_SuppressedMapMode`).
 - B (media) — **HECHA** (`swui/fork/tree_overlay.py`, `step_copy.py`, más en `feature_tree.py`):
