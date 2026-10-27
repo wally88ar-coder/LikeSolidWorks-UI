@@ -233,6 +233,9 @@ Neueste Version oben. / Newest version first.
   Borrar el corte original (Supr) borra también sus copias en un solo paso; "Hasta la cara" se
   lleva a los otros sólidos; con selección automática, si el corte cambia y pasa a atravesar otro
   sólido, el addon pregunta si actualizar el alcance.
+- **Simetría de sólidos** como SW: "Sólidos para simetría" y "Fusionar sólidos"; apagado, cada
+  sólido espejado queda como sólido aparte que sigue al original (`swui/fork/mirror_bodies.py`).
+- **Alcance de la operación en el Asistente para taladro**, igual que en los cortes.
 - **Combinar** (pestaña Operaciones) con el panel de SW: Agregar / Eliminar / Común, sólidos
   elegidos con clics; por debajo la Booleana nativa de FreeCAD (`swui/fork/combine_panel.py`).
 

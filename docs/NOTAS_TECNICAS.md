@@ -233,3 +233,16 @@
   borrar otras cosas en un QTimer (borrar adentro del aviso es reentrante).
 - Separar una extrusión en el `pressed` de Aceptar (para un solo paso de deshacer) NO sirve:
   el Aceptar de FreeCAD vuelve a aplicar la dirección del diálogo (`ReferenceAxis` al croquis).
+- Simetría de Part (`Part::Mirroring`): `MirrorPlane` acepta planos del origen y caras, pero IGNORA
+  en silencio un `PartDesign::Plane` (y una SubShapeBinder de él): usa Normal/Base por defecto.
+  Apuntar a través del Cuerpo (`(Cuerpo, "Origin.YZ_Plane.")`, `(Cuerpo, "Pad.Face6")`) evita el
+  aviso "fuera de alcance". Para un plano de referencia: ecuaciones
+  `Base = <<Cuerpo>>.Placement * <<Plano>>.Placement.Base` y
+  `Normal = <<Cuerpo>>.Placement.Rotation * <<Plano>>.Placement.Rotation * vector(0; 0; 1)`.
+- Ecuaciones: un objeto llamado "A" no se puede nombrar así (es la unidad amperes): usar
+  `<<Etiqueta>>`. No se puede tomar `.Base` de un paréntesis (`(a * b).Base` no se entiende).
+- Un Cuerpo puede arrancar de cualquier sólido: `Body.BaseFeature = objeto` (simetría, pieza de un
+  Dividir...); queda paramétrico.
+- Pruebas: `PartDesign_Hole` (y otros comandos de Part Design) sin Cuerpo activo abren el aviso
+  modal "Cuerpo Activo Requerido" y la prueba queda colgada (el usuario lo vio en su pantalla):
+  `FreeCADGui.ActiveDocument.ActiveView.setActiveObject("pdbody", cuerpo)` antes del comando.

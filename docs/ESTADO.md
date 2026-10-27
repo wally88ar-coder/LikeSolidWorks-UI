@@ -256,7 +256,28 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
       nada solo y no vuelve a preguntar lo mismo si se respondió No (en esa sesión). Probado en
       real (croquis alargado: avisa y con Sí suma la copia).
     - Las copias siguen el nombre del original al aceptar una edición.
-  Para más adelante: alcance en taladro, matrices, simetría, barridos.
+  Hecho después (2026-10-26, el usuario usa simetría de sólidos y alcance en taladro; alcance en
+  matrices/simetrías de operaciones "eventualmente": queda para después):
+    - **Simetría de sólidos** (`mirror_bodies.py` + `pattern_panel.MirrorPanel`): en el panel de
+      Simetría, "Sólidos para simetría" (lista; clic en la lista y después en el sólido) y
+      "Fusionar sólidos". Prendida y solo el sólido de la operación: simetría nativa de Part Design
+      (Whole shape, como antes). Apagada: por cada sólido, Simetría de Part (Part::Mirroring) +
+      Cuerpo nuevo con BaseFeature = esa simetría (sigue al original y admite operaciones propias).
+      Vista previa propia en amarillo; un solo deshacer ("Simetría de sólidos"). Prendida con otros
+      sólidos: avisa (solo el propio). Plano: origen y caras apuntados a través del Cuerpo; plano de
+      referencia por ecuaciones (Part::Mirroring ignora PartDesign::Plane). `material.consumes`:
+      Part::Mirroring copia, no consume (si no, el original desaparecía de Sólidos(n)). Probado sin
+      GUI (los tres tipos de plano, siguen los cambios, reabierto sin el addon) y en real.
+      Límite: para cambiar el plano de una simetría ya hecha como sólido aparte hay que editar la
+      Simetría de Part (diálogo nativo) o rehacerla.
+    - **Alcance en el Asistente para taladro** (`hole_panel` + `multibody`): cuadro "Alcance de la
+      operación" debajo de las pestañas Tipo/Posiciones (solo con más de un sólido); copias con
+      copia vinculada del croquis de posiciones, medidas por ecuación y opciones de lista (tipo y
+      tamaño de rosca, refrentado...) copiadas por valor al aceptar (`ENUM_PROPS`; con ecuación la
+      copia mostraba M7 en vez de M8). Se aplica dentro de la transacción del taladro: un solo
+      deshacer. Supr / aviso automático: igual que los cortes. Probado sin GUI (M6->M8,
+      refrentado) y en real (dos placas, Por todo: copia en la de abajo, mismo volumen).
+  Para más adelante: alcance en matrices y simetrías de operaciones, barridos.
 - C. Combinar (Agregar / Restar / Común) y Dividir con paneles SW.
   - **Combinar: HECHO (2026-10-26)** (`swui/fork/combine_panel.py`, botón en Operaciones, columna
     de "Cuerpo"). Panel como el de SW (capturas del usuario): Tipo de operación Agregar /
