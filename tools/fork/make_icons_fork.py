@@ -158,6 +158,24 @@ def _():
             mk.thin("M34 26 L58 38", mk.NEW, 4.0)]
 
 
+@icon("sm_hem", "Dobladillo")
+def _():
+    # chapa vista de costado con el borde doblado sobre sí misma, y el pliegue azul
+    lower = "M6 46 H50 V40 H6 Z"
+    upper = "M22 34 H50 V28 H22 Z"
+    return [_face(lower, mk.GEO), _face(upper, mk.GEO),
+            '<path d="M50 40 A6 6 0 0 0 50 28" fill="none" stroke="%s" stroke-width="7"/>' % mk.OUTLINE,
+            '<path d="M50 40 A6 6 0 0 0 50 28" fill="none" stroke="%s" stroke-width="3.6"/>' % mk.NEW]
+
+
+@icon("sm_convert", "Convertir en chapa")
+def _():
+    # bloque gris (pieza importada) -> flecha -> perfil en L blanco de chapa
+    block = "M4 22 H22 V44 H4 Z"
+    l_shape = "M38 12 H44 V40 H60 V46 H38 Z"
+    return [_face(block, mk.OLD), mk.arrow(24, 33, 36, 33, mk.NEW, 6.0, 3.0), _face(l_shape, mk.GEO)]
+
+
 @icon("sm_flatten", "Aplanar")
 def _():
     # pieza en U abierta en plano: placa blanca con dos líneas de plegado rojas de trazos

@@ -23,6 +23,7 @@ Verificado en FreeCAD 1.1.4 + SheetMetal 0.8.26 sin GUI: placa 100x50x2 con brid
 Los croquis del desarrollo los arma SheetMetal solo con interfaz (usa ViewObject).
 """
 
+import json
 import math
 import re
 
@@ -40,7 +41,9 @@ OUTLINE_LAYER = "CONTORNO"
 BEND_LAYER = "PLEGADO"
 DASH = (5.0, 2.5)  # trazo y espacio de la línea de plegado (mm)
 
-KINDS = {"SMBaseBend": "base", "SMBendWall": "wall", "SMUnfold": "flat"}
+SHEET_PROP = "SWUI_Sheet"  # en un Cuerpo convertido (pieza importada): JSON con espesor, radio, K, cara fija (nombre estable)
+
+KINDS = {"SMBaseBend": "base", "SMBendWall": "wall", "SMHem": "hem", "SMUnfold": "flat"}
 TOL = 1e-6
 
 
@@ -86,12 +89,54 @@ def sheet_base(body):
     return None
 
 
+def read_spec(text):
+    """JSON de SHEET_PROP -> dict (o None si no hay o está roto)."""
+    try:
+        data = json.loads(text or "")
+    except Exception:
+        return None
+    if not isinstance(data, dict) or "thickness" not in data:
+        return None
+    data.setdefault("k", DEFAULT_K)
+    data.setdefault("radius", data["thickness"])
+    return data
+
+
+def spec(body):
+    return read_spec(getattr(body, SHEET_PROP, "")) if body is not None else None
+
+
+def write_spec(body, data):
+    if SHEET_PROP not in body.PropertiesList:
+        body.addProperty("App::PropertyString", SHEET_PROP, "SWUI", "Chapa convertida (fork de LikeSolidWorks UI)")
+        body.setEditorMode(SHEET_PROP, 2)
+    text = json.dumps(data, sort_keys=True)
+    if getattr(body, SHEET_PROP) != text:
+        setattr(body, SHEET_PROP, text)
+
+
 def is_sheet_body(body):
-    return body is not None and sheet_base(body) is not None
+    return body is not None and (sheet_base(body) is not None or spec(body) is not None)
 
 
 def sheet_bodies(doc):
     return [o for o in doc.Objects if o.TypeId == "PartDesign::Body" and is_sheet_body(o)]
+
+
+def radius(body):
+    base = sheet_base(body)
+    if base is not None:
+        return float(base.Radius.Value)
+    data = spec(body)
+    return float(data["radius"]) if data else 0.0
+
+
+def body_k(body):
+    base = sheet_base(body)
+    if base is not None:
+        return k_factor(base)
+    data = spec(body)
+    return float(data["k"]) if data else DEFAULT_K
 
 
 def ensure_k(base):
@@ -106,7 +151,10 @@ def k_factor(base):
 
 def thickness(body):
     base = sheet_base(body)
-    return float(base.Thickness.Value) if base is not None else 0.0
+    if base is not None:
+        return float(base.Thickness.Value)
+    data = spec(body)
+    return float(data["thickness"]) if data else 0.0
 
 
 # --- Preferencias (lo último usado, como SW recuerda el espesor) --------------
@@ -332,8 +380,11 @@ def fixed_face(body):
     más grande que está sobre la cara grande de la Brida base. Devuelve "FaceN" o None.
     """
     base, tip = sheet_base(body), body.Tip
-    if base is None or tip is None:
+    if tip is None:
         return None
+    if base is None:
+        data = spec(body)
+        return face_at(tip.Shape, data["face"]) if data and data.get("face") else None
     planes = [f for f in base.Shape.Faces if _is_plane(f)]
     if not planes:
         return None
@@ -363,6 +414,79 @@ def fixed_face(body):
     return best
 
 
+def face_key(face):
+    """Cara plana -> [x, y, z, nx, ny, nz] (un punto adentro y la normal) para volver a encontrarla."""
+    u0, u1, v0, v1 = face.ParameterRange
+    p = face.valueAt((u0 + u1) / 2, (v0 + v1) / 2)
+    if not face.isInside(p, 1e-6, True):
+        p = face.CenterOfMass
+    n = face.normalAt((u0 + u1) / 2, (v0 + v1) / 2)
+    return [p.x, p.y, p.z, n.x, n.y, n.z]
+
+
+def face_at(shape, key):
+    """La cara plana de shape que pasa por el punto de key con la misma normal ("FaceN" o None)."""
+    p = FreeCAD.Vector(*key[:3])
+    n = FreeCAD.Vector(*key[3:6])
+    vertex = None
+    best, area = None, 0.0
+    for i, face in enumerate(shape.Faces):
+        if not _is_plane(face):
+            continue
+        m = face.normalAt(0, 0)
+        if m.dot(n) < 1 - 1e-6 or abs((face.CenterOfMass - p).dot(m)) > 1e-4:
+            continue
+        try:
+            import Part
+
+            vertex = vertex or Part.Vertex(p)
+            inside = face.distToShape(vertex)[0] < 1e-4
+        except Exception:
+            inside = False
+        if inside and face.Area > area:
+            best, area = "Face%d" % (i + 1), face.Area
+    return best
+
+
+def detect_thickness(shape, face_name):
+    """Espesor de una chapa sin historia (pieza importada) desde una de sus caras grandes, o None."""
+    try:
+        index = int(face_name[4:]) - 1
+        face = shape.Faces[index]
+    except Exception:
+        return None
+    try:
+        import SheetMetalNewUnfolder
+
+        value = float(SheetMetalNewUnfolder.EstimateThickness.using_best_method(shape, index))
+        if value > TOL:
+            return value
+    except Exception:
+        pass
+    # respaldo: la cara paralela de enfrente más cercana
+    n = face.normalAt(0, 0)
+    found = None
+    for other in shape.Faces:
+        if other.isSame(face) or not _is_plane(other):
+            continue
+        if abs(abs(other.normalAt(0, 0).dot(n)) - 1) > 1e-6:
+            continue
+        d = abs((other.CenterOfMass - face.CenterOfMass).dot(n))
+        if d > TOL and (found is None or d < found):
+            found = d
+    return found
+
+
+def detect_radius(shape, thick):
+    """Radio interior de plegado (el cilindro más chico que tiene su par a radio + espesor), o None."""
+    radii = sorted(set(round(f.Surface.Radius, 6) for f in shape.Faces
+                       if type(f.Surface).__name__ == "Cylinder"))
+    for r in radii:
+        if any(abs(o - r - thick) < 1e-3 for o in radii):
+            return r
+    return None
+
+
 def flat_of(body):
     doc = body.Document
     for obj in doc.Objects:
@@ -387,9 +511,10 @@ def ensure_flat(body, sketches=True):
 
     base, tip = sheet_base(body), body.Tip
     face = fixed_face(body)
-    if base is None or face is None:
-        raise ValueError("No se encontró la cara de la Brida base para desplegar la chapa.")
-    ensure_k(base)
+    if face is None:
+        raise ValueError("No se encontró la cara fija para desplegar la chapa.")
+    if base is not None:
+        ensure_k(base)
     flat = flat_of(body)
     doc = body.Document
     if flat is None:
@@ -404,9 +529,12 @@ def ensure_flat(body, sketches=True):
         flat.Visibility = False
     elif flat.baseObject != (tip, [face]):
         flat.baseObject = (tip, [face])
-    expr = "%s.%s" % (base.Name, K_PROP)
-    if dict(flat.ExpressionEngine).get("KFactor") != expr:
-        flat.setExpression("KFactor", expr)
+    if base is not None:
+        expr = "%s.%s" % (base.Name, K_PROP)
+        if dict(flat.ExpressionEngine).get("KFactor") != expr:
+            flat.setExpression("KFactor", expr)
+    elif abs(flat.KFactor - body_k(body)) > 1e-9:
+        flat.KFactor = body_k(body)  # pieza convertida: el K va en SWUI_Sheet del Cuerpo
     if flat.KFactorStandard != "ansi":
         flat.KFactorStandard = "ansi"  # K de SW: posición de la fibra neutra (0,5 = mitad)
     want = bool(sketches and FreeCAD.GuiUp)
@@ -463,6 +591,35 @@ def material_name(body):
         return (info or {}).get("name") or None
     except Exception:
         return None
+
+
+def sheet_parts(doc):
+    """
+    Las chapas de un documento y de lo que tiene vinculado (piezas de un ensamblaje), una vez cada
+    una aunque esté varias veces (por ahora un DXF por pieza, sin cantidad: pedido del usuario).
+    """
+    out, seen = [], set()
+
+    def add(body):
+        if body is None or not is_sheet_body(body):
+            return
+        key = (body.Document.Name, body.Name)
+        if key not in seen:
+            seen.add(key)
+            out.append(body)
+
+    for obj in doc.Objects:
+        if obj.TypeId == "PartDesign::Body":
+            add(obj)
+            continue
+        try:
+            linked = obj.getLinkedObject(True)
+        except Exception:
+            linked = None
+        if linked is None or linked is obj:
+            continue
+        add(linked if linked.TypeId == "PartDesign::Body" else body_of(linked))
+    return out
 
 
 def write_dxf(body, path):

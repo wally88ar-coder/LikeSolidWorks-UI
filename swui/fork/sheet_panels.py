@@ -29,6 +29,9 @@ from swui.fork import sheet_metal as sm
 
 BASE_COMMAND = "SWUI_SMBaseFlange"
 EDGE_COMMAND = "SWUI_SMEdgeFlange"
+HEM_COMMAND = "SWUI_SMHem"
+CUT_COMMAND = "SWUI_SMCut"
+CONVERT_COMMAND = "SWUI_SMConvert"
 FLAT_COMMAND = "SWUI_SMFlatten"
 DXF_COMMAND = "SWUI_SMExportDXF"
 TITLE = "Chapa"
@@ -205,7 +208,7 @@ class EdgeFlangePanel(dp.SwPanel):
         _leave_native_edit(obj)
         link = obj.baseObject
         self.edges = [s for s in (link[1] if link else []) if s]
-        self.spec_value = obj.LengthSpec
+        self.spec_value = getattr(obj, "LengthSpec", None)  # el dobladillo no tiene
         self.position = obj.BendType
         super().__init__(obj)
 
@@ -379,9 +382,245 @@ class EdgeFlangePanel(dp.SwPanel):
         return ok
 
 
+# --- Dobladillo ----------------------------------------------------------------
+
+# (texto SW, HemType de SheetMetal)
+HEM_TYPES = (("Cerrado", "Flat"), ("Abierto", "Open"), ("Lágrima", "Teardrop"), ("Laminado", "Rolled"))
+# Verificado sin GUI (placa con la arista en y=50): Material Inside no pasa la arista, Material Outside
+# sale un espesor; "Thickness Outside" da error en el dobladillo (no se ofrece).
+HEM_POSITIONS = (("Material interior", "Material Inside"), ("Pliegue exterior", "Material Outside"))
+
+
+class HemPanel(EdgeFlangePanel):
+    TRANSACTION = "Dobladillo"
+    FAIL = "SheetMetal no pudo armar el dobladillo así: probá con otra longitud, radio o Invertir dirección."
+
+    def __init__(self, obj):
+        self.hem_type = obj.HemType
+        super().__init__(obj)
+
+    def _build(self):
+        obj = self.obj
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle(obj.Label)
+        _icon(self.form, "fork/sm_hem")
+        box = QtWidgets.QVBoxLayout(self.form)
+
+        eg = QtWidgets.QGroupBox("Aristas")
+        el = QtWidgets.QVBoxLayout(eg)
+        el.addWidget(QtWidgets.QLabel("Aristas (clic en la chapa):"))
+        self.list = dp.pick_list(self.remove_current, self.clear, height=50)
+        self.list.setMaximumHeight(70)
+        self.list.currentRowChanged.connect(lambda *_a: self._draw())
+        self.list.setStyleSheet("QListWidget { %s }" % dp.ACTIVE_QSS)
+        el.addWidget(self.list)
+        self.invert = QtWidgets.QCheckBox("Invertir dirección")
+        self.invert.setChecked(bool(obj.invert))
+        self.invert.toggled.connect(self._changed)
+        el.addWidget(self.invert)
+        box.addWidget(eg)
+
+        tg = QtWidgets.QGroupBox("Tipo y tamaño")
+        self.sizes = QtWidgets.QFormLayout(tg)
+        self.type_box = _choice(HEM_TYPES, self.hem_type, self._type)
+        self.sizes.addRow(self.type_box)
+        self.length = self._value_box("width", " mm", 0.01, 100000.0)
+        self.opening = self._value_box("opening", " mm", 0.0, 100000.0)
+        self.angle = self._value_box("RollAngle", "°", 1.0, 359.0)
+        self.radius = self._value_box("radius", " mm", 0.01, 1000.0)
+        self.rows = {}
+        for key, text, widget in (("length", "Longitud:", self.length), ("opening", "Separación:", self.opening),
+                                  ("angle", "Ángulo:", self.angle), ("radius", "Radio:", self.radius)):
+            label = QtWidgets.QLabel(text)
+            self.sizes.addRow(label, widget)
+            self.rows[key] = (label, widget)
+        box.addWidget(tg)
+
+        og = QtWidgets.QGroupBox("Posición")
+        of = QtWidgets.QFormLayout(og)
+        self.pos_box = _choice(HEM_POSITIONS, self.position, self._position)
+        of.addRow(self.pos_box)
+        box.addWidget(og)
+        box.addWidget(self._message_label())
+        box.addStretch(1)
+        self._show_rows()
+        self._refresh()
+
+    def _type(self, value):
+        self.hem_type = value
+        self._show_rows()
+        self._changed()
+
+    def _show_rows(self):
+        show = {"length": self.hem_type != "Rolled", "opening": self.hem_type == "Open",
+                "angle": self.hem_type in ("Teardrop", "Rolled"), "radius": self.hem_type in ("Teardrop", "Rolled")}
+        for key, (label, widget) in self.rows.items():
+            label.setVisible(show[key])
+            widget.setVisible(show[key])
+
+    def _apply(self):
+        obj = self.obj
+        if self.base is None:
+            return "No hay chapa antes de este dobladillo."
+        if not self.edges:
+            return ""
+        link = obj.baseObject
+        if not link or link[0] != self.base or [s for s in link[1] if s] != self.edges:
+            obj.baseObject = (self.base, list(self.edges))
+        if self.hem_type in [v for _t, v in HEM_TYPES]:
+            self._set("HemType", self.hem_type)
+        self._set("width", self.length.value())
+        self._set("opening", self.opening.value())
+        self._set("RollAngle", self.angle.value())
+        self._set("radius", self.radius.value())
+        self._set("invert", self.invert.isChecked())
+        if self.position in [v for _t, v in HEM_POSITIONS]:
+            self._set("BendType", self.position)
+        return ""
+
+    def accept(self):
+        ok = dp.SwPanel.accept(self)
+        if ok:
+            sm.remember("HemLength", self.length.value())
+        return ok
+
+
+# --- Convertir en chapa (pieza importada) -------------------------------------------
+
+
+class ConvertPanel:
+    """
+    "Convertir en chapa" para una chapa sin historia (STEP de SW): se elige la cara fija; el
+    espesor y el radio salen de la pieza; el factor K se elige. Se guarda en SWUI_Sheet del Cuerpo.
+    """
+
+    def __init__(self, body, face=None, created=False):
+        self.body = body
+        self.doc = body.Document
+        self.created = created  # el Cuerpo lo armó este comando (Cancelar lo saca)
+        self.data = dict(sm.spec(body) or {"k": sm.DEFAULT_K})
+        self.busy = False
+        self.face = None
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle("Convertir en chapa")
+        _icon(self.form, "fork/sm_convert")
+        box = QtWidgets.QVBoxLayout(self.form)
+        g = QtWidgets.QGroupBox("Parámetros de chapa")
+        f = QtWidgets.QFormLayout(g)
+        self.face_box = dp.RefBox(lambda _w: None)
+        self.face_box.setPlaceholderText("Cara fija (clic en una cara grande)")
+        self.face_box.setStyleSheet(dp.ACTIVE_QSS)
+        f.addRow("Cara fija:", self.face_box)
+        self.thick = QtWidgets.QLabel("-")
+        f.addRow("Espesor:", self.thick)
+        self.radius = dp._spin(float(self.data.get("radius", 0.0)), " mm", 0.0, 1000.0)
+        self.radius.setToolTip("Radio de las bridas que se agreguen; los pliegues de la pieza quedan como vinieron")
+        f.addRow("Radio de plegado:", self.radius)
+        self.k = dp._spin(float(self.data.get("k", sm.DEFAULT_K)), "", 0.0, 1.0, decimals=3)
+        self.k.setSingleStep(0.01)
+        f.addRow("Factor K:", self.k)
+        box.addWidget(g)
+        self.message = QtWidgets.QLabel()
+        self.message.setWordWrap(True)
+        self.message.setStyleSheet("color: %s;" % dp.MISSING_COLOR)
+        self.message.hide()
+        box.addWidget(self.message)
+        box.addStretch(1)
+        if self.data.get("face") and self.body.Tip is not None:
+            face = face or sm.face_at(self.body.Tip.Shape, self.data["face"])
+        if face:
+            self._take(face)
+        self.observer = dp._PickObserver(self)
+        FreeCADGui.Selection.addObserver(self.observer)
+        FreeCADGui.Selection.clearSelection()
+
+    def getStandardButtons(self):
+        return QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+
+    def _say(self, text):
+        self.message.setText(text)
+        self.message.setVisible(bool(text))
+
+    def _take(self, face):
+        tip = self.body.Tip
+        try:
+            geo = tip.Shape.getElement(face)
+        except Exception:
+            return
+        if type(geo.Surface).__name__ != "Plane":
+            self._say("La cara fija tiene que ser plana.")
+            return
+        thick = sm.detect_thickness(tip.Shape, face)
+        if not thick:
+            self._say("No se pudo medir el espesor desde esa cara: ¿es una chapa (espesor parejo)?")
+            return
+        self.face = face
+        self.data["thickness"] = round(thick, 6)
+        self.data["face"] = sm.face_key(geo)
+        self.thick.setText(sm.fmt_mm(thick) + " mm")
+        r = sm.detect_radius(tip.Shape, thick)
+        if "radius" not in self.data or not self.data["radius"]:
+            self.radius.setValue(r if r else thick)
+        self.face_box.setText("Cara<1>")
+        self._say("" if r else "La pieza no tiene pliegues: va a quedar como una placa.")
+
+    def take_selection(self):
+        for sel in FreeCADGui.Selection.getSelectionEx():
+            obj = sel.Object
+            for sub in sel.SubElementNames:
+                sub = sub.split(".")[-1]
+                if not sub.startswith("Face"):
+                    continue
+                if obj is self.body.Tip or obj is self.body:
+                    self._take(sub)
+                elif sm.body_of(obj) is self.body:
+                    name = dp.to_base(obj.Shape, sub, self.body.Tip.Shape)
+                    if name:
+                        self._take(name)
+        self.busy = True
+        try:
+            FreeCADGui.Selection.clearSelection()
+        finally:
+            self.busy = False
+
+    def _close(self):
+        try:
+            FreeCADGui.Selection.removeObserver(self.observer)
+        except Exception:
+            pass
+        dp._state["panel"] = None
+
+    def accept(self):
+        if not self.face:
+            self._say("Elegí la cara fija: una cara grande y plana de la chapa.")
+            return False
+        self.data["radius"] = self.radius.value()
+        self.data["k"] = self.k.value()
+        sm.write_spec(self.body, self.data)
+        flat = sm.flat_of(self.body)
+        if flat is not None:
+            sm.ensure_flat(self.body)
+        self._close()
+        self.doc.recompute()
+        self.doc.commitTransaction()
+        return True
+
+    def reject(self):
+        self._close()
+        hidden = list(getattr(self, "hidden", []))
+        self.doc.abortTransaction()
+        for obj in hidden:
+            try:
+                obj.Visibility = True
+            except Exception:
+                pass
+        self.doc.recompute()
+        return True
+
+
 def _choose(obj):
     k = sm.kind(obj)
-    return BaseFlangePanel if k == "base" else EdgeFlangePanel if k == "wall" else None
+    return {"base": BaseFlangePanel, "wall": EdgeFlangePanel, "hem": HemPanel}.get(k)
 
 
 # --- Comandos ------------------------------------------------------------------
@@ -505,18 +744,7 @@ def target_body(doc=None, quiet=False):
     return None
 
 
-def start_edge_flange():
-    if not _ready_to_start():
-        return None
-    doc = FreeCAD.ActiveDocument
-    sels = FreeCADGui.Selection.getSelectionEx(doc.Name)
-    body = target_body(doc)
-    if body is None:
-        return None
-    tip = body.Tip
-    if tip is None:
-        _info("La chapa no tiene sólido todavía.")
-        return None
+def _picked_edges(sels, body, tip):
     edges = []
     for sel in sels:
         for sub in sel.SubElementNames:
@@ -531,34 +759,134 @@ def start_edge_flange():
                 name = None
             if name and name not in edges:
                 edges.append(name)
-    import SheetMetalCmd
+    return edges
+
+
+def _start_on_edges(kind):
+    """Brida de arista ("wall") o Dobladillo ("hem") sobre las aristas elegidas (o sin elegir)."""
+    if not _ready_to_start():
+        return None
+    doc = FreeCAD.ActiveDocument
+    sels = FreeCADGui.Selection.getSelectionEx(doc.Name)
+    body = target_body(doc)
+    if body is None:
+        return None
+    tip = body.Tip
+    if tip is None:
+        _info("La chapa no tiene sólido todavía.")
+        return None
+    edges = _picked_edges(sels, body, tip)
     from swui.fork import multibody
 
-    doc.openTransaction("Brida de arista")
+    label = "Brida de arista" if kind == "wall" else "Dobladillo"
+    doc.openTransaction(label)
     try:
         base = sm.sheet_base(body)
-        obj = doc.addObject("PartDesign::FeaturePython", "Bend")
-        SheetMetalCmd.SMBendWall(obj, tip, edges)
-        SheetMetalCmd.SMViewProviderFlat(obj.ViewObject)
+        if kind == "wall":
+            import SheetMetalCmd
+
+            obj = doc.addObject("PartDesign::FeaturePython", "Bend")
+            SheetMetalCmd.SMBendWall(obj, tip, edges)
+            SheetMetalCmd.SMViewProviderFlat(obj.ViewObject)
+        else:
+            import SheetMetalHem
+
+            obj = doc.addObject("PartDesign::FeaturePython", "Hem")
+            SheetMetalHem.SMHem(obj, tip, edges)
+            SheetMetalHem.SMViewProviderFlat(obj.ViewObject)
         body.addObject(obj)
-        obj.setExpression("radius", "%s.Radius" % base.Name)  # Usar radio predeterminado
-        obj.length = sm.last("FlangeLength", sm.DEFAULT_LENGTH)
-        obj.angle = 90.0
         obj.invert = False
-        obj.LengthSpec = "Outer Sharp"
-        obj.BendType = "Material Inside"
-        multibody._keep_label(obj, sm.next_label("Brida-Arista", _labels(doc)))
+        if kind == "wall":
+            if base is not None:
+                obj.setExpression("radius", "%s.Radius" % base.Name)  # Usar radio predeterminado
+            else:
+                obj.radius = sm.radius(body) or sm.thickness(body)  # pieza convertida: por valor
+            obj.length = sm.last("FlangeLength", sm.DEFAULT_LENGTH)
+            obj.angle = 90.0
+            obj.LengthSpec = "Outer Sharp"
+            obj.BendType = "Material Inside"
+            prefix, panel_cls = "Brida-Arista", EdgeFlangePanel
+        else:
+            obj.HemType = "Flat"
+            obj.width = sm.last("HemLength", 10.0)
+            obj.radius = sm.thickness(body) or 1.0
+            obj.opening = sm.thickness(body) or 1.0
+            obj.BendType = "Material Inside"
+            prefix, panel_cls = "Dobladillo", HemPanel
+        multibody._keep_label(obj, sm.next_label(prefix, _labels(doc)))
         multibody._set_tip(body, obj)
         FreeCADGui.Selection.clearSelection()
         if edges:
             doc.recompute()
-        return _open(EdgeFlangePanel, obj)
+        return _open(panel_cls, obj)
     except Exception:
-        FreeCAD.Console.PrintError("[SWUI fork] Brida de arista:\n%s\n" % traceback.format_exc())
+        FreeCAD.Console.PrintError("[SWUI fork] %s:\n%s\n" % (label, traceback.format_exc()))
         dp._state["panel"] = None
         if doc.HasPendingTransaction:
             doc.abortTransaction()
         return None
+
+
+def start_edge_flange():
+    return _start_on_edges("wall")
+
+
+def start_hem():
+    return _start_on_edges("hem")
+
+
+def start_convert():
+    """Convertir en chapa una pieza sin historia (STEP): Cuerpo que arranca de ella + cara fija."""
+    if not _ready_to_start():
+        return None
+    doc = FreeCAD.ActiveDocument
+    sels = FreeCADGui.Selection.getSelectionEx(doc.Name)
+    if not sels:
+        _info("Elegí una cara grande y plana de la pieza a convertir (la cara fija).")
+        return None
+    obj = sels[0].Object
+    body = obj if obj.TypeId == "PartDesign::Body" else sm.body_of(obj)
+    if body is not None and sm.sheet_base(body) is not None:
+        _info("Esta pieza ya es de chapa (tiene Brida base).")
+        return None
+    from swui.fork import move_face
+
+    doc.openTransaction("Convertir en chapa")
+    try:
+        created = body is None
+        hidden = [obj] if created else []
+        body = body or move_face._body_for(doc, obj)
+        if body is None or body.Tip is None:
+            doc.abortTransaction()
+            _info("Elegí una cara de un sólido.")
+            return None
+        face = None
+        subs = [s.split(".")[-1] for s in sels[0].SubElementNames if s.split(".")[-1].startswith("Face")]
+        if subs:
+            if obj is body.Tip or obj is body or created:
+                face = subs[0]  # el FeatureBase del Cuerpo nuevo tiene las mismas caras que el sólido
+            else:
+                face = dp.to_base(obj.Shape, subs[0], body.Tip.Shape)
+        FreeCADGui.Selection.clearSelection()
+        panel = ConvertPanel(body, face, created)
+        panel.hidden = hidden
+        dp._state["panel"] = panel
+        FreeCADGui.Control.showDialog(panel)
+        return body
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Convertir en chapa:\n%s\n" % traceback.format_exc())
+        dp._state["panel"] = None
+        if doc.HasPendingTransaction:
+            doc.abortTransaction()
+        return None
+
+
+def start_cut():
+    """Extruir corte nativo, con el mismo flujo SW de la pestaña Operaciones (plano o cara, croquis)."""
+    from swui import ribbon
+
+    # fuera del Activated de este comando (correr un comando adentro de otro: ver NOTAS_TECNICAS)
+    QtCore.QTimer.singleShot(0, lambda: ribbon._run("PartDesign_Pocket"))
 
 
 FLAT_TRANSPARENCY = 60  # el croquis del plegado queda en la cara de abajo: que se vea a través
@@ -625,9 +953,49 @@ def toggle_flat():
     return flat
 
 
+def _is_assembly(doc):
+    return any(o.TypeId == "Assembly::AssemblyObject" for o in doc.Objects) or (
+        not sm.sheet_bodies(doc) and bool(sm.sheet_parts(doc)))
+
+
+def export_all(doc=None):
+    """DXF por lotes: un DXF por pieza de chapa del ensamblaje, en la carpeta del ensamblaje."""
+    doc = doc or FreeCAD.ActiveDocument
+    bodies = sm.sheet_parts(doc)
+    if not bodies:
+        _info("El ensamblaje no tiene piezas de chapa.")
+        return []
+    if doc.FileName:
+        folder = os.path.dirname(doc.FileName)
+    else:
+        folder = QtWidgets.QFileDialog.getExistingDirectory(_mw(), "Carpeta para los DXF")
+        if not folder:
+            return []
+    done, failed = [], []
+    for body in bodies:
+        name = sm.dxf_filename(sm.part_name(body), sm.thickness(body), sm.material_name(body))
+        path = os.path.join(folder, name)
+        try:
+            flat = _flat(body, "Desarrollo")
+            sm.write_dxf(body, path)
+            _sketches_follow(flat)
+            done.append(name)
+        except Exception as exc:
+            FreeCAD.Console.PrintError("[SWUI fork] DXF de %s:\n%s\n" % (body.Label, traceback.format_exc()))
+            failed.append("%s (%s)" % (sm.part_name(body), exc))
+    text = "DXF guardados en %s:\n%s" % (folder, "\n".join(done) or "(ninguno)")
+    if failed:
+        text += "\n\nNo se pudieron exportar:\n" + "\n".join(failed)
+    FreeCAD.Console.PrintMessage("[SWUI fork] %s\n" % text)
+    _info(text)
+    return done
+
+
 def export_dxf():
     if not _ready_to_start():
         return None
+    if _is_assembly(FreeCAD.ActiveDocument):
+        return export_all()
     body = target_body()
     if body is None:
         return None
@@ -676,6 +1044,12 @@ COMMANDS = {
                    "fork/sm_base_flange", start_base_flange),
     EDGE_COMMAND: ("Brida de arista", "Pared plegada sobre una o más aristas de la chapa (como SW)",
                    "fork/sm_edge_flange", start_edge_flange),
+    HEM_COMMAND: ("Dobladillo", "Dobladillo cerrado, abierto, lágrima o laminado sobre aristas de la chapa (como SW)",
+                  "fork/sm_hem", start_hem),
+    CUT_COMMAND: ("Extruir corte", "Corte extruido sobre la chapa (el de Operaciones; el desarrollo lo lleva)",
+                  "sketch/f_pocket", start_cut),
+    CONVERT_COMMAND: ("Convertir en chapa", "Chapa sin historia (p. ej. STEP de SW): elegir la cara fija; "
+                      "el espesor se mide solo", "fork/sm_convert", start_convert),
     FLAT_COMMAND: ("Aplanar", "Mostrar el desarrollo de la chapa; otro clic la vuelve a plegar",
                    "fork/sm_flatten", toggle_flat),
     DXF_COMMAND: ("Exportar DXF", "Guardar el desarrollo en DXF (contorno y líneas de plegado) al lado de la pieza",

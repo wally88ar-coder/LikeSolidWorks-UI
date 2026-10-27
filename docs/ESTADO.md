@@ -9,9 +9,10 @@ abajo).
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
-- **Fase 1 — Chapa: versión 1 hecha (2026-10-27); falta que la pruebe el usuario.** Pestaña
-  Chapa con Brida base, Brida de arista, Aplanar y Exportar DXF. Faltan las versiones 2 y 3
-  (ver "Plan: fase 1").
+- **Fase 1 — Chapa: versiones 1 y 2 hechas (2026-10-27/28); falta que las pruebe el usuario.**
+  Pestaña Chapa con Brida base, Brida de arista, Dobladillo, Extruir corte, Convertir en chapa
+  (STEP), Aplanar y Exportar DXF (también por lotes desde un ensamblaje). Falta la versión 3
+  (Desdoblar/Doblar; ver "Plan: fase 1").
 - **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
   salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
@@ -61,8 +62,23 @@ Versiones:
 3. Desdoblar/Doblar (cortar sobre el plano y volver a plegar): SheetMetal no lo trae igual; lo más
    parecido es "Wrap Cutout". Probar antes de prometer.
 
-Versión 2, empezada 2026-10-27 (el usuario se fue a dormir: "seguí trabajando"); **sin código
-todavía**, solo verificado sin GUI (scripts de prueba en el scratchpad de esa sesión):
+Versión 2: **HECHA (2026-10-27/28**, el usuario se fue a dormir: "seguí trabajando"; falta que la
+pruebe él). Botones nuevos en la pestaña Chapa: Dobladillo, Extruir corte, Convertir en chapa;
+Exportar DXF en un ensamblaje exporta todas las chapas (un DXF por pieza, en la carpeta del
+ensamblaje, aviso con la lista). Probado en FreeCAD real: dobladillo abierto con el panel SW;
+corte desde la cara (pick_plane -> croquis -> Pocket nativo) y el DXF con el círculo; pieza
+"importada" corrida y girada convertida (espesor 2 medido solo) + brida de arista sobre ella + su
+DXF; ensamblaje con 3 vínculos a 2 piezas -> 2 DXF. Test en verde.
+Decisiones (Claude, para revisar):
+1. Convertir en chapa = solo chapas que ya vienen plegadas (STEP de SW). Convertir un sólido
+   macizo como en SW (cara fija + aristas de pliegue) queda sin hacer.
+2. En la pieza convertida, el radio de las bridas nuevas sale del pliegue más chico de la pieza
+   (si no tiene pliegues, = espesor); el K, 0,5. Se cambian con "Convertir en chapa" otra vez.
+3. Dobladillo nuevo: cerrado, longitud la última usada (10 la primera vez), radio y separación =
+   espesor, Material interior.
+4. Lotes: los Desarrollos se agregan a los archivos de cada pieza (quedan modificados sin guardar).
+5. "Extruir corte" de la pestaña Chapa es el mismo Extruir corte de Operaciones (Pocket nativo).
+Lo que se verificó antes de escribir el código (sin GUI):
 - **Cortes**: el Extruir corte nativo (Pocket "Por todo") sobre la chapa anda; el desarrollo sale
   con el agujero y una brida de arista puesta después del corte también anda (U con brida de 20
   después del corte: desarrollo 93,42 = 42 + 26 + 16 + 2 × 4,712). Plan: botón "Extruir corte" en
@@ -85,8 +101,8 @@ todavía**, solo verificado sin GUI (scripts de prueba en el scratchpad de esa s
   la arista (y máx 50, = Material interior de SW); "Material Outside" = sale 2 (y 52, = Pliegue
   exterior); "Thickness Outside" da error (no ofrecerlo). En Cerrado el radio y IncludeBend no
   cambian la forma; `invert` lo pasa para abajo. Desarrollo de los cuatro: válido.
-- Falta: los tres paneles/comandos, DXF por lotes desde un ensamblaje (un DXF por pieza de chapa),
-  pruebas en FreeCAD real, CHANGELOG y commit.
+- Hecho así: `SWUI_Sheet` en el Cuerpo convertido con la cara fija como punto + normal
+  (`sheet_metal.face_key` / `face_at`); `sheet_metal` acepta Cuerpos sin Brida base.
 
 Hecho en la versión 1 (`swui/fork/sheet_metal.py` sin interfaz, `sheet_panels.py` paneles y
 comandos, `sheet_tab.py` la pestaña; íconos `sm_*` en `make_icons_fork.py`):
@@ -746,7 +762,7 @@ Etapas:
   cinta del addon; sin fecha).
 
 ## Falta / ideas pendientes
-- Fase 1: chapa, versiones 2 y 3 (ver "Plan: fase 1").
+- Fase 1: chapa, versión 3 (ver "Plan: fase 1").
 - Simulación FEM como pestaña "Simulación" con flujo SW (estudio, material, sujeciones, cargas,
   malla, ejecutar, resultados): conversada, sin empezar; es grande.
 - Panel Ver/Datos (propiedades de FreeCAD): se deja por ahora; el usuario va a ver si le sirve.

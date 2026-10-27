@@ -261,6 +261,11 @@ Neueste Version oben. / Newest version first.
   de la pieza, con nombre pieza_espesor_material ("Soporte_1,5mm_SAE 1010.dxf"). Parámetros de
   chapa en la Brida base: espesor, radio (de fábrica = espesor) y factor K (0,5), que siguen las
   bridas y el desarrollo (`swui/fork/sheet_metal.py`, `sheet_panels.py`, `sheet_tab.py`).
+- Chapa, segunda versión: **Dobladillo** (cerrado / abierto / lágrima / laminado, material interior
+  o pliegue exterior), **Extruir corte** en la pestaña Chapa (el desarrollo lleva los agujeros),
+  **Convertir en chapa** para chapas sin historia (STEP de SW: se elige la cara fija y el espesor
+  se mide solo; después admite bridas, aplanar y DXF) y **DXF por lotes**: Exportar DXF en un
+  ensamblaje guarda un DXF por cada pieza de chapa.
 
 ## 0.10.0 — 2026-10-18
 

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Dobladillo</title>
+  <path d="M6 46 H50 V40 H6 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M22 34 H50 V28 H22 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M50 40 A6 6 0 0 0 50 28" fill="none" stroke="#1b1b1b" stroke-width="7"/>
+  <path d="M50 40 A6 6 0 0 0 50 28" fill="none" stroke="#3d8bff" stroke-width="3.6"/>
+</svg>

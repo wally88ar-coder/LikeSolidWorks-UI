@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Convertir en chapa</title>
+  <path d="M4 22 H22 V44 H4 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M24.0 33.0 L30.0 33.0" stroke="#1b1b1b" stroke-width="5.4" stroke-linecap="round"/><path d="M36.0 33.0 L30.0 29.7 L30.0 36.3 Z" fill="#3d8bff" stroke="#1b1b1b" stroke-width="1.2" stroke-linejoin="round"/><path d="M24.0 33.0 L30.0 33.0" stroke="#3d8bff" stroke-width="3.0" stroke-linecap="round"/>
+  <path d="M38 12 H44 V40 H60 V46 H38 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+</svg>

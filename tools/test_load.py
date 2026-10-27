@@ -998,6 +998,10 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or smt.extent(smt.shift([("LINE", "X", 5.0, 6.0, 7.0, 9.0)], -5.0, -6.0)) != (0.0, 0.0, 2.0, 3.0)
             or smt.kind(types.SimpleNamespace(Proxy=type("SMBendWall", (), {})())) != "wall"
             or smt.kind(object()) is not None
+            or smt.read_spec('{"thickness": 2}') != {"thickness": 2, "k": 0.5, "radius": 2}
+            or smt.read_spec("roto") is not None or smt.read_spec('{"k": 1}') is not None
+            or smp._choose(types.SimpleNamespace(Proxy=type("SMHem", (), {})())) is not smp.HemPanel
+            or [v for _t, v in smp.HEM_POSITIONS] != ["Material Inside", "Material Outside"]
             or sorted(smt.merge_lines([("LINE", "C", 0.0, 0.0, 0.0, 26.0), ("LINE", "C", 0.0, 26.0, 0.0, 30.7),
                                        ("LINE", "C", 0.0, 30.7, 50.0, 30.7), ("LINE", "P", 0.0, 28.0, 9.0, 28.0)]))
             != [("LINE", "C", 0.0, 30.7, 0.0, 0.0), ("LINE", "C", 0.0, 30.7, 50.0, 30.7),
