@@ -136,9 +136,20 @@ con texto no entraba en 1366 px y los botones grandes perdían el texto).
   pedazo), lista vacía (todo vuelve), Cancelar sin rastros, segunda operación sin pisar la primera
   (error encontrado en la prueba y corregido: las dos se llamaban igual y la segunda borraba las
   copias de la primera).
-- Sin hacer: Restricciones (el Cuerpo no tiene apoyo en 1.1.4: el addon calcularía la posición al
-  aceptar), trasladar "de un vértice a otro", Supr sobre el grupo (borra solo el grupo: usar
-  Editar con la lista vacía o Ctrl+Z).
+- Sin hacer: Restricciones, trasladar "de un vértice a otro", Supr sobre el grupo (borra solo el
+  grupo: usar Editar con la lista vacía o Ctrl+Z). El usuario (2026-10-27): nombres "Cuerpo2"...
+  le dan igual por ahora; **quiere que Supr sobre Eliminar/Conservar devuelva los sólidos como SW**.
+  Verificado sin GUI (2026-10-27), las dos cosas salen nativas y paramétricas:
+  - De un vértice a otro: `Part::DatumPoint` (raíz del documento, MapMode "Vertex", apoyado a
+    través del Cuerpo: `(Cuerpo, "Box.Vertex3")`) en cada vértice y la ecuación
+    `Placement.Base = Destino.Placement.Base - Origen.Placement.Base` en el Cuerpo copia: sigue
+    al cambiar la pieza.
+  - Restricciones como marcos: `Part::LocalCoordinateSystem` apoyado en lo elegido de cada pieza
+    (cara plana, arista, vértice; modos del motor de apoyo) y
+    `Placement = Destino.Placement * minvert(Origen.Placement)` en el Cuerpo copia (funciona).
+    Falta resolver cómo traducir combinaciones de relaciones de SW a modos de apoyo y qué hacer
+    con los grados de libertad que quedan libres (dejarlos como están al aceptar, en
+    AttachmentOffset). El Body y la SubShapeBinder no tienen apoyo propio.
 
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
