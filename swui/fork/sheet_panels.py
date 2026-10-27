@@ -620,9 +620,150 @@ class ConvertPanel:
         return True
 
 
+# --- Corte desdoblado (editar) ----------------------------------------------------
+
+
+class WrapCutPanel(dp.SwPanel):
+    """
+    Editar un Corte-Desdoblado (Wrap Cutout de SheetMetal) sin su panel en inglés: factor K (el de
+    la chapa o uno propio) y "Editar croquis sobre el desarrollo", que vuelve a Desdoblar con el
+    croquis del corte (como editar el corte en estado desdoblado en SW).
+    """
+
+    TRANSACTION = "Corte desdoblado"
+    FAIL = ("SheetMetal no pudo armar este corte: el croquis tiene que ser un contorno cerrado que toque "
+            "la cara fija o cruce un pliegue.")
+
+    def __init__(self, obj):
+        _leave_native_edit(obj)
+        super().__init__(obj)
+
+    def _base(self):
+        link = self.obj.baseObject
+        return link[0] if link and link[0] is not None else self.obj.BaseFeature
+
+    def _sheet_base(self):
+        body = sm.body_of(self.obj)
+        return sm.sheet_base(body) if body is not None else None
+
+    def _build(self):
+        obj = self.obj
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle(obj.Label)
+        _icon(self.form, "fork/sm_fold")
+        box = QtWidgets.QVBoxLayout(self.form)
+
+        cg = QtWidgets.QGroupBox("Corte")
+        cl = QtWidgets.QVBoxLayout(cg)
+        sketch = obj.Sketch
+        cl.addWidget(QtWidgets.QLabel("Croquis: %s" % (sketch.Label if sketch is not None else "(falta)")))
+        self.edit_button = QtWidgets.QPushButton("Editar croquis sobre el desarrollo")
+        self.edit_button.setToolTip("Desdobla la chapa como estaba antes de este corte y abre su croquis; "
+                                    "al salir del croquis (o con Doblar) se vuelve a plegar")
+        self.edit_button.setEnabled(sketch is not None)
+        self.edit_button.clicked.connect(self._edit_sketch)
+        cl.addWidget(self.edit_button)
+        box.addWidget(cg)
+
+        kg = QtWidgets.QGroupBox("Margen de pliegue")
+        kf = QtWidgets.QFormLayout(kg)
+        base = self._sheet_base()
+        self.tied = QtWidgets.QCheckBox("Usar el factor K de la chapa")
+        self.tied.setChecked(base is not None and
+                             dict(obj.ExpressionEngine).get("kfactor") == "%s.%s" % (base.Name, sm.K_PROP))
+        self.tied.setEnabled(base is not None)
+        self.tied.toggled.connect(self._tie)
+        kf.addRow(self.tied)
+        self.k = dp._spin(float(obj.kfactor), "", 0.0, 1.0, decimals=3)
+        self.k.setSingleStep(0.01)
+        self.k.setEnabled(not self.tied.isChecked())
+        self.k.valueChanged.connect(self._changed)
+        kf.addRow("Factor K:", self.k)
+        box.addWidget(kg)
+        box.addWidget(self._message_label())
+        box.addStretch(1)
+
+    def _tie(self, on):
+        self.k.setEnabled(not on)
+        self._changed()
+
+    def _apply(self):
+        obj = self.obj
+        base = self._sheet_base()
+        expr = dict(obj.ExpressionEngine).get("kfactor")
+        if self.tied.isChecked() and base is not None:
+            want = "%s.%s" % (base.Name, sm.K_PROP)
+            if expr != want:
+                obj.setExpression("kfactor", want)
+            self.k.blockSignals(True)
+            self.k.setValue(sm.k_factor(base))
+            self.k.blockSignals(False)
+        else:
+            if expr is not None:
+                obj.setExpression("kfactor", None)
+            if abs(float(obj.kfactor) - self.k.value()) > 1e-9:
+                obj.kfactor = self.k.value()
+        return ""
+
+    def _edit_sketch(self, *_a):
+        obj = self.obj
+        if not self.accept():
+            return
+        FreeCADGui.Control.closeDialog()
+        doc_name, name = obj.Document.Name, obj.Name
+        QtCore.QTimer.singleShot(0, lambda: edit_cut_sketch(FreeCAD.getDocument(doc_name).getObject(name)))
+
+
+def _open_sketch_on_flat(body, sketch, flat, hide):
+    """Abrir el croquis con el desarrollo a la vista (y lo plegado oculto); al salir, Doblar."""
+    from swui import pick_plane
+
+    for prop, value in (("ShowSupport", False), ("HideDependent", False)):
+        try:  # el croquis, al abrirse, muestra su apoyo (la chapa plegada) y oculta lo demás
+            setattr(sketch.ViewObject, prop, value)
+        except Exception:
+            pass
+    FreeCADGui.Selection.clearSelection()
+    FreeCADGui.getDocument(body.Document.Name).setEdit(sketch)
+
+    def show_flat():
+        try:
+            for obj in hide:
+                obj.Visibility = False
+            flat.Visibility = True
+            _sketches_follow(flat)
+        except Exception:
+            pass
+
+    show_flat()
+    QtCore.QTimer.singleShot(200, show_flat)  # por si el croquis cambió la visibilidad al abrirse
+    pick_plane.arm(FOLD_COMMAND, sketch)  # al salir del croquis se dobla solo
+
+
+def edit_cut_sketch(obj):
+    """Editar el croquis de un Corte-Desdoblado sobre el desarrollo de la chapa de antes del corte."""
+    if obj is None or FreeCADGui.Control.activeDialog():
+        return None
+    body = sm.body_of(obj)
+    sketch = obj.Sketch
+    support, faces = obj.baseObject
+    if body is None or sketch is None or support is None:
+        return None
+    try:
+        flat = _flat(body, "Desarrollo")
+        flat.baseObject = (support, list(faces))  # la chapa como estaba antes de este corte
+        flat.recompute()  # Aplanar / DXF lo vuelven a la punta (ensure_flat)
+    except Exception as exc:
+        FreeCAD.Console.PrintError("[SWUI fork] Editar corte desdoblado:\n%s\n" % traceback.format_exc())
+        _info("No se pudo desplegar la chapa: %s" % exc)
+        return None
+    _open_sketch_on_flat(body, sketch, flat, [o for o in (body.Tip, support) if o is not None])
+    return sketch
+
+
 def _choose(obj):
     k = sm.kind(obj)
-    return {"base": BaseFlangePanel, "wall": EdgeFlangePanel, "hem": HemPanel}.get(k)
+    return {"base": BaseFlangePanel, "wall": EdgeFlangePanel, "hem": HemPanel, "wrap": WrapCutPanel}.get(k)
 
 
 # --- Comandos ------------------------------------------------------------------
@@ -1031,8 +1172,6 @@ def start_unfold():
     lo que se dibuja encima del desarrollo se corta y se vuelve a plegar al tocar Doblar (o al
     salir del croquis).
     """
-    from swui import pick_plane
-
     if not _ready_to_start():
         return None
     body = target_body()
@@ -1071,25 +1210,7 @@ def start_unfold():
             if doc.HasPendingTransaction:
                 doc.abortTransaction()
             return None
-    for prop, value in (("ShowSupport", False), ("HideDependent", False)):
-        try:  # el croquis, al abrirse, muestra su apoyo (la chapa plegada) y oculta lo demás
-            setattr(sketch.ViewObject, prop, value)
-        except Exception:
-            pass
-    FreeCADGui.Selection.clearSelection()
-    FreeCADGui.getDocument(doc.Name).setEdit(sketch)
-
-    def show_flat():
-        try:
-            tip.Visibility = False
-            flat.Visibility = True
-            _sketches_follow(flat)
-        except Exception:
-            pass
-
-    show_flat()
-    QtCore.QTimer.singleShot(200, show_flat)  # por si el croquis cambió la visibilidad al abrirse
-    pick_plane.arm(FOLD_COMMAND, sketch)  # al salir del croquis se dobla solo
+    _open_sketch_on_flat(body, sketch, flat, [tip])
     return sketch
 
 
@@ -1166,8 +1287,28 @@ def start_fold():
             if doc.HasPendingTransaction:
                 doc.abortTransaction()
             return None
+    else:
+        _check_edited_cuts(doc)
     _refold_view(body)
     return body
+
+
+def _check_edited_cuts(doc):
+    """Después de editar el croquis de un Corte-Desdoblado: avisar si el corte quedó mal."""
+    sketches = [o for o in FreeCADGui.Selection.getSelection(doc.Name) if o.TypeId == "Sketcher::SketchObject"]
+    cuts = [u for sk in sketches for u in sk.InList if sm.kind(u) == "wrap"]
+    if not cuts:
+        return
+    doc.recompute()
+    for cut in cuts:
+        support = cut.baseObject[0] if cut.baseObject else None
+        if not cut.isValid():
+            _info("%s quedó con error: el croquis tiene que ser un contorno cerrado que toque la cara fija "
+                  "o cruce un pliegue. Corregilo con Editar operación > Editar croquis sobre el desarrollo."
+                  % cut.Label)
+        elif support is not None and cut.Shape.Volume >= support.Shape.Volume - 1e-6:
+            _info("%s ya no corta nada: el croquis quedó entero sobre una brida (eso va con Extruir corte "
+                  "sobre la cara de la brida)." % cut.Label)
 
 
 class _Command:

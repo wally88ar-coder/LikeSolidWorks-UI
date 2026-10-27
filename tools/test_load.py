@@ -1010,6 +1010,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or smp is None or smp.BASE_COMMAND not in pick_.FEATURE_COMMANDS
             or smp.BASE_COMMAND not in fsk_.PROFILE_FEATURES or smp._choose not in dup.CHOOSERS
             or smp.FOLD_COMMAND not in fsk_.PROFILE_FEATURES
+            or smp._choose(types.SimpleNamespace(Proxy=type("SMSketchOnSheet", (), {})())) is not smp.WrapCutPanel
             or smt.kind(types.SimpleNamespace(Proxy=type("SMSketchOnSheet", (), {})())) != "wrap"
             or smt.pending_cut(types.SimpleNamespace(Group=[])) is not None):
         print("  FEHLER: fork: chapa (nombre del DXF, archivo DXF, pestaña Chapa, enganches)", titles_)

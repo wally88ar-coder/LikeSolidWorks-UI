@@ -71,8 +71,15 @@ Versiones:
    **Límite de SheetMetal** (probado): un corte que queda entero sobre una brida (no toca la cara
    fija ni cruza un pliegue) no corta nada; el fork lo detecta, no deja la operación, avisa (usar
    Extruir corte sobre la cara de la brida) y el croquis queda para corregirlo con Desdoblar.
-   Editar un Corte-Desdoblado abre el panel de SheetMetal (en inglés); para cambiar el corte se
-   edita su croquis. SW permite elegir qué pliegues desdoblar: acá se despliega todo.
+   Editar un Corte-Desdoblado (clic derecho > Editar operación) abre un panel del fork en lugar
+   del de SheetMetal (pedido del usuario, 2026-10-28: "interfaz homogénea"): factor K ("Usar el
+   factor K de la chapa" o propio) y "Editar croquis sobre el desarrollo", que despliega la chapa
+   como estaba antes del corte (el desarrollo apunta al apoyo del corte; Aplanar/DXF lo vuelven a
+   la punta), abre el croquis y al salir (o con Doblar) vuelve a plegar; si el corte quedó con
+   error o entero sobre una brida, avisa. Probado en FreeCAD real (K 0,4 propio y de vuelta a la
+   chapa, ranura movida de 45-55 a 65-75 sacando lo mismo, aviso). Queda un paso de deshacer vacío
+   de SheetMetal ("WrappedCutout") al editar, como en las bridas.
+   SW permite elegir qué pliegues desdoblar: acá se despliega todo.
 
 Versión 2: **HECHA (2026-10-27/28**, el usuario se fue a dormir: "seguí trabajando"; falta que la
 pruebe él). Botones nuevos en la pestaña Chapa: Dobladillo, Extruir corte, Convertir en chapa;
@@ -775,7 +782,7 @@ Etapas:
 
 ## Falta / ideas pendientes
 - Fase 1: chapa hecha; pendientes chicos: desahogos de pliegue, Convertir en chapa de un sólido
-  macizo, panel SW para editar un Corte-Desdoblado, elegir qué pliegues desdoblar.
+  macizo, elegir qué pliegues desdoblar.
 - Simulación FEM como pestaña "Simulación" con flujo SW (estudio, material, sujeciones, cargas,
   malla, ejecutar, resultados): conversada, sin empezar; es grande.
 - Panel Ver/Datos (propiedades de FreeCAD): se deja por ahora; el usuario va a ver si le sirve.

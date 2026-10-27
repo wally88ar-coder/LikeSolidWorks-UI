@@ -269,7 +269,8 @@ Neueste Version oben. / Newest version first.
 - Chapa, tercera versión: **Desdoblar / Doblar** como SW. Desdoblar muestra el desarrollo y abre un
   croquis encima; lo que se dibuja (puede cruzar los pliegues) se corta y la chapa se vuelve a
   plegar con Doblar o al salir del croquis (por debajo el "Wrap Cutout" de SheetMetal). Un corte
-  entero sobre una brida avisa que va con Extruir corte.
+  entero sobre una brida avisa que va con Extruir corte. Editar un Corte-Desdoblado abre un panel
+  en castellano (factor K y "Editar croquis sobre el desarrollo") en lugar del de SheetMetal.
 
 ## 0.10.0 — 2026-10-18
 
