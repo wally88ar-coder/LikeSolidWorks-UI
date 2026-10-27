@@ -258,6 +258,16 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
     - Las copias siguen el nombre del original al aceptar una edición.
   Para más adelante: alcance en taladro, matrices, simetría, barridos.
 - C. Combinar (Agregar / Restar / Común) y Dividir con paneles SW.
+  - **Combinar: HECHO (2026-10-26)** (`swui/fork/combine_panel.py`, botón en Operaciones, columna
+    de "Cuerpo"). Panel como el de SW (capturas del usuario): Tipo de operación Agregar /
+    Eliminar / Común; "Sólidos para combinar" o, en Eliminar, "Sólido principal" + "Sólidos para
+    substraer"; clic en una cara o en el árbol elige el sólido, otro clic lo saca. Por debajo la
+    Booleana nativa (Fuse/Cut/Common) en el Cuerpo principal (en Agregar/Común, el primero de la
+    lista; si cambia, la operación se muda), herramientas ocultas y descontadas de Sólidos(n).
+    Editar una existente abre el mismo panel (registrado en `dress_up_panel.PANELS`). Probado en
+    FreeCAD real: A con B y C superpuestos, Eliminar -> 43500 mm³ (correcto), un solo deshacer,
+    editar y Cancelar sin cambios. Falta que lo pruebe el usuario.
+  - Dividir: falta (pedirle capturas del panel de SW, como hizo con Combinar).
 - D. Soldadas, después de la chapa.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
