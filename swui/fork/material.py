@@ -465,6 +465,8 @@ def _owner(obj):
 # Los que usan un sólido sin "comérselo": apoyos de croquis, copias vinculadas de una cara,
 # vistas de planos, planillas, contenedores y vínculos de ensamblaje.
 NOT_CONSUMERS = ("PartDesign::", "Sketcher::", "TechDraw::", "Spreadsheet::", "App::", "Measure::", "Assembly::")
+# Operaciones de Part que COPIAN el sólido (el original sigue existiendo): simetría de sólidos
+COPIERS = ("Part::Mirroring",)
 
 
 def consumes(user, obj):
@@ -480,7 +482,7 @@ def consumes(user, obj):
         return any(o is obj for o in (getattr(user, "Group", None) or []))
     if kind == "PartDesign::Body":
         return getattr(user, "BaseFeature", None) is obj
-    if kind.startswith(NOT_CONSUMERS):
+    if kind.startswith(NOT_CONSUMERS) or kind in COPIERS:
         return False
     try:
         return user.isDerivedFrom("Part::Feature")

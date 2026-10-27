@@ -12,7 +12,10 @@ reemplaza a su diálogo. Como en SW:
   activa; una cara plana también (dirección normal / plano de simetría);
 - "Operaciones y caras": un clic en una cara de la pieza suma (o saca) la
   operación que la creó; también un clic en una operación del árbol;
-- "Sólidos": copiar la pieza entera (TransformMode "Whole shape" de FreeCAD);
+- "Sólidos": copiar la pieza entera (TransformMode "Whole shape" de FreeCAD). En Simetría,
+  como SW: "Sólidos para simetría" + "Fusionar sólidos". Prendida y solo el sólido de la
+  operación: la simetría nativa de Part Design (Whole shape). Apagada: cada sólido elegido
+  se espeja como SÓLIDO APARTE (mirror_bodies.py: Simetría de Part + Cuerpo nuevo, nativos);
 - espaciado e instancias (las instancias cuentan el original, como en SW);
 - vista previa con las copias en amarillo.
 
@@ -468,20 +471,172 @@ class PolarPanel(TransformedPanel):
 class MirrorPanel(TransformedPanel):
     TRANSACTION = "Editar simetría"
     FAIL = "FreeCAD no puede hacer la simetría así: revisá el plano."
+    ONLY_OWN = ("Con «Fusionar sólidos» va solo el sólido de esta operación: para espejar otros "
+                "sólidos, destildalo (quedan como sólidos aparte).")
+
+    def __init__(self, obj):
+        from swui.fork import multibody
+
+        own = multibody.body_of(obj)
+        self.mirror_bodies = [own] if (obj.TransformMode == "Whole shape" and own is not None
+                                       and obj.Document.HasPendingTransaction is False) else []
+        super().__init__(obj)
 
     def _build(self):
         box = QtWidgets.QWidget()
         box.setWindowTitle("Cara/Plano de simetría")
         form = QtWidgets.QFormLayout(box)
         self._ref_box("MirrorPlane", "Plano:", form, "Plano o cara plana")
-        self.form = [box, self._features_box()]
+        features = self._features_box()
+        self.whole.hide()  # en Simetría: la sección "Sólidos para simetría" (como SW)
+        solids = QtWidgets.QWidget()
+        solids.setWindowTitle("Sólidos para simetría")
+        lay = QtWidgets.QVBoxLayout(solids)
+        lay.addWidget(QtWidgets.QLabel("Clic acá y después en el sólido (cara o árbol):"))
+        self.blist = dp.pick_list(self.remove_body, self.clear_bodies, 50)
+        self.blist._swui_click = _ListClick(self._activate, self.blist)
+        self.blist.viewport().installEventFilter(self.blist._swui_click)
+        lay.addWidget(self.blist)
+        self.merge = QtWidgets.QCheckBox("Fusionar sólidos")
+        self.merge.setChecked(True)
+        self.merge.setToolTip("Apagado: cada sólido espejado queda como un sólido aparte (Cuerpo nuevo)")
+        self.merge.toggled.connect(self._changed)
+        lay.addWidget(self.merge)
+        self.form = [box, features, solids]
         self._start()
+
+    # --- sólidos
+
+    def _own(self):
+        from swui.fork import multibody
+
+        return multibody.body_of(self.obj)
+
+    def _separate(self):
+        """¿Sólidos aparte? (sólidos elegidos y no es "solo el propio, fusionado")."""
+        return bool(self.mirror_bodies) and not (self.merge.isChecked() and self.mirror_bodies == [self._own()])
+
+    def _activate(self, widget):
+        self.active = widget
+        for w in list(self.ref_boxes.values()) + [self.list, getattr(self, "blist", None)]:
+            if w is not None:
+                w.setStyleSheet(ACTIVE_QSS if w is widget else "")
+
+    def _fill(self):
+        super()._fill()
+        if hasattr(self, "blist"):
+            self.blist.clear()
+            for body in self.mirror_bodies:
+                self.blist.addItem(body.Label)
+            self.list.setEnabled(not self.mirror_bodies)
+
+    def remove_body(self, *_a):
+        row = self.blist.currentRow()
+        if 0 <= row < len(self.mirror_bodies):
+            self.mirror_bodies = self.mirror_bodies[:row] + self.mirror_bodies[row + 1:]
+            self._fill()
+            self.preview()
+
+    def clear_bodies(self, *_a):
+        self.mirror_bodies = []
+        self._fill()
+        self.preview()
 
     def _pick(self, obj, sub):
         # una arista no define un plano de simetría
-        if sub.startswith("Edge"):
+        if sub.startswith("Edge") and self.active is not getattr(self, "blist", None):
             return False
+        if self.active is getattr(self, "blist", None):
+            from swui.fork import combine_panel, multibody
+
+            body = combine_panel._body_of(obj)
+            if body is None or body not in multibody.solid_bodies(self.doc) + [self._own()]:
+                return False
+            self.mirror_bodies = combine_panel.toggle_body(self.mirror_bodies, body)
+            return True
         return super()._pick(obj, sub)
+
+    # --- vista previa y aceptar
+
+    def _apply(self):
+        native_whole = bool(self.mirror_bodies) and not self._separate()
+        self.whole.blockSignals(True)
+        self.whole.setChecked(native_whole)
+        self.whole.blockSignals(False)
+        return super()._apply()
+
+    def _ready(self):
+        return bool(self.mirror_bodies) or bool(self.originals)
+
+    def preview(self):
+        if not self._separate():
+            return super().preview()
+        from swui.fork import mirror_bodies
+
+        self.timer.stop()
+        self.valid = False
+        problem = ""
+        shapes = []
+        if self.merge.isChecked():
+            problem = self.ONLY_OWN
+        elif mirror_bodies.plane_link(self.refs.get("MirrorPlane")) is None:
+            problem = "Elegí el plano de simetría (un plano o una cara plana)."
+        else:
+            for body in self.mirror_bodies:
+                shape = mirror_bodies.mirrored_shape(body, self.refs.get("MirrorPlane"))
+                if shape is None:
+                    problem = "No se pudo espejar %s." % body.Label
+                    break
+                shapes.append(shape)
+            self.valid = not problem
+        self._show_only(self.base)
+        self.message.setText(problem)
+        self.message.setVisible(bool(problem))
+        self._undraw()
+        try:
+            graph = self.gdoc.ActiveView.getSceneGraph()
+            for shape in shapes:
+                node = dp._faces_node(shape.Faces, dp.PREVIEW_COLOR)
+                graph.addChild(node)
+                self.nodes.append(node)
+        except Exception:
+            pass
+
+    def accept(self):
+        if not self._separate():
+            return super().accept()
+        if self.timer.isActive():
+            self.preview()
+        if not self.valid:
+            return False
+        from swui.fork import mirror_bodies, multibody
+
+        doc, name, ref = self.doc, self.obj.Name, self.refs.get("MirrorPlane")
+        bodies = list(self.mirror_bodies)
+        self._close()
+        self._restore_visibility()
+        # la simetría de Part Design no queda: deshacer lo del diálogo (resetEdit confirmaría)
+        doc.abortTransaction()
+        if self.gdoc.getInEdit() is not None:
+            self.gdoc.resetEdit()
+        doc.openTransaction("Simetría de sólidos")
+        try:
+            feature = doc.getObject(name)
+            if feature is not None:  # se editaba una existente: pasa a sólidos aparte
+                body = multibody.body_of(feature)
+                previous = feature.BaseFeature
+                was_tip = body is not None and body.Tip is feature
+                doc.removeObject(name)
+                if was_tip and previous is not None:
+                    multibody._set_tip(body, previous)
+            for body in bodies:
+                mirror_bodies.make_mirror_body(body, ref)
+            doc.commitTransaction()
+        except Exception as exc:
+            doc.abortTransaction()
+            QtWidgets.QMessageBox.warning(FreeCADGui.getMainWindow(), "Simetría", "No se pudo: %s" % exc)
+        doc.recompute()
+        return True
 
 
 def install():
