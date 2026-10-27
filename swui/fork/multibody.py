@@ -866,7 +866,10 @@ class _DeleteKey(QtCore.QObject):
 
     def eventFilter(self, obj, event):
         try:
-            if event.type() != QtCore.QEvent.Type.KeyPress or event.key() != QtCore.Qt.Key.Key_Delete:
+            # Qt resuelve los atajos (Supr = Std_Delete) con ShortcutOverride, ANTES del KeyPress:
+            # hay que sumar las copias ahí, si no Std_Delete ya corrió
+            if event.type() not in (QtCore.QEvent.Type.ShortcutOverride, QtCore.QEvent.Type.KeyPress) \
+                    or event.key() != QtCore.Qt.Key.Key_Delete:
                 return False
             if isinstance(QtWidgets.QApplication.focusWidget(), (QtWidgets.QLineEdit, QtWidgets.QAbstractSpinBox,
                                                                   QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit)):

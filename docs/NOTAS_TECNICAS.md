@@ -223,10 +223,12 @@
   arma el asistente vuelve a poner su nombre en otro QTimer(0) posterior (`multibody._keep_label`).
 - Probar sin GUI: un FeaturePython definido en el script de prueba no se puede reabrir en otro
   proceso (1.1.4 bloquea importar módulos que no sean de FreeCAD o de addons instalados).
-- Supr: un filtro de eventos en la QApplication ve la tecla ANTES del atajo de Std_Delete; sumar
-  objetos a la selección ahí hace que Std_Delete los borre en el mismo paso y sin el aviso de
-  "objetos que dependen". En la prueba, `QTest.keyClick(arbol, Key_Delete)` no disparó Std_Delete
-  (sí `sendEvent` + `runCommand("Std_Delete")`).
+- Supr: los atajos se resuelven con `QEvent.ShortcutOverride` (al widget con foco) ANTES del
+  KeyPress: un filtro de la QApplication que escucha solo KeyPress llega tarde (Std_Delete ya
+  corrió). Escuchando ShortcutOverride, sumar objetos a la selección hace que Std_Delete los borre
+  en el mismo paso y sin el aviso de "objetos que dependen". Para probar el atajo real:
+  `QTest.keyClick(ventana_principal, Key_Delete)` con la ventana activa y esperando ~1 s después de
+  cambiar la selección (FreeCAD habilita Std_Delete con un pequeño retraso; antes no dispara).
 - `slotDeletedObject` (observador de App) llega con el objeto todavía vivo: guardar los nombres y
   borrar otras cosas en un QTimer (borrar adentro del aviso es reentrante).
 - Separar una extrusión en el `pressed` de Aceptar (para un solo paso de deshacer) NO sirve:

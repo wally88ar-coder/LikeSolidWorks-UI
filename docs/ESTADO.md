@@ -243,8 +243,10 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
   - Hecho después (2026-10-26, pedido del usuario):
     - Borrar el corte original borra sus copias y lo que el asistente armó para ellas: con Supr
       (filtro de la aplicación) se suman a la selección y Std_Delete borra todo en un paso, sin
-      aviso de vínculos rotos (probado en real: selección + Std_Delete; la tecla simulada con
-      QTest no disparó Std_Delete en la prueba: que lo confirme el usuario). Por otro camino
+      aviso de vínculos rotos. Probado en real con el atajo de verdad (QTest a la ventana, con
+      Std_Delete ya habilitado): un solo paso "Delete", sin aviso, y un Ctrl+Z devuelve todo. La
+      primera versión escuchaba solo KeyPress y llegaba tarde (salía el aviso nativo y las copias
+      se borraban en un segundo paso): corregido escuchando ShortcutOverride. Por otro camino
       (menú, Python): respaldo que borra las copias enseguida (paso aparte).
     - "Hasta la cara" se lleva a los otros sólidos con una copia vinculada de la cara (probado
       sin GUI). "Hasta el sólido" (UpToShape) sigue sin llevarse.
