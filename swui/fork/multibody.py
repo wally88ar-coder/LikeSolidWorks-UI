@@ -18,7 +18,13 @@ después FreeCAD recalcula solo (el archivo abre y se edita bien sin el addon).
 - Alcance de la operación (cortes): en cada sólido elegido se crea una copia del corte (copia
   vinculada del croquis + ecuaciones de FreeCAD atadas a las cotas del original, también el
   tipo), marcada con la propiedad SWUI_ScopeOf (nombre estable). Como SW, de fábrica: "Todos
-  los sólidos" con "Selección automática" = los sólidos que el corte atraviesa.
+  los sólidos" con "Selección automática" = los sólidos que el corte atraviesa. "Hasta la cara":
+  cada copia apunta a una copia vinculada de esa cara. El modo elegido queda en el original
+  (SWUI_ScopeMode, nombre estable): con selección automática, si después el corte pasa a
+  atravesar otros sólidos (p. ej. por una ecuación), el addon AVISA y ofrece actualizar; no
+  cambia nada solo (no es un motor: el archivo sigue siendo nativo).
+- Borrar el corte original borra sus copias (en SW es una sola operación): con Supr se suman a
+  lo que se borra (un solo paso de deshacer); por otro camino, se borran enseguida después.
 """
 
 import traceback
@@ -32,6 +38,7 @@ ADDITIVE = ("PartDesign::Pad", "PartDesign::Revolution")
 SUBTRACTIVE = ("PartDesign::Pocket", "PartDesign::Groove")
 SCOPE_PROP = "SWUI_ScopeOf"  # en las copias de un corte: el corte original (nombre estable)
 SCOPE_GROUP = "Alcance"
+SCOPE_MODE_PROP = "SWUI_ScopeMode"  # en el corte original: "auto" / "all" / "selected" (nombre estable)
 BODY_LABEL = "Cuerpo"
 TOUCH_VOLUME = 1e-6  # mm³: el corte "atraviesa" un sólido si le saca más que esto
 AUTO_MS = 700  # cada cuánto se recalcula la selección automática con el diálogo abierto
@@ -44,7 +51,8 @@ COPY_PROPS = {
                            "Reversed", "Type2", "SideType"),
     "PartDesign::Groove": ("Type", "Angle", "Angle2", "Midplane", "Reversed"),
 }
-NOT_COPYABLE_TYPES = ("UpToFace", "UpToShape")  # apuntan a caras del sólido original
+NOT_COPYABLE_TYPES = ("UpToShape",)  # "Hasta el sólido": no se lleva a otros sólidos
+# (UpToFace sí: cada copia apunta a una copia vinculada de la cara)
 SKETCH_AXES = {"V_Axis": "ObjectY", "H_Axis": "ObjectX", "N_Axis": "ObjectZ"}
 
 
@@ -162,18 +170,22 @@ def _keep_label(obj, label):
         pass
 
 
-def _binder(body, sketch, label):
-    """Copia vinculada del croquis dentro de otro Cuerpo (oculta: la usa la operación)."""
+def _binder(body, sketch, label, sub=""):
+    """
+    Copia vinculada (oculta) dentro de otro Cuerpo: del croquis entero (sub "") o de una cara
+    (sub "Face3"). Si ya hay una igual en ese Cuerpo, se reusa.
+    """
     for obj in body.Group:
         if obj.TypeId == "PartDesign::SubShapeBinder":
             try:
-                if obj.Support and obj.Support[0][0] is sketch:
+                support = obj.Support[0] if obj.Support else None
+                if support is not None and support[0] is sketch and tuple(support[1] or ("",)) == (sub,):
                     return obj
             except Exception:
                 pass
     binder = body.newObject("PartDesign::SubShapeBinder", "Vinculo")
     _keep_label(binder, label)
-    binder.Support = [(sketch, ("",))]
+    binder.Support = [(sketch, (sub,))]
     try:
         binder.Visibility = False
     except Exception:
@@ -382,9 +394,12 @@ def _make_copy(feature, body, sketch):
         if copy_axis is None:
             raise ValueError("el eje no se puede llevar a este sólido")
     binder = _binder(body, sketch, "%s (vínculo)" % sketch.Label)
+    face = _face_for(feature, body)
     copy = body.newObject(feature.TypeId, feature.Name + "_copia")
     _keep_label(copy, copy_label(feature.Label, body.Label))
     copy.Profile = binder
+    if face is not None:
+        copy.UpToFace = face
     if copy_axis is not None:
         copy.ReferenceAxis = copy_axis
     for prop in COPY_PROPS.get(feature.TypeId, ()):
@@ -405,11 +420,61 @@ def _make_copy(feature, body, sketch):
     return copy
 
 
+def _face_for(feature, body):
+    """"Hasta la cara": la cara del original como copia vinculada dentro del otro sólido, o None."""
+    try:
+        if getattr(feature, "Type", "") != "UpToFace" or not feature.UpToFace:
+            return None
+        obj, subs = feature.UpToFace
+        sub = subs[0] if subs else ""
+    except Exception:
+        return None
+    if obj is None or not sub:
+        return None
+    binder = _binder(body, obj, "Cara de %s (vínculo)" % obj.Label, sub)
+    return (binder, ["Face1"])
+
+
+def sync_copies(feature):
+    """Al aceptar una edición del original: lo que no va por ecuación ("Hasta la cara", nombre) al día."""
+    for copy in copies_of(feature):
+        try:
+            face = _face_for(feature, body_of(copy))
+            if face is not None and (not copy.UpToFace or copy.UpToFace[0] is not face[0]):
+                copy.UpToFace = face
+            want = copy_label(feature.Label, body_of(copy).Label)  # si se renombró el original
+            if copy.Label != want:
+                copy.Label = want
+        except Exception:
+            pass
+
+
+def scope_mode(feature):
+    return getattr(feature, SCOPE_MODE_PROP, "") or ("selected" if copies_of(feature) else "auto")
+
+
+def set_scope_mode(feature, mode):
+    if SCOPE_MODE_PROP not in feature.PropertiesList:
+        feature.addProperty("App::PropertyString", SCOPE_MODE_PROP, SCOPE_GROUP,
+                            "Alcance de la operación (LikeSolidWorks UI): auto / all / selected")
+        try:
+            feature.setEditorMode(SCOPE_MODE_PROP, 2)  # oculta
+        except Exception:
+            pass
+    if getattr(feature, SCOPE_MODE_PROP) != mode:
+        setattr(feature, SCOPE_MODE_PROP, mode)
+
+
 def _remove_copy(copy):
     doc = copy.Document
     body = body_of(copy)
     binder = profile_object(copy)
     helpers = [binder]
+    try:
+        if copy.UpToFace:
+            helpers.append(copy.UpToFace[0])
+    except Exception:
+        pass
     if copy.TypeId == "PartDesign::Groove":
         try:
             helpers.append(copy.ReferenceAxis[0])
@@ -468,10 +533,10 @@ class _Section(QtWidgets.QGroupBox):
             self.list = QtWidgets.QListWidget()
             self.list.setMaximumHeight(110)
             copies = copies_of(feature)
-            self.all.setChecked(True)
-            self.auto.setChecked(True)
-            if copies:  # al editar: lo que hay
-                self.sel.setChecked(True)
+            mode = scope_mode(feature)  # al editar: lo que se eligió la última vez
+            self.all.setChecked(mode in ("auto", "all"))
+            self.sel.setChecked(mode == "selected")
+            self.auto.setChecked(mode != "all")
             for w in (self.all, self.sel, self.auto, self.list):
                 box.addWidget(w)
             self._fill_list(set(body_of(c) for c in copies))
@@ -548,7 +613,11 @@ class _Section(QtWidgets.QGroupBox):
     def decision(self):
         if self.additive:
             return ("merge", self.merge.isChecked())
-        return ("scope", [b.Name for b in self.bodies()])
+        if self.sel.isChecked():
+            mode = "selected"
+        else:
+            mode = "auto" if self.auto.isChecked() else "all"
+        return ("scope", [b.Name for b in self.bodies()], mode)
 
 
 def _wanted(feature):
@@ -695,10 +764,16 @@ def _apply_decision(decision, doc_name, name):
         else:
             bodies = [doc.getObject(n) for n in decision[1] if doc.getObject(n) is not None]
             current = sorted([body_of(feature).Name] + [body_of(c).Name for c in copies_of(feature)])
-            if sorted(b.Name for b in bodies) == current:
+            same = sorted(b.Name for b in bodies) == current
+            if same and getattr(feature, SCOPE_MODE_PROP, None) == decision[2] and not copies_of(feature):
                 return
             doc.openTransaction("Alcance de la operación")
-            _created, _removed, problems = apply_scope(feature, bodies)
+            problems = []
+            if len(solid_bodies(doc)) > 1 or copies_of(feature):
+                set_scope_mode(feature, decision[2])
+            if not same:
+                _created, _removed, problems = apply_scope(feature, bodies)
+            sync_copies(feature)
             doc.commitTransaction()
             if problems:
                 _tell("\n".join(problems))
@@ -748,11 +823,176 @@ def _in_workbench():
         return True
 
 
+# --- Borrar el original borra sus copias -----------------------------------------------------
+
+
+def _helpers(copy):
+    """Lo que el asistente armó para una copia: copia vinculada del croquis, de la cara, recta del eje."""
+    out = [profile_object(copy)]
+    try:
+        if copy.UpToFace:
+            out.append(copy.UpToFace[0])
+    except Exception:
+        pass
+    if copy.TypeId == "PartDesign::Groove":
+        try:
+            out.append(copy.ReferenceAxis[0])
+        except Exception:
+            pass
+    return [h for h in out if h is not None and h.TypeId in ("PartDesign::SubShapeBinder", "PartDesign::Line")]
+
+
+def with_copies(objs):
+    """
+    Lo que hay que borrar: lo elegido + las copias de los cortes elegidos + lo que el asistente
+    armó para ellas y nadie más usa (sin repetir).
+    """
+    out = list(objs)
+    for obj in objs:
+        for copy in copies_of(obj):
+            if copy not in out:
+                out.append(copy)
+    for copy in [o for o in out if original_of(o) is not None]:
+        for helper in _helpers(copy):
+            users = [u for u in helper.InList if u.TypeId != "PartDesign::Body"]
+            if helper not in out and all(u in out for u in users):
+                out.append(helper)
+    return out
+
+
+class _DeleteKey(QtCore.QObject):
+    """Supr sobre el árbol o la vista: suma a la selección las copias de los cortes elegidos,
+    así Std_Delete las borra junto con el original (un paso de deshacer, sin aviso de vínculos)."""
+
+    def eventFilter(self, obj, event):
+        try:
+            if event.type() != QtCore.QEvent.Type.KeyPress or event.key() != QtCore.Qt.Key.Key_Delete:
+                return False
+            if isinstance(QtWidgets.QApplication.focusWidget(), (QtWidgets.QLineEdit, QtWidgets.QAbstractSpinBox,
+                                                                  QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit)):
+                return False
+            if not _in_workbench() or FreeCADGui.Control.activeDialog():
+                return False
+            sels = FreeCADGui.Selection.getSelection()
+            extra = [c for c in with_copies(sels) if c not in sels]
+            for copy in extra:
+                FreeCADGui.Selection.addSelection(copy)
+        except Exception:
+            pass
+        return False
+
+
+class _DocObserver:
+    """Respaldo (borrado por otro camino: menú, Python) y aviso de la selección automática."""
+
+    def slotDeletedObject(self, obj):
+        try:
+            doc = obj.Document
+            if getattr(doc, "Transacting", False) or getattr(doc, "Restoring", False):
+                return
+            names = [c.Name for c in copies_of(obj)]
+        except Exception:
+            return
+        if names:
+            doc_name = doc.Name
+            QtCore.QTimer.singleShot(0, lambda: _drop_orphans(doc_name, names))
+
+    def slotRecomputedDocument(self, doc):
+        if _check["busy"] or FreeCADGui.Control.activeDialog():
+            return
+        doc_name = doc.Name
+        QtCore.QTimer.singleShot(0, lambda: _check_auto(doc_name))
+
+
+def _drop_orphans(doc_name, names):
+    doc = FreeCAD.listDocuments().get(doc_name)
+    if doc is None:
+        return
+    copies = [doc.getObject(n) for n in names if doc.getObject(n) is not None]
+    if not copies:
+        return
+    doc.openTransaction("Borrar copias del corte")
+    for copy in copies:
+        try:
+            _remove_copy(copy)
+        except Exception:
+            pass
+    doc.commitTransaction()
+    doc.recompute()
+
+
+_check = {"busy": False, "declined": set()}
+
+
+def drifted(feature):
+    """Con selección automática: (sólidos a sumar, sólidos a sacar) si el corte cambió, o ([], [])."""
+    if scope_mode(feature) != "auto" or SCOPE_MODE_PROP not in feature.PropertiesList:
+        return [], []
+    current = set([body_of(feature)] + [body_of(c) for c in copies_of(feature)])
+    touched = set(touched_bodies(feature))
+    owner = body_of(feature)
+    return ([b for b in touched if b not in current], [b for b in current if b not in touched and b is not owner])
+
+
+def _check_auto(doc_name):
+    doc = FreeCAD.listDocuments().get(doc_name)
+    if doc is None or _check["busy"] or FreeCADGui.Control.activeDialog():
+        return
+    for feature in [o for o in doc.Objects if SCOPE_MODE_PROP in getattr(o, "PropertiesList", [])]:
+        try:
+            add, drop = drifted(feature)
+        except Exception:
+            continue
+        if not add and not drop:
+            continue
+        key = (doc_name, feature.Name, tuple(sorted(b.Name for b in add)), tuple(sorted(b.Name for b in drop)))
+        if key in _check["declined"]:
+            continue
+        parts = []
+        if add:
+            parts.append("ahora también atraviesa %s" % ", ".join(b.Label for b in add))
+        if drop:
+            parts.append("ya no atraviesa %s" % ", ".join(b.Label for b in drop))
+        text = ("«%s» %s (selección automática).\n\n¿Actualizar el alcance de la operación?"
+                % (feature.Label, " y ".join(parts)))
+        answer = QtWidgets.QMessageBox.question(FreeCADGui.getMainWindow(), "Alcance de la operación", text)
+        if answer != QtWidgets.QMessageBox.StandardButton.Yes:
+            _check["declined"].add(key)
+            continue
+        _check["busy"] = True
+        try:
+            doc.openTransaction("Alcance de la operación")
+            current = [body_of(feature)] + [body_of(c) for c in copies_of(feature)]
+            wanted = [b for b in current if b not in drop] + add
+            _c, _r, problems = apply_scope(feature, wanted)
+            doc.commitTransaction()
+            doc.recompute()
+            if problems:
+                _tell("\n".join(problems))
+        except Exception:
+            doc.abortTransaction()
+            FreeCAD.Console.PrintError("[SWUI fork] Alcance automático:\n%s\n" % traceback.format_exc())
+        finally:
+            _check["busy"] = False
+
+
 _observer = None
+_doc_observer = None
+_delete_key = None
 
 
 def install():
-    global _observer
+    global _observer, _doc_observer, _delete_key
     if _observer is None:
         _observer = _EditObserver()
         FreeCADGui.addDocumentObserver(_observer)
+    if _doc_observer is None:
+        _doc_observer = _DocObserver()
+        FreeCAD.addDocumentObserver(_doc_observer)
+    if _delete_key is None:
+        try:
+            app = QtWidgets.QApplication.instance()
+            _delete_key = _DeleteKey()
+            app.installEventFilter(_delete_key)
+        except Exception:
+            _delete_key = None

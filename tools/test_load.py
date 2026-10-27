@@ -898,7 +898,8 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or mb.scope_bodies("all", False, "A", ["A", "B", "C"], ["A"], []) != ["A", "B", "C"]
             or mb.scope_bodies("selected", True, "A", ["A", "B", "C"], ["A", "B"], ["B"]) != ["A", "B"]
             or mb.scope_bodies("selected", False, "B", ["A", "B", "C"], [], []) != ["B"]
-            or "Midplane" in mb.COPY_PROPS["PartDesign::Pocket"]
+            or "Midplane" in mb.COPY_PROPS["PartDesign::Pocket"] or mb.NOT_COPYABLE_TYPES != ("UpToShape",)
+            or mb.with_copies([]) != []
             or not any(isinstance(o, mb._EditObserver) for o in gui_._doc_observers)):
         print("  FEHLER: fork: multicuerpo (fusionar resultado, alcance de la operación)")
         return False
