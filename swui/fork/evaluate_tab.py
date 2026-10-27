@@ -4,8 +4,8 @@
 """
 Lo que el fork agrega a la cinta. Pestaña Evaluar con las herramientas de la fase 3 (como el
 CommandManager de SW): Medir (el del fork en lugar de Std_Measure), Propiedades físicas,
-Ecuaciones y Editar material. Pestaña Operaciones: Combinar (multicuerpo). Cambia las tablas
-del original (ribbon_layout.EVALUIEREN / FEATURES) desde afuera, antes de que se arme la cinta;
+Ecuaciones y Editar material. Pestaña Operaciones: Combinar (multicuerpo) y Mover cara.
+Cambia las tablas del original (ribbon_layout.EVALUIEREN / FEATURES) desde afuera, antes de que se arme la cinta;
 el test (tools/test_load.py, parte "fork") lee esta tabla.
 """
 
@@ -25,6 +25,7 @@ GROUP = [
 # Pestaña Operaciones: multicuerpo (combinar.py / dividir), en la columna chica de "Cuerpo"
 FEATURES_ADD = [
     ("SWUI_Combine", "Combinar", {"svg": "fork/combine"}),
+    ("SWUI_MoveFace", "Mover cara", {"svg": "fork/move_face"}),
 ]
 
 

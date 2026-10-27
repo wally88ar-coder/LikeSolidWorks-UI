@@ -238,6 +238,11 @@ Neueste Version oben. / Newest version first.
 - **Alcance de la operación en el Asistente para taladro**, igual que en los cortes.
 - **Combinar** (pestaña Operaciones) con el panel de SW: Agregar / Eliminar / Común, sólidos
   elegidos con clics; por debajo la Booleana nativa de FreeCAD (`swui/fork/combine_panel.py`).
+- **Mover cara** (pestaña Operaciones, fase 4) con el panel de SW: Equidistanciar / Trasladar
+  (dirección o ΔX ΔY ΔZ) / Girar alrededor de una arista, solo caras planas, también en sólidos
+  importados. Por debajo Extruir o Cortar desde la cara y el Ángulo de salida nativos: el archivo
+  abre y se recalcula sin el addon (`swui/fork/move_face.py`). Límite: con caras vecinas
+  inclinadas, mover (no girar) deja un escalón en vez de prolongarlas.
 
 ## 0.10.0 — 2026-10-18
 

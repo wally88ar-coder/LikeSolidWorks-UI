@@ -246,3 +246,18 @@
 - Pruebas: `PartDesign_Hole` (y otros comandos de Part Design) sin Cuerpo activo abren el aviso
   modal "Cuerpo Activo Requerido" y la prueba queda colgada (el usuario lo vio en su pantalla):
   `FreeCADGui.ActiveDocument.ActiveView.setActiveObject("pdbody", cuerpo)` antes del comando.
+
+## Mover cara (fase 4): hallazgos en FreeCAD 1.1.4
+- Pad / Pocket aceptan como `Profile` caras del sólido anterior `(operación, ["Face6", "Face9"])`:
+  el Pad sale según la normal de la cara (también la de abajo, hacia -Z), el Pocket entra.
+- `PartDesign::Draft` gira una cara alrededor de una arista: `NeutralPlane` = cara plana que
+  contiene la arista; `PullDirection` = arista recta perpendicular a ella dentro de la cara (la
+  cara queda paralela al tiro y el ángulo es el giro). Prolonga las vecinas aunque sean inclinadas.
+  Si la cara girada atraviesa la de enfrente, falla sin mensaje (`Draft: ` vacío).
+- Un plano de referencia con MapMode OXY/OXZ/OZX apoyado en (vértice, arista, cara) sale paralelo
+  a la cara en vez de contener su normal: no sirve para el plano neutro.
+- `Body.BaseFeature = sólido`: el Cuerpo toma la forma SIN el Placement del sólido (lo mismo con una
+  SubShapeBinder o un Clon con Placement): copiar el Placement al Cuerpo.
+- `doc.removeObject(nombre)`: leer `obj.Name` antes (después da "deleted object").
+- `SwPanel.preview` vuelve a leer `self.obj` después de `_apply` (un panel puede cambiar la
+  operación por otra); `dress_up_panel.CHOOSERS` elige el panel por marca antes que por TypeId.

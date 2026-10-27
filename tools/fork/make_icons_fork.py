@@ -94,6 +94,16 @@ def _():
             mk.new("M8 22 H26 V12 H54 V40 H36 V50 H8 Z")]
 
 
+@icon("move_face", "Mover cara")
+def _():
+    # bloque con la cara de arriba corrida hacia arriba (contorno azul) y la flecha
+    top = "M30 28 L54 36 L34 46 L10 38 Z"
+    left = "M10 38 L34 46 V60 L10 52 Z"
+    right = "M54 36 L34 46 V60 L54 50 Z"
+    return [_face(left, mk.GEO), _face(right, mk.PLANE), _face(top, mk.GEO),
+            mk.new("M30 10 L54 18 L34 28 L10 20 Z"), mk.arrow(32, 37, 32, 16, mk.NEW, 7.0, 3.2)]
+
+
 @icon("split", "Dividir")
 def _():
     # un bloque partido en dos por un plano (línea roja punteada) que se separan

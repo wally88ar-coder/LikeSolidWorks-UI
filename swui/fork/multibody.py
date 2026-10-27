@@ -666,6 +666,8 @@ class _Section(QtWidgets.QGroupBox):
 
 
 def _wanted(feature):
+    if hasattr(feature, "SWUI_MoveFace"):
+        return False  # Mover cara (move_face.py) tiene su propio panel
     if feature.TypeId in ADDITIVE:
         return has_solid_before(feature) or is_separated(feature)
     if feature.TypeId in SUBTRACTIVE:

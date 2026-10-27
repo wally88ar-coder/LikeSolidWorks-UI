@@ -121,6 +121,14 @@ def install(workbench=None):
         FreeCAD.Console.PrintError("[SWUI fork] Multicuerpo (fusionar resultado, alcance):\n%s\n"
                                    % traceback.format_exc())
     try:
+        from swui.fork import move_face
+
+        move_face.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [move_face.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Mover cara:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

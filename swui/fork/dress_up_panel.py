@@ -428,6 +428,7 @@ class SwPanel:
         problem = ""
         try:
             problem = self._apply()
+            obj = self.obj  # _apply puede cambiar la operación por otra (Mover cara: Pad <-> Pocket)
             if not problem and self._ready():
                 obj.recompute()
                 self.valid = obj.isValid() and not obj.Shape.isNull()
@@ -844,6 +845,18 @@ class DraftPanel(DressUpPanel):
 
 
 PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel, DRAFT: DraftPanel}  # pattern/hole_panel suman los suyos
+CHOOSERS = []  # funciones obj -> clase de panel o None; antes que PANELS (p. ej. Mover cara: un Pad marcado)
+
+
+def panel_class(obj):
+    for choose in CHOOSERS:
+        try:
+            cls = choose(obj)
+        except Exception:
+            cls = None
+        if cls is not None:
+            return cls
+    return PANELS.get(obj.TypeId)
 
 
 def _in_workbench():
@@ -863,7 +876,7 @@ def _take_over(doc_name, obj_name):
             return
         old_preview = _hide_native_preview()
         FreeCADGui.Control.closeDialog()
-        panel = PANELS[obj.TypeId](obj)
+        panel = panel_class(obj)(obj)
         panel.old_preview = old_preview
         _state["panel"] = panel
         FreeCADGui.Control.showDialog(panel)
@@ -926,7 +939,7 @@ class _EditObserver:
             obj = vp.Object
         except Exception:
             return
-        if obj.TypeId in PANELS and _state["panel"] is None and not _state["native"] and _in_workbench():
+        if panel_class(obj) is not None and _state["panel"] is None and not _state["native"] and _in_workbench():
             QtCore.QTimer.singleShot(0, lambda: _take_over(obj.Document.Name, obj.Name))
 
 

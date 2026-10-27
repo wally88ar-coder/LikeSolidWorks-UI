@@ -20,6 +20,9 @@
   ángulo / punto medio cambiando una cota, eje en un cilindro).
   Después, lo que elija el usuario entre lo que falta del "Alcance": Mover/Copiar y
   Eliminar/Conservar sólido, chapa (fase 1), mover/rotar cara (fase 4).
+- **Fase 4 — Mover cara: código completo (2026-10-27); falta que la pruebe el usuario.**
+  Detalle en "Análisis: Mover/Copiar sólido..." > Hecho. Siguen sin hacer Mover/Copiar sólido y
+  Eliminar/Conservar sólido (plan ya acordado en esa sección).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
@@ -83,6 +86,28 @@ Respuestas del usuario (2026-10-26, con capturas de los paneles de SW 2018):
 - Mover cara: en piezas propias y en importadas. **Aprobado hacer la fase 4 con objetos nativos**
   (Pad/Pocket/Draft), sin FeaturePython. Panel SW: Equidistanciar / Trasladar / Girar, caras,
   Copiar, condición final (Hasta profundidad especificada...), dirección, distancia, ΔX ΔY ΔZ.
+
+Hecho: **Mover cara** (2026-10-27, `swui/fork/move_face.py`, botón en Operaciones bajo
+Combinar). Panel SW: Equidistanciar / Trasladar / Girar, Caras, y en Parámetros Dirección
+(Trasladar; vacía = ΔX ΔY ΔZ), Eje de giro (Girar), Invertir dirección, Distancia, Ángulo.
+- Por debajo: Pad (sale) / Pocket (entra) con la cara como perfil; Girar = PartDesign::Draft con
+  plano neutro = cara plana que contiene la arista y tiro = arista recta (o cara) perpendicular a
+  ella dentro de la cara (prolonga también vecinas inclinadas, verificado). Varias caras: tienen que
+  mirar para el mismo lado (girar: mismo plano). Si cambia el sentido o el tipo, la operación se
+  cambia por la otra (bloqueado si otra operación usa sus caras). Marca `SWUI_MoveFace` (texto JSON,
+  oculta, **nombre estable**). Editar abre el panel (sin modo edición de FreeCAD: así se puede
+  cambiar Pad <-> Pocket). Sólido suelto (STEP): Cuerpo nuevo con BaseFeature = el sólido y
+  `Body.Placement` = el del sólido (el Cuerpo descarta la ubicación del sólido de arranque).
+- Probado sin GUI (cuentas, caras, eje) y en FreeCAD real: +5 (125000 mm³), editar e Invertir
+  -> Pocket (75000), un deshacer vuelve al Pad; girar 10° (119082, igual al cálculo; hacia abajo
+  no entra y avisa "probá con Invertir dirección o un ángulo menor"); importado corrido en Y
+  queda en su lugar; Cancelar no deja nada. Reabierto en otro proceso sin el addon: recalcula.
+- Sin hacer (decidir con el usuario si hace falta): Copiar (la casilla), condición final
+  distinta de "Hasta profundidad especificada", girar alrededor de un eje que no esté en la cara,
+  Equidistanciar caras curvas (p. ej. agrandar un agujero), ícono propio en el árbol (se ve el de
+  Extruir/Cortar/Ángulo de salida), y la distancia de Trasladar con dirección inclinada no se ata
+  a ecuaciones (se guarda la componente normal como número). Una ecuación que cambie de signo no
+  pasa de Extruir a Cortar.
 
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
