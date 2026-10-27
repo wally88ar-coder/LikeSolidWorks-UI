@@ -47,6 +47,30 @@ Lo que no está en esta lista no se hace (salvo pedido). "Por ahora no" = quizá
   Desdoblar/Doblar (abrir el desarrollo, operar en plano y volver a plegar).
 - Por ahora no: Operación Cierre, Superficie.
 
+## Análisis: Mover/Copiar sólido, Eliminar/Conservar sólido, Mover/rotar cara (2026-10-26, sin código)
+Verificado en 1.1.4 sin GUI (todo nativo, en la línea "asistente, no motor"):
+- Copiar sólido: Cuerpo nuevo con BaseFeature = copia vinculada (SubShapeBinder) del original y
+  el desplazamiento/giro en **Body.Placement** (admite ecuaciones; sigue los cambios del original;
+  admite operaciones encima). Ojo: el Placement de la copia vinculada (o de un Clon de Draft) usada
+  como BaseFeature se IGNORA (FeatureBase lo descarta): hay que mover el Cuerpo.
+- Mover sólido: o bien Body.Placement del mismo Cuerpo (simple; mueve todo, también lo que se
+  agregue después), o bien como Copiar + el original "consumido" (queda como paso del historial:
+  lo de antes en A, lo de después en el Cuerpo nuevo). Hace falta la decisión del usuario.
+- Conservar sólido (corte que parte la pieza en sueltos): `CompoundTools.CompoundFilter`
+  (Part::FeaturePython de FreeCAD) + Cuerpo nuevo con BaseFeature = filtro: correcto. Elegir la
+  pieza por número es frágil (orden); idea a probar: modo "collision-pass" con un punto dentro de
+  la pieza elegida. El Body no tiene `Suppressed` (las operaciones sí).
+- Mover cara (desfase según la normal): **Pad / Pocket nativos con la cara del sólido como perfil**
+  (también sobre un sólido importado, Cuerpo con BaseFeature): volumen exacto con caras vecinas
+  perpendiculares (+5: 125000, -5: 75000 mm³). Con vecinas inclinadas da un escalón en vez de
+  prolongarlas (110000 vs 109375 de SW); TaperAngle del Pad podría cubrir paredes de igual
+  inclinación (sin afinar). Dirección elegida: usar su componente normal (Pad con dirección
+  oblicua corre el prisma inclinado, no sirve).
+- Rotar cara alrededor de una arista: **PartDesign::Draft nativo** (cara de arriba, plano neutro =
+  cara lateral que contiene la arista, 10°: vértices y volumen exactos, 55918 mm³).
+- Consecuencia: la fase 4 se puede hacer sin FeaturePython propio (el CLAUDE.md lo preveía);
+  cambio de arquitectura a confirmar con el usuario.
+
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
 - Material: `ShapeMaterial` (Materials::PropertyMaterial) ya existe en Body y en todo Part::Feature;
