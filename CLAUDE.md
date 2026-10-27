@@ -77,26 +77,26 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   material. Diálogo de Ecuaciones estilo SW sobre expresiones + Spreadsheet/VarSet. Mediciones en
   pieza y ensamblaje (el panel de Medir de FreeCAD sale en inglés). Franja Material / Ecuaciones /
   Sólidos arriba del árbol (pasada acá desde el plan del árbol).
-- Mover/rotar cara: solo caras **planas**. Operación paramétrica (FeaturePython) en el Body,
-  editable y controlable por ecuaciones. Mover = desfase según la normal (o componente normal de
-  una dirección elegida) con el desfase de caras de OpenCASCADE, prolongando/recortando caras
-  vecinas. Rotar alrededor de una arista de la cara = método de ángulo de salida
-  (BRepOffsetAPI_DraftAngle); eje arbitrario = traslación + rotación. Respaldo: cara como perfil +
-  extrusión/corte booleano. Si se pierde la referencia, error claro y permitir reasignarla.
+- (Hecho en la fase 4, 2026-10-27, `swui/fork/move_face.py`.) Mover/rotar cara: solo caras
+  **planas**, con operaciones nativas (no FeaturePython: aprobado por el usuario). Equidistanciar /
+  Trasladar = Extruir o Cortar con la cara como perfil (componente normal); Girar alrededor de una
+  arista de la cara = Ángulo de salida nativo. Límite: con vecinas inclinadas, mover deja escalón.
 
 Operaciones de pieza que usa (menú Insertar de SW, lista completa en `docs/ESTADO.md` > Alcance):
-faltan Mover/Copiar sólido y Eliminar/Conservar sólido; Superficie y Operación Cierre, por ahora no.
+todas hechas salvo la chapa (Mover/Copiar y Eliminar/Conservar sólido: 2026-10-27, sin
+Restricciones por decisión del usuario); Superficie y Operación Cierre, por ahora no.
 
 El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con globos,
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-26: fase 0 terminada; fases 2 y 3 con código completo, falta que las pruebe el
-usuario (de la 2 solo probó el redondeo) y que revise las decisiones de la fase 3 (lista en
-`docs/ESTADO.md`). Hecho además fuera de las fases: árbol de operaciones estilo SW
-(barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...) y aristas del
-modelo dentro del croquis. Fase 1 cajoneada a pedido del usuario. Próximo: lo que elija el usuario
-después de probar las fases 2 y 3 (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
+Estado al 2026-10-27: fase 0 terminada; fases 2, 3 y 4 con código completo, falta que las pruebe
+el usuario (de la 2 solo probó el redondeo, de la 4 girar cara) y que revise las decisiones de la
+fase 3 (lista en `docs/ESTADO.md`). Hecho además fuera de las fases: árbol de operaciones estilo SW
+(barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...), aristas del
+modelo dentro del croquis, multicuerpo (Fusionar resultado, Alcance, Combinar, simetría de sólidos)
+y Mover/Copiar / Eliminar/Conservar sólidos. Fase 1 cajoneada a pedido del usuario. Próximo: lo que
+elija el usuario después de probar (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
 Trabajo de planos (TechDraw, sin número de fase): rosca simplificada automática, rótulo en
 castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el
@@ -105,7 +105,7 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 1. Chapa metálica + exportación DXF (es lo que más usa el usuario y no existe).
 2. Flujos de pieza: diálogos restantes adaptados y asistente para taladro.
 3. Evaluar: propiedades físicas, material, ecuaciones.
-4. Mover/rotar cara.
+4. Mover/rotar cara (hecha 2026-10-27).
 5. Ensamblaje: tangente, panel encadenado, mediciones.
 
 ## Forma de trabajo

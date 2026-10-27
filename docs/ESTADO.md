@@ -1,6 +1,7 @@
 # Estado del fork
 
-Última actualización: 2026-10-26 (quinta sesión: alcance del menú Insertar, ver "Alcance" abajo).
+Última actualización: 2026-10-27 (sexta sesión: fase 4 Mover cara, Mover/Copiar sólido y
+Eliminar/Conservar sólidos; ver "Análisis: Mover/Copiar sólido..." abajo).
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -14,18 +15,21 @@
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
   barrido, hélice y referencia; además árbol flotante, paneles SW de plano/eje/punto, y planos
   En ángulo / Punto medio que siguen a la pieza. Detalle en "Plan: fase 2" > Avance.
-- **Próximo paso:** que el usuario pruebe la fase 2 con una pieza suya (lista sugerida: chaflán,
-  matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el plano en
-  el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia / en
-  ángulo / punto medio cambiando una cota, eje en un cilindro).
-  Después, lo que elija el usuario entre lo que falta del "Alcance": Mover/Copiar y
-  Eliminar/Conservar sólido, chapa (fase 1), mover/rotar cara (fase 4).
-- **Fase 4 — Mover cara: código completo (2026-10-27).** Probado por el usuario: girar cara
-  "muy bueno"; falta que pruebe equidistanciar/trasladar. Detalle en "Análisis: Mover/Copiar
-  sólido..." > Hecho.
-- **Mover/Copiar sólido y Eliminar/Conservar sólidos: código completo (2026-10-27); falta que los
-  pruebe el usuario.** Restricciones de Mover/Copiar quedan para otra etapa. Detalle en la misma
-  sección.
+- **Fase 4 — Mover cara: terminada (2026-10-27)**, con operaciones nativas (Pad / Pocket /
+  Draft), sin FeaturePython (aprobado por el usuario). Probado por él: girar cara ("muy bueno");
+  falta que pruebe equidistanciar y trasladar.
+- **Mover/Copiar sólido y Eliminar/Conservar sólidos: terminados (2026-10-27); falta que los
+  pruebe el usuario.** Incluye "de un vértice a otro" y Supr que devuelve los sólidos.
+  Restricciones: descartado por el usuario (ecuaciones a mano si hiciera falta).
+  Con esto está completo el "Alcance" del menú Insertar, salvo la chapa (fase 1).
+  Detalle de las tres en "Análisis: Mover/Copiar sólido..." > Hecho.
+- **Próximo paso:** que el usuario pruebe con piezas suyas lo pendiente: fase 2 (lista sugerida:
+  chaflán, matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el
+  plano en el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia /
+  en ángulo / punto medio cambiando una cota, eje en un cilindro), fase 3 (y sus decisiones),
+  mover cara (equidistanciar / trasladar), Mover/Copiar y Eliminar/Conservar sólidos.
+  Después, lo que elija el usuario: chapa (fase 1, recomendada por Claude), planos, ensamblaje
+  (fase 5).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
@@ -45,15 +49,15 @@ Lo que no está en esta lista no se hace (salvo pedido). "Por ahora no" = quizá
 - Saliente/Base: Extruir, Revolución, Barrer. No: Recubrir, Límite, Dar espesor.
 - Cortar: Extruir, Revolución. No: Barrer ("corte barrido nunca usé"), Recubrir, Límite, Con superficie.
 - Operaciones: Redondeo, Chaflán, Asistente para taladro, Ángulo de salida, Vaciado, Combinar,
-  **Mover/Copiar sólido**, **Eliminar/Conservar sólido** (estos dos faltan). Vaciado hoy es el
+  **Mover/Copiar sólido**, **Eliminar/Conservar sólido** (hechos 2026-10-27). Vaciado hoy es el
   `PartDesign_Thickness` nativo con nombre en castellano, sin panel SW (el usuario lo da por hecho).
 - Matriz/Simetría: Matriz lineal, Matriz circular, Simetría.
-- Cara: Mover/rotar cara (fase 4). Curva: Hélice/Espiral. Geometría de referencia: hecha.
+- Cara: Mover/rotar cara (fase 4, hecha 2026-10-27). Curva: Hélice/Espiral. Geometría de referencia: hecha.
 - Chapa (fase 1): Brida base, Convertir en chapa metálica, Brida de arista, Dobladillo,
   Desdoblar/Doblar (abrir el desarrollo, operar en plano y volver a plegar).
 - Por ahora no: Operación Cierre, Superficie.
 
-## Análisis: Mover/Copiar sólido, Eliminar/Conservar sólido, Mover/rotar cara (2026-10-26, sin código)
+## Análisis: Mover/Copiar sólido, Eliminar/Conservar sólido, Mover/rotar cara (analizado 2026-10-26, hecho 2026-10-27)
 Verificado en 1.1.4 sin GUI (todo nativo, en la línea "asistente, no motor"):
 - Copiar sólido: Cuerpo nuevo con BaseFeature = copia vinculada (SubShapeBinder) del original y
   el desplazamiento/giro en **Body.Placement** (admite ecuaciones; sigue los cambios del original;
@@ -61,7 +65,7 @@ Verificado en 1.1.4 sin GUI (todo nativo, en la línea "asistente, no motor"):
   como BaseFeature se IGNORA (FeatureBase lo descarta): hay que mover el Cuerpo.
 - Mover sólido: o bien Body.Placement del mismo Cuerpo (simple; mueve todo, también lo que se
   agregue después), o bien como Copiar + el original "consumido" (queda como paso del historial:
-  lo de antes en A, lo de después en el Cuerpo nuevo). Hace falta la decisión del usuario.
+  lo de antes en A, lo de después en el Cuerpo nuevo). El usuario eligió la segunda (b).
 - Conservar sólido (corte que parte la pieza en sueltos): `CompoundTools.CompoundFilter`
   (Part::FeaturePython de FreeCAD) + Cuerpo nuevo con BaseFeature = filtro: correcto. Elegir la
   pieza por número es frágil (orden); idea a probar: modo "collision-pass" con un punto dentro de
@@ -75,9 +79,10 @@ Verificado en 1.1.4 sin GUI (todo nativo, en la línea "asistente, no motor"):
 - Rotar cara alrededor de una arista: **PartDesign::Draft nativo** (cara de arriba, plano neutro =
   cara lateral que contiene la arista, 10°: vértices y volumen exactos, 55918 mm³).
 - Consecuencia: la fase 4 se puede hacer sin FeaturePython propio (el CLAUDE.md lo preveía);
-  cambio de arquitectura a confirmar con el usuario.
-- El Cuerpo y la copia vinculada NO tienen apoyo (Attachment) en 1.1.4: "Restricciones" de
-  Mover/Copiar no sale nativo; el addon calcularía la posición al aceptar (no sigue cambios solo).
+  cambio de arquitectura aprobado por el usuario (2026-10-26).
+- El Cuerpo y la copia vinculada NO tienen apoyo (Attachment) en 1.1.4. (Después se verificó que
+  Restricciones y "de un vértice a otro" sí salen con puntos / sistemas de coordenadas de Part y
+  ecuaciones: ver más abajo.)
 
 Respuestas del usuario (2026-10-26, con capturas de los paneles de SW 2018):
 - Mover/Copiar: usa Trasladar/Girar con números **y** Restricciones. Mover = **(b)**, paso en el
