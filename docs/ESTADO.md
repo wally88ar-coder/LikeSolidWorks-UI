@@ -61,6 +61,33 @@ Versiones:
 3. Desdoblar/Doblar (cortar sobre el plano y volver a plegar): SheetMetal no lo trae igual; lo más
    parecido es "Wrap Cutout". Probar antes de prometer.
 
+Versión 2, empezada 2026-10-27 (el usuario se fue a dormir: "seguí trabajando"); **sin código
+todavía**, solo verificado sin GUI (scripts de prueba en el scratchpad de esa sesión):
+- **Cortes**: el Extruir corte nativo (Pocket "Por todo") sobre la chapa anda; el desarrollo sale
+  con el agujero y una brida de arista puesta después del corte también anda (U con brida de 20
+  después del corte: desarrollo 93,42 = 42 + 26 + 16 + 2 × 4,712). Plan: botón "Extruir corte" en
+  la pestaña Chapa que llame a `ribbon._run("PartDesign_Pocket")` (con un comando SWUI propio,
+  para no repetir PartDesign_Pocket en la cinta: el test cuenta botones).
+- **Convertir en chapa (STEP de SW)**: el Unfold despliega un sólido sin historia (76,712, bien) y
+  `SheetMetalNewUnfolder.EstimateThickness.using_best_method(forma, i_cara)` da el espesor (2).
+  Cuerpo con `BaseFeature` = sólido y `Body.Placement` = el del sólido (como `move_face._body_for`):
+  FreeCAD 1.1.4 arma adentro un `PartDesign::FeatureBase` (es la punta). **Las bridas van apoyadas
+  en ese FeatureBase**, no en el sólido importado: con el sólido de base la brida no sale y el
+  Placement se aplica dos veces (probado con el sólido corrido y girado 30°). Plan: propiedad
+  `SWUI_Sheet` en el Cuerpo (JSON: espesor detectado, radio, K, cara fija como punto + normal en
+  coordenadas del Cuerpo; **nombre estable**); `sheet_metal` tiene que aceptar Cuerpos sin Brida
+  base (espesor, K, radio y cara fija desde `SWUI_Sheet`; las bridas con radio por valor). El
+  "Convertir en chapa" de SW sobre un sólido macizo (cara fija + aristas de pliegue) sería
+  `SheetMetal_FromSolid` (caras a sacar + aristas a rasgar): queda para después.
+- **Dobladillo** = `SMHem` (HemType Flat / Open / Teardrop / Rolled = Cerrado / Abierto / Lágrima /
+  Laminado de SW; `width` = longitud, `opening` = separación, `radius` y `RollAngle` para lágrima y
+  laminado). Placa 100x50x2, arista de arriba en y=50, longitud 10: "Material Inside" = no pasa
+  la arista (y máx 50, = Material interior de SW); "Material Outside" = sale 2 (y 52, = Pliegue
+  exterior); "Thickness Outside" da error (no ofrecerlo). En Cerrado el radio y IncludeBend no
+  cambian la forma; `invert` lo pasa para abajo. Desarrollo de los cuatro: válido.
+- Falta: los tres paneles/comandos, DXF por lotes desde un ensamblaje (un DXF por pieza de chapa),
+  pruebas en FreeCAD real, CHANGELOG y commit.
+
 Hecho en la versión 1 (`swui/fork/sheet_metal.py` sin interfaz, `sheet_panels.py` paneles y
 comandos, `sheet_tab.py` la pestaña; íconos `sm_*` en `make_icons_fork.py`):
 - Brida base = `SMBaseBend` de SheetMetal (PartDesign::FeaturePython en el Cuerpo). Se llega como
