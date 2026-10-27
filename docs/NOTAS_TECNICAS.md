@@ -261,3 +261,14 @@
 - `doc.removeObject(nombre)`: leer `obj.Name` antes (después da "deleted object").
 - `SwPanel.preview` vuelve a leer `self.obj` después de `_apply` (un panel puede cambiar la
   operación por otra); `dress_up_panel.CHOOSERS` elige el panel por marca antes que por TypeId.
+
+## Mover/Copiar y Eliminar/Conservar sólidos: hallazgos en FreeCAD 1.1.4
+- SubShapeBinder de un Cuerpo entero (`Support = [(Cuerpo, "")]`), en la raíz: su forma está en
+  posición real (incluye el Placement del Cuerpo). Un Cuerpo que arranca de ella con
+  `Body.Placement = P` queda en P * forma real.
+- `CompoundTools.CompoundFilter` con `FilterType = "collision-pass"` y `Stencil = Part::Vertex`
+  adentro de un pedazo se queda con ese pedazo; si cambian las cotas sigue el mismo (elegir por
+  número de orden se cruza). Reabierto sin el addon funciona (es de FreeCAD).
+- Un panel propio que limpia la selección en su `__init__`: leer la selección ANTES de crearlo.
+- Nombres de operaciones agrupadas por una marca ("op"): calcular el siguiente libre con las
+  marcas, no solo con los Label (los objetos se llamaban "...1 (2)" y el "...1" quedaba libre).

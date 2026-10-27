@@ -476,8 +476,17 @@ def consumes(user, obj):
     - Combinar (PartDesign::Boolean): los Cuerpos de su lista (herramientas).
     - Un Cuerpo que arranca de obj (BaseFeature): p. ej. cada pieza de un Dividir.
     - Operaciones de Part (booleanas, Dividir, filtros...): todo lo que usan.
+    - Mover sólido (move_bodies, sin "Copiar"): el original pasa al Cuerpo movido.
+    - Eliminar sólidos (delete_bodies): el grupo se come lo que tiene adentro.
     """
     kind = getattr(user, "TypeId", "")
+    if hasattr(user, "SWUI_MoveBody"):
+        from swui.fork import move_bodies
+
+        return move_bodies.is_moved(move_bodies.read_spec(user.SWUI_MoveBody)) and \
+            move_bodies.source_of(user) is obj
+    if hasattr(user, "SWUI_DeleteBodies"):
+        return any(o is obj for o in (getattr(user, "Group", None) or []))
     if kind == "PartDesign::Boolean":
         return any(o is obj for o in (getattr(user, "Group", None) or []))
     if kind == "PartDesign::Body":

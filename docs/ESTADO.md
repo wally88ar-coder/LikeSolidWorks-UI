@@ -20,9 +20,12 @@
   ángulo / punto medio cambiando una cota, eje en un cilindro).
   Después, lo que elija el usuario entre lo que falta del "Alcance": Mover/Copiar y
   Eliminar/Conservar sólido, chapa (fase 1), mover/rotar cara (fase 4).
-- **Fase 4 — Mover cara: código completo (2026-10-27); falta que la pruebe el usuario.**
-  Detalle en "Análisis: Mover/Copiar sólido..." > Hecho. Siguen sin hacer Mover/Copiar sólido y
-  Eliminar/Conservar sólido (plan ya acordado en esa sección).
+- **Fase 4 — Mover cara: código completo (2026-10-27).** Probado por el usuario: girar cara
+  "muy bueno"; falta que pruebe equidistanciar/trasladar. Detalle en "Análisis: Mover/Copiar
+  sólido..." > Hecho.
+- **Mover/Copiar sólido y Eliminar/Conservar sólidos: código completo (2026-10-27); falta que los
+  pruebe el usuario.** Restricciones de Mover/Copiar quedan para otra etapa. Detalle en la misma
+  sección.
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
@@ -108,6 +111,34 @@ Combinar). Panel SW: Equidistanciar / Trasladar / Girar, Caras, y en Parámetros
   Extruir/Cortar/Ángulo de salida), y la distancia de Trasladar con dirección inclinada no se ata
   a ecuaciones (se guarda la componente normal como número). Una ecuación que cambie de signo no
   pasa de Extruir a Cortar.
+
+Hecho: **Mover/Copiar sólido** (2026-10-27, `swui/fork/move_bodies.py`) y **Eliminar/Conservar
+sólidos** (`swui/fork/delete_bodies.py`). En la cinta: botón grande "Mover/Copiar sólido" con menú
+(Eliminar/Conservar adentro), al lado de la columna Cuerpo/Combinar/Mover cara (una columna más
+con texto no entraba en 1366 px y los botones grandes perdían el texto).
+- Mover/Copiar: por sólido y copia, copia vinculada (SubShapeBinder, raíz, marca `SWUI_MoveBody`
+  con JSON y "op" que agrupa; **nombre estable**) + Cuerpo nuevo (BaseFeature) con el
+  desplazamiento en `Body.Placement` (copia i = desplazamiento^i; girar y después trasladar).
+  Mover = sin Copiar: el original queda oculto y `material.consumes` lo descuenta. Editar: clic
+  derecho -> Editar operación sobre el Cuerpo nuevo o la copia vinculada (`dress_up_panel.OPENERS`,
+  `feature_tree`). Cuerpos nuevos "Cuerpo2"... (decidido por Claude: el original conserva su
+  nombre; avisar al usuario). No se puede sacar de la lista un sólido cuya copia ya tiene
+  operaciones propias (avisa).
+- Eliminar/Conservar: grupo (App::DocumentObjectGroup, marca `SWUI_DeleteBodies`, **nombre
+  estable**) con los Cuerpos eliminados (ocultos, descontados); pedazos: Part::Vertex adentro del
+  pedazo + CompoundFilter "collision-pass" + Cuerpo nuevo por pedazo que queda; el Cuerpo partido
+  queda oculto. Conservar = se elimina todo lo demás (como SW). Editar desarma y vuelve a armar;
+  lista vacía borra la operación. Pedazo con operaciones propias: no se desarma (avisa).
+- Probado sin GUI (cuentas, plan de eliminar/conservar, reabierto sin el addon cambiando cotas:
+  la copia y el pedazo siguen) y en FreeCAD real: mover +50 en Z (Sólidos sin el original),
+  editar a Copiar ×3 con ΔX 120 (el original vuelve a verse), deshacer/rehacer, eliminar el
+  pedazo 2 de un Cuerpo partido (queda el 1 como Cuerpo nuevo), editar a Conservar (queda solo el
+  pedazo), lista vacía (todo vuelve), Cancelar sin rastros, segunda operación sin pisar la primera
+  (error encontrado en la prueba y corregido: las dos se llamaban igual y la segunda borraba las
+  copias de la primera).
+- Sin hacer: Restricciones (el Cuerpo no tiene apoyo en 1.1.4: el addon calcularía la posición al
+  aceptar), trasladar "de un vértice a otro", Supr sobre el grupo (borra solo el grupo: usar
+  Editar con la lista vacía o Ctrl+Z).
 
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:

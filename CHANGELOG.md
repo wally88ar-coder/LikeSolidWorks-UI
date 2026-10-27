@@ -243,6 +243,13 @@ Neueste Version oben. / Newest version first.
   importados. Por debajo Extruir o Cortar desde la cara y el Ángulo de salida nativos: el archivo
   abre y se recalcula sin el addon (`swui/fork/move_face.py`). Límite: con caras vecinas
   inclinadas, mover (no girar) deja un escalón en vez de prolongarlas.
+- **Mover/Copiar sólido** (pestaña Operaciones, botón con menú) con el panel de SW: sólidos,
+  Copiar + cantidad, Trasladar (arista + distancia o ΔX ΔY ΔZ), Girar (arista + ángulo o centro +
+  ángulos). Cada copia (o el sólido movido) es un Cuerpo nuevo que sigue al original; al mover, lo
+  de antes queda en el original oculto (`swui/fork/move_bodies.py`). Restricciones: más adelante.
+- **Eliminar/Conservar sólidos** (mismo botón) para Cuerpos enteros y para los pedazos que deja un
+  corte; cada pedazo que queda es un Cuerpo nuevo, elegido por un punto adentro (sigue siendo el
+  mismo aunque cambien las cotas). Editar con la lista vacía devuelve todo (`swui/fork/delete_bodies.py`).
 
 ## 0.10.0 — 2026-10-18
 

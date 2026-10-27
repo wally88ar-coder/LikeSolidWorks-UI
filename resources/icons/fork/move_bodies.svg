@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Mover/Copiar sólido</title>
+  <path d="M4 36 L18 43 V57 L4 50 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M30 37 L18 43 V57 L30 51 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M16 30 L30 37 L18 43 L4 36 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M34 12 L48 19 V33 L34 26 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M60 13 L48 19 V33 L60 27 Z" fill="#8b9099" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M46 6 L60 13 L48 19 L34 12 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M20.0 34.0 L34.0 25.6" stroke="#1b1b1b" stroke-width="5.6" stroke-linecap="round"/><path d="M40.0 22.0 L32.0 22.3 L36.0 28.9 Z" fill="#3d8bff" stroke="#1b1b1b" stroke-width="1.2" stroke-linejoin="round"/><path d="M20.0 34.0 L34.0 25.6" stroke="#3d8bff" stroke-width="3.2" stroke-linecap="round"/>
+</svg>

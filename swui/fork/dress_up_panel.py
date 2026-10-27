@@ -846,6 +846,21 @@ class DraftPanel(DressUpPanel):
 
 PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel, DRAFT: DraftPanel}  # pattern/hole_panel suman los suyos
 CHOOSERS = []  # funciones obj -> clase de panel o None; antes que PANELS (p. ej. Mover cara: un Pad marcado)
+# Operaciones del fork que no son de Part Design (sin modo edición de FreeCAD): pares
+# (obj -> objeto a editar o None, abrir(objeto)). Los usa "Editar operación" del árbol.
+OPENERS = []
+
+
+def opener(obj):
+    """(objeto, abrir) si obj pertenece a una operación del fork con panel propio; si no, None."""
+    for target, open_panel in OPENERS:
+        try:
+            found = target(obj)
+        except Exception:
+            found = None
+        if found is not None:
+            return found, open_panel
+    return None
 
 
 def panel_class(obj):

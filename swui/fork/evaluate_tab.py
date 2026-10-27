@@ -27,6 +27,12 @@ FEATURES_ADD = [
     ("SWUI_Combine", "Combinar", {"svg": "fork/combine"}),
     ("SWUI_MoveFace", "Mover cara", {"svg": "fork/move_face"}),
 ]
+# Al lado, un botón grande con menú (la columna de "Cuerpo" ya tiene tres renglones, y otra
+# columna con texto no entra en 1366 px: los botones grandes perdían el texto)
+FEATURES_ADD2 = [
+    ("SWUI_MoveBodies", "Mover/Copiar\nsólido", {"svg": "fork/move_bodies"}),
+    ("SWUI_DeleteBodies", "Eliminar/Con-\nservar sólido", {"svg": "fork/delete_bodies"}),
+]
 
 
 def install_features():
@@ -39,8 +45,10 @@ def install_features():
                 for add in FEATURES_ADD:
                     if add not in entry["stack"]:
                         entry["stack"].append(add)
+                if not any(isinstance(e, dict) and e.get("flyout") == FEATURES_ADD2 for e in group):
+                    group.insert(group.index(entry) + 1, {"flyout": list(FEATURES_ADD2)})
                 return
-    ribbon_layout.FEATURES[1].append(list(FEATURES_ADD))
+    ribbon_layout.FEATURES[1].append(list(FEATURES_ADD) + list(FEATURES_ADD2))
 
 
 def install():

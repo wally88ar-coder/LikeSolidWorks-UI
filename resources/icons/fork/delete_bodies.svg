@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Eliminar/Conservar sólido</title>
+  <path d="M2 29 L16 37 V54 L2 46 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M30 30 L16 37 V54 L30 47 Z" fill="#8b9099" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M14 22 L30 30 L16 37 L2 29 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M34 15 L48 23 V40 L34 32 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M62 16 L48 23 V40 L62 33 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M46 8 L62 16 L48 23 L34 15 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M38 12 L60 38 M60 12 L38 38" stroke="#e0261b" stroke-width="4.0" fill="none" stroke-linecap="round"/>
+</svg>

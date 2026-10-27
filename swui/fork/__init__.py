@@ -129,6 +129,16 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Mover cara:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import delete_bodies, move_bodies
+
+        move_bodies.install()
+        delete_bodies.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [move_bodies.COMMAND, delete_bodies.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Mover/Copiar y Eliminar/Conservar sólidos:\n%s\n"
+                                   % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

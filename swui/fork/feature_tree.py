@@ -550,6 +550,10 @@ def creator(feature, face):
 
 def menu_commands(objs):
     """Comandos del clic derecho para lo seleccionado (vacío si no es de un cuerpo)."""
+    from swui.fork import dress_up_panel as dp
+
+    if objs and dp.opener(objs[0]) is not None:
+        return [EDIT]  # Mover/Copiar o Eliminar sólidos (fuera de los Cuerpos)
     objs = [o for o in objs if body_of(o) is not None and (is_feature(o) or is_sketch(o))]
     if not objs:
         return []
@@ -797,10 +801,22 @@ class _EditFeature(_Command):
     tip = "Abre el diálogo de la operación para cambiar sus valores"
 
     def target(self):
+        from swui.fork import dress_up_panel as dp
+
+        for obj in selected():  # las del fork viven fuera de los Cuerpos
+            if dp.opener(obj) is not None:
+                return obj
         return _first(is_feature)
 
     def Activated(self):
-        FreeCADGui.ActiveDocument.setEdit(self.target())
+        from swui.fork import dress_up_panel as dp
+
+        obj = self.target()
+        own = dp.opener(obj)  # Mover/Copiar o Eliminar sólidos: panel propio del fork
+        if own is not None:
+            own[1](own[0])
+        else:
+            FreeCADGui.ActiveDocument.setEdit(obj)
 
 
 class _EditSketch(_Command):

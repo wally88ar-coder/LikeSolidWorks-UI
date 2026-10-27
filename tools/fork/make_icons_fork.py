@@ -104,6 +104,31 @@ def _():
             mk.new("M30 10 L54 18 L34 28 L10 20 Z"), mk.arrow(32, 37, 32, 16, mk.NEW, 7.0, 3.2)]
 
 
+@icon("move_bodies", "Mover/Copiar sólido")
+def _():
+    # bloque gris (antes) y el mismo bloque blanco corrido, con la flecha azul
+    def block(x, y, color):
+        top = "M%d %d L%d %d L%d %d L%d %d Z" % (x + 12, y, x + 26, y + 7, x + 14, y + 13, x, y + 6)
+        left = "M%d %d L%d %d V%d L%d %d Z" % (x, y + 6, x + 14, y + 13, y + 27, x, y + 20)
+        right = "M%d %d L%d %d V%d L%d %d Z" % (x + 26, y + 7, x + 14, y + 13, y + 27, x + 26, y + 21)
+        return [_face(left, color), _face(right, mk.PLANE if color == mk.GEO else mk.OLD), _face(top, color)]
+    return block(4, 30, mk.OLD) + block(34, 6, mk.GEO) + [mk.arrow(20, 34, 40, 22, mk.NEW, 7.0, 3.2)]
+
+
+@icon("delete_bodies", "Eliminar/Conservar sólido")
+def _():
+    # dos bloques: uno blanco que queda y uno gris tachado con la cruz roja
+    keep_top = "M14 22 L30 30 L16 37 L2 29 Z"
+    keep_left = "M2 29 L16 37 V54 L2 46 Z"
+    keep_right = "M30 30 L16 37 V54 L30 47 Z"
+    gone_top = "M46 8 L62 16 L48 23 L34 15 Z"
+    gone_left = "M34 15 L48 23 V40 L34 32 Z"
+    gone_right = "M62 16 L48 23 V40 L62 33 Z"
+    return [_face(keep_left, mk.GEO), _face(keep_right, mk.PLANE), _face(keep_top, mk.GEO),
+            _face(gone_left, mk.OLD), _face(gone_right, mk.OLD), _face(gone_top, mk.OLD),
+            mk.thin("M38 12 L60 38 M60 12 L38 38", mk.RED, 4.0)]
+
+
 @icon("split", "Dividir")
 def _():
     # un bloque partido en dos por un plano (línea roja punteada) que se separan
