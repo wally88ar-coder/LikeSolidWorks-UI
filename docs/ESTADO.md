@@ -32,6 +32,19 @@ Pendiente:
   frente, líneas finas en lateral/corte). Decidido: va con el trabajo de planos (ver Falta).
 - Pedido a FreeCAD (planos en ángulo / punto medio): el usuario lo dejó por ahora.
 
+## Alcance: menú Insertar de SW que usa el usuario (audio + capturas, 2026-10-26)
+Lo que no está en esta lista no se hace (salvo pedido). "Por ahora no" = quizás más adelante.
+- Saliente/Base: Extruir, Revolución, Barrer. No: Recubrir, Límite, Dar espesor.
+- Cortar: Extruir, Revolución. No: Barrer ("corte barrido nunca usé"), Recubrir, Límite, Con superficie.
+- Operaciones: Redondeo, Chaflán, Asistente para taladro, Ángulo de salida, Vaciado, Combinar,
+  **Mover/Copiar sólido**, **Eliminar/Conservar sólido** (estos dos faltan). Vaciado hoy es el
+  `PartDesign_Thickness` nativo con nombre en castellano, sin panel SW (el usuario lo da por hecho).
+- Matriz/Simetría: Matriz lineal, Matriz circular, Simetría.
+- Cara: Mover/rotar cara (fase 4). Curva: Hélice/Espiral. Geometría de referencia: hecha.
+- Chapa (fase 1): Brida base, Convertir en chapa metálica, Brida de arista, Dobladillo,
+  Desdoblar/Doblar (abrir el desarrollo, operar en plano y volver a plegar).
+- Por ahora no: Operación Cierre, Superficie.
+
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
 - Material: `ShapeMaterial` (Materials::PropertyMaterial) ya existe en Body y en todo Part::Feature;
