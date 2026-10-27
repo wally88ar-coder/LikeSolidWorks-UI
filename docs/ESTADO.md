@@ -11,8 +11,8 @@ abajo).
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
 - **Fase 1 — Chapa: versiones 1 y 2 hechas (2026-10-27/28); falta que las pruebe el usuario.**
   Pestaña Chapa con Brida base, Brida de arista, Dobladillo, Extruir corte, Convertir en chapa
-  (STEP), Aplanar y Exportar DXF (también por lotes desde un ensamblaje). Falta la versión 3
-  (Desdoblar/Doblar; ver "Plan: fase 1").
+  (STEP), Aplanar, Desdoblar/Doblar y Exportar DXF (también por lotes desde un ensamblaje). Las
+  tres versiones del plan están hechas (ver "Plan: fase 1").
 - **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
   salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
@@ -59,8 +59,20 @@ Versiones:
    Aplanar, Exportar DXF de una pieza.
 2. Dobladillo, Convertir en chapa (piezas STEP de SW), cortes sobre la chapa, DXF por lotes desde
    un ensamblaje (un DXF por pieza, lo más simple).
-3. Desdoblar/Doblar (cortar sobre el plano y volver a plegar): SheetMetal no lo trae igual; lo más
-   parecido es "Wrap Cutout". Probar antes de prometer.
+3. **HECHA (2026-10-28)**: Desdoblar/Doblar (cortar sobre el plano y volver a plegar), sobre el
+   "Wrap Cutout" de SheetMetal (`SMSketchOnSheet`). Desdoblar muestra el desarrollo (que SheetMetal
+   deja en su lugar, apoyado en la cara fija), oculta la chapa plegada y abre un croquis en el
+   Cuerpo sobre la cara fija ("Croquis-Desdoblar1", marca `SWUI_UnfoldCut`, **nombre estable**;
+   al croquis se le apagan ShowSupport y HideDependent para que se vea el desarrollo). Doblar (o
+   salir del croquis, con `pick_plane.arm`) arma "Corte-Desdoblado1" con el K atado a la Brida base
+   y vuelve a plegar; sin dibujar nada, borra el croquis y solo vuelve a plegar. Probado en FreeCAD
+   real: ranura 10x20 que cruza el pliegue (saca 400 mm³, saliendo del croquis), 6x12 cruzando el
+   pliegue con Doblar con el croquis abierto (144 mm³), vacío, y el DXF con los dos huecos.
+   **Límite de SheetMetal** (probado): un corte que queda entero sobre una brida (no toca la cara
+   fija ni cruza un pliegue) no corta nada; el fork lo detecta, no deja la operación, avisa (usar
+   Extruir corte sobre la cara de la brida) y el croquis queda para corregirlo con Desdoblar.
+   Editar un Corte-Desdoblado abre el panel de SheetMetal (en inglés); para cambiar el corte se
+   edita su croquis. SW permite elegir qué pliegues desdoblar: acá se despliega todo.
 
 Versión 2: **HECHA (2026-10-27/28**, el usuario se fue a dormir: "seguí trabajando"; falta que la
 pruebe él). Botones nuevos en la pestaña Chapa: Dobladillo, Extruir corte, Convertir en chapa;
@@ -762,7 +774,8 @@ Etapas:
   cinta del addon; sin fecha).
 
 ## Falta / ideas pendientes
-- Fase 1: chapa, versión 3 (ver "Plan: fase 1").
+- Fase 1: chapa hecha; pendientes chicos: desahogos de pliegue, Convertir en chapa de un sólido
+  macizo, panel SW para editar un Corte-Desdoblado, elegir qué pliegues desdoblar.
 - Simulación FEM como pestaña "Simulación" con flujo SW (estudio, material, sujeciones, cargas,
   malla, ejecutar, resultados): conversada, sin empezar; es grande.
 - Panel Ver/Datos (propiedades de FreeCAD): se deja por ahora; el usuario va a ver si le sirve.

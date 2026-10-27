@@ -1008,7 +1008,10 @@ def _check_feature_tree(commands, mw, layout, hooked):
                 ("LINE", "P", 0.0, 28.0, 9.0, 28.0)]
             or "Chapa" not in titles_ or titles_.index("Chapa") != titles_.index(lay_.SKIZZE[0]) + 1
             or smp is None or smp.BASE_COMMAND not in pick_.FEATURE_COMMANDS
-            or smp.BASE_COMMAND not in fsk_.PROFILE_FEATURES or smp._choose not in dup.CHOOSERS):
+            or smp.BASE_COMMAND not in fsk_.PROFILE_FEATURES or smp._choose not in dup.CHOOSERS
+            or smp.FOLD_COMMAND not in fsk_.PROFILE_FEATURES
+            or smt.kind(types.SimpleNamespace(Proxy=type("SMSketchOnSheet", (), {})())) != "wrap"
+            or smt.pending_cut(types.SimpleNamespace(Group=[])) is not None):
         print("  FEHLER: fork: chapa (nombre del DXF, archivo DXF, pestaña Chapa, enganches)", titles_)
         return False
     print("  Evaluar  : fork: material (copia en la pieza), propiedades físicas, ecuaciones SW, medir SW, franja")

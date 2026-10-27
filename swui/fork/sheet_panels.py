@@ -33,6 +33,8 @@ HEM_COMMAND = "SWUI_SMHem"
 CUT_COMMAND = "SWUI_SMCut"
 CONVERT_COMMAND = "SWUI_SMConvert"
 FLAT_COMMAND = "SWUI_SMFlatten"
+UNFOLD_COMMAND = "SWUI_SMUnfold"
+FOLD_COMMAND = "SWUI_SMFold"
 DXF_COMMAND = "SWUI_SMExportDXF"
 TITLE = "Chapa"
 
@@ -1023,6 +1025,151 @@ def export_dxf():
     return path
 
 
+def start_unfold():
+    """
+    Desdoblar (como SW): muestra el desarrollo en su lugar y abre un croquis sobre la cara fija;
+    lo que se dibuja encima del desarrollo se corta y se vuelve a plegar al tocar Doblar (o al
+    salir del croquis).
+    """
+    from swui import pick_plane
+
+    if not _ready_to_start():
+        return None
+    body = target_body()
+    if body is None:
+        return None
+    doc = body.Document
+    if sm.pending_cut(body) is not None:
+        sketch = sm.pending_cut(body)  # quedó uno sin doblar: seguir con ese
+    else:
+        sketch = None
+    try:
+        flat = _flat(body, "Desarrollo")
+    except Exception as exc:
+        FreeCAD.Console.PrintError("[SWUI fork] Desdoblar:\n%s\n" % traceback.format_exc())
+        _info("No se pudo desplegar la chapa: %s" % exc)
+        return None
+    tip = body.Tip
+    face = sm.fixed_face(body)
+    if sketch is None:
+        from swui.fork import multibody
+
+        doc.openTransaction("Desdoblar")
+        try:
+            sketch = body.newObject("Sketcher::SketchObject", "Sketch")
+            sketch.AttachmentSupport = [(tip, face)]
+            sketch.MapMode = "FlatFace"
+            sketch.addProperty("App::PropertyBool", sm.CUT_MARK, "SWUI", "Croquis de Desdoblar (fork de LikeSolidWorks UI)")
+            sketch.setEditorMode(sm.CUT_MARK, 2)
+            setattr(sketch, sm.CUT_MARK, True)
+            multibody._keep_label(sketch, sm.next_label("Croquis-Desdoblar", _labels(doc)))
+            body.Tip = tip  # el croquis no es la punta
+            doc.recompute()
+            doc.commitTransaction()
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Desdoblar:\n%s\n" % traceback.format_exc())
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            return None
+    for prop, value in (("ShowSupport", False), ("HideDependent", False)):
+        try:  # el croquis, al abrirse, muestra su apoyo (la chapa plegada) y oculta lo demás
+            setattr(sketch.ViewObject, prop, value)
+        except Exception:
+            pass
+    FreeCADGui.Selection.clearSelection()
+    FreeCADGui.getDocument(doc.Name).setEdit(sketch)
+
+    def show_flat():
+        try:
+            tip.Visibility = False
+            flat.Visibility = True
+            _sketches_follow(flat)
+        except Exception:
+            pass
+
+    show_flat()
+    QtCore.QTimer.singleShot(200, show_flat)  # por si el croquis cambió la visibilidad al abrirse
+    pick_plane.arm(FOLD_COMMAND, sketch)  # al salir del croquis se dobla solo
+    return sketch
+
+
+def _refold_view(body):
+    flat = sm.flat_of(body)
+    if flat is not None:
+        flat.Visibility = False
+        _sketches_follow(flat)
+    body.Visibility = True
+    if body.Tip is not None:
+        body.Tip.Visibility = True
+
+
+def start_fold():
+    """Doblar: el corte dibujado sobre el desarrollo pasa a la chapa plegada (Wrap Cutout)."""
+    from swui import from_sketch, pick_plane
+
+    if FreeCAD.ActiveDocument is None or not sm.available():
+        return None
+    if from_sketch.handle(FOLD_COMMAND):
+        pick_plane._disarm()
+        return None  # croquis abierto: lo cierra y vuelve a llamar
+    body = target_body(quiet=True)
+    if body is None:
+        _info("Elegí la chapa a doblar.")
+        return None
+    doc = body.Document
+    sketch = sm.pending_cut(body)
+    flat = sm.flat_of(body)
+    if sketch is not None and len(sketch.Geometry) == 0:
+        doc.openTransaction("Doblar")
+        doc.removeObject(sketch.Name)  # no se dibujó nada: solo volver a plegar
+        doc.commitTransaction()
+        sketch = None
+    if sketch is not None:
+        import SketchOnSheetMetalCmd
+        from swui.fork import multibody
+
+        support, faces = sketch.AttachmentSupport[0]
+        doc.openTransaction("Doblar")
+        try:
+            obj = doc.addObject("PartDesign::FeaturePython", "WrappedCutout")
+            SketchOnSheetMetalCmd.SMSketchOnSheet(obj, support, list(faces) if isinstance(faces, (list, tuple))
+                                                  else [faces], sketch)
+            SketchOnSheetMetalCmd.SMSketchOnSheetVP(obj.ViewObject)
+            body.addObject(obj)
+            base = sm.sheet_base(body)
+            if base is not None:
+                sm.ensure_k(base)
+                obj.setExpression("kfactor", "%s.%s" % (base.Name, sm.K_PROP))
+            else:
+                obj.kfactor = sm.body_k(body)
+            multibody._keep_label(obj, sm.next_label("Corte-Desdoblado", _labels(doc)))
+            multibody._set_tip(body, obj)
+            sketch.Visibility = False
+            doc.recompute()
+            problem = ""
+            if not obj.isValid():
+                problem = ("SheetMetal no pudo doblar ese corte: el croquis tiene que ser un contorno "
+                           "cerrado dibujado sobre el desarrollo.")
+            elif obj.Shape.Volume >= support.Shape.Volume - 1e-6:
+                # SheetMetal solo enrolla lo que toca la cara fija o cruza un pliegue (probado)
+                problem = ("Ese corte no toca la cara fija ni cruza un pliegue (queda entero sobre una "
+                           "brida): hacelo con Extruir corte sobre la cara de la brida.")
+            if problem:
+                doc.abortTransaction()
+                doc.recompute()
+                _refold_view(body)
+                _info(problem + "\nEl croquis quedó guardado: con Desdoblar se sigue editando.")
+                return None
+            doc.commitTransaction()
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Doblar:\n%s\n" % traceback.format_exc())
+            if doc.HasPendingTransaction:
+                doc.abortTransaction()
+            return None
+    _refold_view(body)
+    return body
+
+
 class _Command:
     def __init__(self, text, tip, icon, run):
         self.text, self.tip, self.icon, self.run = text, tip, icon, run
@@ -1052,6 +1199,10 @@ COMMANDS = {
                       "el espesor se mide solo", "fork/sm_convert", start_convert),
     FLAT_COMMAND: ("Aplanar", "Mostrar el desarrollo de la chapa; otro clic la vuelve a plegar",
                    "fork/sm_flatten", toggle_flat),
+    UNFOLD_COMMAND: ("Desdoblar", "Mostrar el desarrollo y dibujar encima un corte (puede cruzar los pliegues)",
+                     "fork/sm_unfold", start_unfold),
+    FOLD_COMMAND: ("Doblar", "Cortar lo dibujado sobre el desarrollo y volver a plegar la chapa",
+                   "fork/sm_fold", start_fold),
     DXF_COMMAND: ("Exportar DXF", "Guardar el desarrollo en DXF (contorno y líneas de plegado) al lado de la pieza",
                   "fork/sm_dxf", export_dxf),
 }
@@ -1070,6 +1221,7 @@ def install():
         dp.CHOOSERS.append(_choose)
     if BASE_COMMAND not in pick_plane.FEATURE_COMMANDS:
         pick_plane.FEATURE_COMMANDS = tuple(pick_plane.FEATURE_COMMANDS) + (BASE_COMMAND,)
-    if BASE_COMMAND not in from_sketch.PROFILE_FEATURES:
-        from_sketch.PROFILE_FEATURES = tuple(from_sketch.PROFILE_FEATURES) + (BASE_COMMAND,)
+    for name in (BASE_COMMAND, FOLD_COMMAND):  # con el croquis abierto: lo cierra y sigue
+        if name not in from_sketch.PROFILE_FEATURES:
+            from_sketch.PROFILE_FEATURES = tuple(from_sketch.PROFILE_FEATURES) + (name,)
     sheet_tab.install()

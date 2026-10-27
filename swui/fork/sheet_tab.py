@@ -21,6 +21,8 @@ GROUPS = [
     ],
     [
         ("SWUI_SMFlatten", "Aplanar", {"svg": "fork/sm_flatten"}),
+        ("SWUI_SMUnfold", "Desdoblar", {"svg": "fork/sm_unfold"}),
+        ("SWUI_SMFold", "Doblar", {"svg": "fork/sm_fold"}),
         ("SWUI_SMExportDXF", "Exportar\nDXF", {"svg": "fork/sm_dxf"}),
     ],
 ]

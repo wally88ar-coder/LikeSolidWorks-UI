@@ -185,6 +185,23 @@ def _():
             mk.arrow(32, 58, 32, 46, mk.NEW, 6.0, 2.8)]
 
 
+@icon("sm_unfold", "Desdoblar")
+def _():
+    # perfil en L gris (plegado) que se abre en una placa blanca con la flecha
+    l_shape = "M6 8 H12 V34 H26 V40 H6 Z"
+    plate = "M32 34 H60 V40 H32 Z"
+    return [_face(l_shape, mk.OLD), _face(plate, mk.GEO), mk.arrow(18, 22, 40, 26, mk.NEW, 6.0, 3.0)]
+
+
+@icon("sm_fold", "Doblar")
+def _():
+    # placa blanca con un corte azul que vuelve a plegarse en L (flecha)
+    plate = "M4 40 H32 V46 H4 Z"
+    l_shape = "M40 10 H46 V40 H60 V46 H40 Z"
+    return [_face(plate, mk.GEO), mk.new("M12 40 H22"), _face(l_shape, mk.GEO),
+            mk.arrow(26, 34, 38, 22, mk.NEW, 6.0, 3.0)]
+
+
 @icon("sm_dxf", "Exportar DXF")
 def _():
     # hoja con el contorno azul y la línea de plegado roja, "DXF" abajo

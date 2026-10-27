@@ -18,6 +18,12 @@ desarrollador nuevo). El fork pone encima los nombres, paneles y flujo de SW:
   de plegado en PLEGADO con línea de trazos. El exportador de FreeCAD pone las capas según los
   grupos del documento y no lleva el tipo de línea (probado 2026-10-27).
 
+- Desdoblar/Doblar (como SW): el desarrollo de SheetMetal queda en su lugar, apoyado en la cara
+  fija; Desdoblar abre un croquis en el Cuerpo sobre la cara fija (marca `CUT_MARK`) y Doblar
+  arma con él el "Wrap Cutout" de SheetMetal (SMSketchOnSheet), que enrolla sobre los pliegues lo
+  que se dibujó encima del desarrollo. Verificado: ranura de 10x20 que cruza el pliegue -> saca
+  400 mm³ y, vuelta a desplegar, aparece justo donde se dibujó.
+
 Verificado en FreeCAD 1.1.4 + SheetMetal 0.8.26 sin GUI: placa 100x50x2 con brida de arista de
 30 (exterior virtual), radio 2, K 0,5: desarrollo 76,712 = 46 + 26 + π/2·(2 + 0,5·2).
 Los croquis del desarrollo los arma SheetMetal solo con interfaz (usa ViewObject).
@@ -43,7 +49,10 @@ DASH = (5.0, 2.5)  # trazo y espacio de la línea de plegado (mm)
 
 SHEET_PROP = "SWUI_Sheet"  # en un Cuerpo convertido (pieza importada): JSON con espesor, radio, K, cara fija (nombre estable)
 
-KINDS = {"SMBaseBend": "base", "SMBendWall": "wall", "SMHem": "hem", "SMUnfold": "flat"}
+CUT_MARK = "SWUI_UnfoldCut"  # en el croquis de Desdoblar: todavía sin doblar (nombre estable)
+
+KINDS = {"SMBaseBend": "base", "SMBendWall": "wall", "SMHem": "hem", "SMUnfold": "flat",
+         "SMSketchOnSheet": "wrap"}
 TOL = 1e-6
 
 
@@ -591,6 +600,15 @@ def material_name(body):
         return (info or {}).get("name") or None
     except Exception:
         return None
+
+
+def pending_cut(body):
+    """El croquis de Desdoblar que todavía no se dobló (sin corte que lo use), o None."""
+    for obj in getattr(body, "Group", []):
+        if obj.TypeId == "Sketcher::SketchObject" and getattr(obj, CUT_MARK, False):
+            if not any(kind(u) == "wrap" for u in obj.InList):
+                return obj
+    return None
 
 
 def sheet_parts(doc):

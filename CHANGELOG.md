@@ -266,6 +266,10 @@ Neueste Version oben. / Newest version first.
   **Convertir en chapa** para chapas sin historia (STEP de SW: se elige la cara fija y el espesor
   se mide solo; después admite bridas, aplanar y DXF) y **DXF por lotes**: Exportar DXF en un
   ensamblaje guarda un DXF por cada pieza de chapa.
+- Chapa, tercera versión: **Desdoblar / Doblar** como SW. Desdoblar muestra el desarrollo y abre un
+  croquis encima; lo que se dibuja (puede cruzar los pliegues) se corta y la chapa se vuelve a
+  plegar con Doblar o al salir del croquis (por debajo el "Wrap Cutout" de SheetMetal). Un corte
+  entero sobre una brida avisa que va con Extruir corte.
 
 ## 0.10.0 — 2026-10-18
 
