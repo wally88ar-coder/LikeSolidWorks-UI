@@ -1,6 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-26 (cuarta sesión: fase 3 hecha, trabajando solo). Todo subido a `origin`.
+Última actualización: 2026-10-26 (quinta sesión: alcance del menú Insertar, ver "Alcance" abajo).
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -18,6 +18,8 @@
   matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el plano en
   el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia / en
   ángulo / punto medio cambiando una cota, eje en un cilindro).
+  Después, lo que elija el usuario entre lo que falta del "Alcance": Mover/Copiar y
+  Eliminar/Conservar sólido, chapa (fase 1), mover/rotar cara (fase 4).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.

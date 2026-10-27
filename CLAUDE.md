@@ -84,6 +84,9 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   (BRepOffsetAPI_DraftAngle); eje arbitrario = traslación + rotación. Respaldo: cara como perfil +
   extrusión/corte booleano. Si se pierde la referencia, error claro y permitir reasignarla.
 
+Operaciones de pieza que usa (menú Insertar de SW, lista completa en `docs/ESTADO.md` > Alcance):
+faltan Mover/Copiar sólido y Eliminar/Conservar sólido; Superficie y Operación Cierre, por ahora no.
+
 El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con globos,
 tolerancias geométricas.
 
