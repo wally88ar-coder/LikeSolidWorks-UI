@@ -509,7 +509,7 @@ Etapas:
   la placa pero oculta. Corregido (`multibody._set_tip`: se ve la punta, se oculta la anterior solo
   si sigue en el Cuerpo; también al volver a fusionar y al borrar copias). Reproducido en FreeCAD
   real con su caso (plano sobre la cara, croquis en el plano, extrusión invertida). En su archivo
-  basta con prender el ojo de "Saliente-Extruir1".
+  basta con prender el ojo de "Saliente-Extruir1". Probado por el usuario después del arreglo: "ahora sí, funciona".
 - 2026-10-25 (video): en un croquis sobre una cara no se podían enganchar ni acotar las aristas
   del sólido. No era un error: FreeCAD 1.1.4 no deja tocar el modelo desde el croquis (hay que
   usar Convertir entidades; 26.3 sí lo permite). Hecho en el fork (`sketch_model_edges.py`): con
