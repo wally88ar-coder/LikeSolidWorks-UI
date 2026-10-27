@@ -16,6 +16,10 @@ Copiar n veces: la copia i lleva el desplazamiento aplicado i veces. Mover (deci
 usuario, camino b): igual que una copia, pero el original queda oculto y deja de contar como
 sólido (material.consumes): lo de antes queda en el original, lo de después va en el nuevo.
 
+De un vértice a otro (dos vértices en Dirección, como SW): un punto de referencia de FreeCAD
+(Part::DatumPoint, MapMode "Vertex", marca SWUI_MoveBodyPoint) en cada vértice y la ecuación
+Placement.Base = giro + i * (A - De) en cada Cuerpo copia: sigue a los vértices si la pieza cambia.
+
 Marca: SWUI_MoveBody en cada copia vinculada (texto JSON con lo elegido; "op" agrupa las de
 una misma operación). Nombre estable para siempre (docs/ESTADO.md, Decisiones).
 """
@@ -34,6 +38,7 @@ MARK = "SWUI_MoveBody"
 BINDER = "PartDesign::SubShapeBinder"
 BODY = "PartDesign::Body"
 LABEL = "Mover/Copiar sólido"
+POINT_MARK = "SWUI_MoveBodyPoint"  # puntos de "de un vértice a otro": JSON {"op", "role"} (nombre estable)
 
 
 # --- Cuentas sin FreeCAD (probables en el test) -------------------------------
@@ -42,7 +47,8 @@ LABEL = "Mover/Copiar sólido"
 def read_spec(text):
     spec = {"op": "", "copy": False, "count": 1, "index": 1, "source": "",
             "delta": [0.0, 0.0, 0.0], "dir": None, "distance": 0.0,
-            "center": [0.0, 0.0, 0.0], "angles": [0.0, 0.0, 0.0], "axis": None, "angle": 0.0}
+            "center": [0.0, 0.0, 0.0], "angles": [0.0, 0.0, 0.0], "axis": None, "angle": 0.0,
+            "from": None, "to": None}
     try:
         data = json.loads(text or "{}")
         if isinstance(data, dict):
@@ -97,8 +103,21 @@ def _ref_obj(doc, ref):
     return doc.getObject(ref[0]), ref[1]
 
 
-def placement_of(spec, doc):
-    """Desplazamiento de UNA copia: girar (eje o centro + ángulos) y después trasladar."""
+def _vertex_of(root, sub):
+    try:
+        shape = root.getSubObject(sub)
+        return shape.Point if shape.ShapeType == "Vertex" else None
+    except Exception:
+        return None
+
+
+def by_vertices(spec):
+    """Trasladar de un vértice a otro (los dos elegidos)."""
+    return bool(spec.get("from")) and bool(spec.get("to"))
+
+
+def rotation_of(spec, doc):
+    """La parte de girar del desplazamiento (eje o centro + ángulos)."""
     V = FreeCAD.Vector
     rot = FreeCAD.Placement()
     root, sub = _ref_obj(doc, spec.get("axis"))
@@ -110,10 +129,30 @@ def placement_of(spec, doc):
         ax, ay, az = spec["angles"]
         if any(abs(a) > 1e-12 for a in (ax, ay, az)):
             rot = FreeCAD.Placement(V(), FreeCAD.Rotation(az, ay, ax), V(*spec["center"]))
+    return rot
+
+
+def placement_of(spec, doc):
+    """Desplazamiento de UNA copia: girar (eje o centro + ángulos) y después trasladar."""
+    V = FreeCAD.Vector
+    if by_vertices(spec):
+        a, b = _vertex_of(*_ref_obj(doc, spec["from"])), _vertex_of(*_ref_obj(doc, spec["to"]))
+        move = (b - a) if a is not None and b is not None else V()
+        return FreeCAD.Placement(move, FreeCAD.Rotation()).multiply(rotation_of(spec, doc))
     root, sub = _ref_obj(doc, spec.get("dir"))
     line = _line_of(root, sub) if root is not None else None
     move = line[1] * spec["distance"] if line is not None else V(*spec["delta"])
-    return FreeCAD.Placement(move, FreeCAD.Rotation()).multiply(rot)
+    return FreeCAD.Placement(move, FreeCAD.Rotation()).multiply(rotation_of(spec, doc))
+
+
+def vertex_expression(base, index, start, end):
+    """
+    Ecuación de Placement.Base de la copia `index` con "de un vértice a otro": la parte del giro
+    (número) + index veces (vértice A - vértice De), así sigue a los vértices si la pieza cambia.
+    start / end: nombres de los puntos de referencia (Part::DatumPoint) en los vértices.
+    """
+    return "vector(%r; %r; %r) + (%s.Placement.Base - %s.Placement.Base) * %d" % (
+        base[0], base[1], base[2], end, start, index)
 
 
 def power(pl, n):
@@ -240,7 +279,8 @@ class MoveBodiesPanel:
         move = QtWidgets.QGroupBox("Trasladar")
         self.move_form = QtWidgets.QFormLayout(move)
         self.dir_box = dp.RefBox(self._activate)
-        self.dir_box.setPlaceholderText("Arista recta (vacía: ΔX ΔY ΔZ)")
+        self.dir_box.setPlaceholderText("Arista recta o dos vértices (vacía: ΔX ΔY ΔZ)")
+        _clear_action(self.dir_box, lambda: self._clear_ref("dir"))
         self.distance = dp._spin(float(s["distance"]), " mm", -100000.0, 100000.0)
         self.deltas = [dp._spin(float(v), " mm", -100000.0, 100000.0) for v in s["delta"]]
         self.move_rows = {}
@@ -256,6 +296,7 @@ class MoveBodiesPanel:
         self.turn_form = QtWidgets.QFormLayout(turn)
         self.axis_box = dp.RefBox(self._activate)
         self.axis_box.setPlaceholderText("Arista recta (vacía: centro y ángulos)")
+        _clear_action(self.axis_box, lambda: self._clear_ref("axis"))
         self.angle = dp._spin(float(s["angle"]), "°", -360.0, 360.0)
         self.center = [dp._spin(float(v), " mm", -100000.0, 100000.0) for v in s["center"]]
         self.angles = [dp._spin(float(v), "°", -360.0, 360.0) for v in s["angles"]]
@@ -297,19 +338,36 @@ class MoveBodiesPanel:
         root, _sub = _ref_obj(doc, ref)
         return "Arista<1> (%s)" % root.Label if root is not None else ""
 
+    def _dir_text(self):
+        s = self.spec
+        if by_vertices(s):
+            return "Vértice<1>, Vértice<2> (de uno al otro)"
+        if s.get("from"):
+            return "Vértice<1> (falta el segundo vértice)"
+        return self._ref_text(self.doc, s["dir"])
+
+    def _clear_ref(self, key):
+        """Clic derecho -> Borrar selecciones en Dirección / Eje: vuelve a los números."""
+        self.spec[key] = None
+        if key == "dir":
+            self.spec["from"] = self.spec["to"] = None
+        self._refresh()
+        self.preview()
+
     def _refresh(self):
         s = self.spec
         self.count.setVisible(self.copy.isChecked())
         has_dir, has_axis = bool(s["dir"]), bool(s["axis"])
+        vertices = by_vertices(s)
         for key, (label, w) in self.move_rows.items():
-            show = key == "dir" or (key == "distance") == has_dir
+            show = key == "dir" or (not vertices and (key == "distance") == has_dir)
             label.setVisible(show)
             w.setVisible(show)
         for key, (label, w) in self.turn_rows.items():
             show = key == "axis" or (key == "angle") == has_axis
             label.setVisible(show)
             w.setVisible(show)
-        self.dir_box.setText(self._ref_text(self.doc, s["dir"]))
+        self.dir_box.setText(self._dir_text())
         self.axis_box.setText(self._ref_text(self.doc, s["axis"]))
         self.list.clear()
         for body in self.sources:
@@ -367,11 +425,15 @@ class MoveBodiesPanel:
 
     def _pick(self, root, sub):
         element = sub.split(".")[-1]
+        if self.active is self.dir_box and element.startswith("Vertex"):
+            return self._pick_vertex(root, sub)
         if self.active in (self.dir_box, self.axis_box):
             if not element.startswith("Edge") or _line_of(root, sub) is None:
                 return False
             key = "dir" if self.active is self.dir_box else "axis"
             self.spec[key] = [root.Name, sub]
+            if key == "dir":
+                self.spec["from"] = self.spec["to"] = None
             self.active = self.list
             return True
         leaf = root
@@ -388,6 +450,66 @@ class MoveBodiesPanel:
             return False
         self.sources = dp.toggle(self.sources, body)
         return True
+
+    def _pick_vertex(self, root, sub):
+        """De un vértice a otro, como SW: el primer vértice es De, el segundo A."""
+        leaf = root
+        try:
+            leaf = root.getSubObject(sub, retType=1) or root
+        except Exception:
+            pass
+        body = _body_of(leaf) or _body_of(root)
+        if body is not None and body.Name in self._own():
+            return False  # un vértice de la propia copia la haría depender de sí misma
+        if _vertex_of(root, sub) is None:
+            return False
+        s = self.spec
+        s["dir"] = None
+        if not s.get("from") or by_vertices(s):
+            s["from"], s["to"] = [root.Name, sub], None
+        else:
+            s["to"] = [root.Name, sub]
+            self.active = self.list
+        return True
+
+    def _points(self):
+        out = {}
+        for o in self.doc.Objects:
+            if hasattr(o, POINT_MARK):
+                try:
+                    data = json.loads(getattr(o, POINT_MARK))
+                except ValueError:
+                    continue
+                if data.get("op") == self.spec["op"]:
+                    out[data.get("role")] = o
+        return out
+
+    def _sync_points(self):
+        """Puntos de referencia en los vértices De y A (o ninguno si no se usan)."""
+        from swui.fork import multibody
+
+        points = self._points()
+        if not by_vertices(self.spec):
+            for o in points.values():
+                self.doc.removeObject(o.Name)
+            return {}
+        for role, text in (("from", "De"), ("to", "A")):
+            root_name, sub = self.spec[role]
+            root = self.doc.getObject(root_name)
+            pt = points.get(role)
+            if pt is None:
+                pt = self.doc.addObject("Part::DatumPoint", "Punto")
+                pt.addProperty("App::PropertyString", POINT_MARK, "SWUI", "Mover/Copiar sólido (fork de LikeSolidWorks UI)")
+                pt.setEditorMode(POINT_MARK, 2)
+                setattr(pt, POINT_MARK, json.dumps({"op": self.spec["op"], "role": role}, sort_keys=True))
+                _hide(pt)
+                points[role] = pt
+            if [(o, tuple(subs)) for o, subs in pt.AttachmentSupport] != [(root, (sub,))]:
+                pt.AttachmentSupport = [(root, sub)]
+                pt.MapMode = "Vertex"
+            multibody._keep_label(pt, "%s (%s)" % (text, self.spec["op"]))
+        self.doc.recompute()
+        return points
 
     # --- objetos nativos
 
@@ -413,7 +535,9 @@ class MoveBodiesPanel:
                 self._remove(b)
             else:
                 existing[key] = b
+        points = self._sync_points()
         step = placement_of(s, self.doc)
+        turn = rotation_of(s, self.doc)
         used = set(o.Label for o in self.doc.Objects)
         for src, i in wanted:
             binder = existing.get((src.Name, i))
@@ -436,9 +560,17 @@ class MoveBodiesPanel:
                 setattr(binder, MARK, text)
             multibody._keep_label(binder, binder_label(s["op"], src.Label, i, s["count"], len(self.sources)))
             if body is not None:
-                pl = power(step, i)
-                if not body.Placement.isSame(pl, 1e-9):
-                    body.Placement = pl
+                if points:  # de un vértice a otro: la traslación por ecuación, sigue a los vértices
+                    rot = power(turn, i)
+                    body.setExpression(".Placement.Base", None)
+                    body.Placement = rot
+                    body.setExpression(".Placement.Base", vertex_expression(
+                        (rot.Base.x, rot.Base.y, rot.Base.z), i, points["from"].Name, points["to"].Name))
+                else:
+                    body.setExpression(".Placement.Base", None)
+                    pl = power(step, i)
+                    if not body.Placement.isSame(pl, 1e-9):
+                        body.Placement = pl
                 body.Visibility = True
         for src in self.sources:  # mover: el original se oculta (sigue en el árbol, "antes de mover")
             src.Visibility = bool(s["copy"])
@@ -509,6 +641,17 @@ class MoveBodiesPanel:
         return True
 
 
+def _clear_action(box, clear):
+    """Clic derecho en una casilla de referencia: Borrar selecciones (como SW)."""
+    from swui.compat import QtGui
+
+    action_cls = getattr(QtGui, "QAction", None) or QtWidgets.QAction
+    box.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+    act = action_cls("Borrar selecciones", box)
+    act.triggered.connect(lambda *_a: clear())
+    box.addAction(act)
+
+
 def _choose(obj):
     return MoveBodiesPanel if hasattr(obj, MARK) and obj.TypeId == BINDER else None
 
@@ -521,6 +664,13 @@ def edit_target(obj):
         return obj
     if obj.TypeId == BODY and hasattr(obj.BaseFeature, MARK):
         return obj.BaseFeature
+    if hasattr(obj, POINT_MARK):
+        try:
+            op = json.loads(getattr(obj, POINT_MARK)).get("op")
+        except ValueError:
+            return None
+        found = binders_of_op(obj.Document, op)
+        return found[0] if found else None
     return None
 
 

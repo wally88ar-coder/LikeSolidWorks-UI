@@ -136,10 +136,19 @@ con texto no entraba en 1366 px y los botones grandes perdían el texto).
   pedazo), lista vacía (todo vuelve), Cancelar sin rastros, segunda operación sin pisar la primera
   (error encontrado en la prueba y corregido: las dos se llamaban igual y la segunda borraba las
   copias de la primera).
-- Sin hacer: Restricciones, trasladar "de un vértice a otro", Supr sobre el grupo (borra solo el
-  grupo: usar Editar con la lista vacía o Ctrl+Z). El usuario (2026-10-27): nombres "Cuerpo2"...
-  le dan igual por ahora; **quiere que Supr sobre Eliminar/Conservar devuelva los sólidos como SW**.
-  Verificado sin GUI (2026-10-27), las dos cosas salen nativas y paramétricas:
+- Hecho después (2026-10-27, pedido del usuario; los nombres "Cuerpo2"... le dan igual por ahora):
+  - **Supr sobre Eliminar/Conservar devuelve los sólidos** como SW: con solo operaciones de ese
+    tipo elegidas, el addon toma la tecla (acepta ShortcutOverride, así Std_Delete no corre) y en
+    un paso de deshacer ("Borrar Eliminar/Conservar sólido1") muestra los Cuerpos eliminados y el
+    partido y borra pedazos, filtros y puntos. Respaldo por otro camino (menú, Python): observador
+    de documento, paso aparte. Un pedazo con operaciones propias: con Supr avisa y no borra; por
+    otro camino se queda y avisa. Probado en real con la tecla de verdad, deshacer/rehacer, y
+    borrado por Python (sin restos).
+  - **De un vértice a otro** en Trasladar: dos vértices en Dirección (clic derecho -> Borrar
+    selecciones vuelve a ΔX ΔY ΔZ). Probado en real: la copia de un taco queda con su esquina en
+    la esquina de la placa y la sigue al alargar la placa de 100 a 150.
+- **Restricciones: NO hacer** (decisión del usuario, 2026-10-27: "llegado el caso puede hacerse
+  con alguna ecuación ad-hoc"). Lo verificado queda como referencia:
   - De un vértice a otro: `Part::DatumPoint` (raíz del documento, MapMode "Vertex", apoyado a
     través del Cuerpo: `(Cuerpo, "Box.Vertex3")`) en cada vértice y la ecuación
     `Placement.Base = Destino.Placement.Base - Origen.Placement.Base` en el Cuerpo copia: sigue

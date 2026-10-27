@@ -272,3 +272,8 @@
 - Un panel propio que limpia la selección en su `__init__`: leer la selección ANTES de crearlo.
 - Nombres de operaciones agrupadas por una marca ("op"): calcular el siguiente libre con las
   marcas, no solo con los Label (los objetos se llamaban "...1 (2)" y el "...1" quedaba libre).
+- Ecuaciones con vectores constantes: `vector(10; 0; 0) + Punto.Placement.Base * 2` funciona en
+  `Body.Placement.Base` (`setExpression(".Placement.Base", ...)`). `Part::DatumPoint` (raíz,
+  MapMode "Vertex", apoyo `(Cuerpo, "Box.Vertex3")`) no deriva de Part::Feature: no "consume".
+- Tomar Supr para algo propio: aceptar el ShortcutOverride en un filtro de la aplicación (la tecla
+  llega como KeyPress y Std_Delete no corre) y actuar en el KeyPress (`delete_bodies._DeleteKey`).

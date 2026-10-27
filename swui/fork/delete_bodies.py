@@ -16,8 +16,10 @@ Todo nativo (el addon es un asistente, docs/ESTADO.md "Multicuerpo"), verificado
   número de orden: si un cambio de cotas reordena los pedazos, sigue siendo el mismo (probado).
   El Cuerpo partido queda oculto (lo "consume" el filtro); filtros y puntos van en el grupo.
 Editar (clic derecho -> Editar operación) deshace lo armado y lo vuelve a armar con la lista
-nueva; con la lista vacía la operación se borra y todo vuelve. Un pedazo que ya tiene
-operaciones propias no se puede desarmar (avisa).
+nueva; con la lista vacía la operación se borra y todo vuelve. Borrarla con Supr también
+devuelve los sólidos (como SW), en un paso de deshacer; por otro camino (menú, Python) un
+respaldo los devuelve enseguida. Un pedazo que ya tiene operaciones propias no se puede
+desarmar: con Supr avisa y no borra; por otro camino ese pedazo se queda (y avisa).
 """
 
 import json
@@ -135,21 +137,42 @@ def built_objects(group):
     return out
 
 
+def _busy_pieces(built):
+    return [o for o in built if o.TypeId == BODY and len(o.Group) > 1]
+
+
 def _teardown(doc, group):
     """Deshacer lo armado: sacar los Cuerpos eliminados (visibles) y borrar filtros, puntos y pedazos."""
     built = built_objects(group)
-    for body in [o for o in built if o.TypeId == BODY]:
-        if len(body.Group) > 1:
-            return "El sólido %s ya tiene operaciones propias: no se puede desarmar." % body.Label
-    restore = set()
-    for o in built:
+    busy = _busy_pieces(built)
+    if busy:
+        return "El sólido %s ya tiene operaciones propias: no se puede desarmar." % busy[0].Label
+    members = _member_bodies(group)
+    for name in members:
+        group.removeObject(doc.getObject(name))
+    _restore(doc, members, [o.Name for o in built])
+    return ""
+
+
+def _member_bodies(group):
+    return [o.Name for o in group.Group if o.TypeId == BODY]
+
+
+def _restore(doc, bodies, built, keep=()):
+    """
+    Volver a como estaba (por nombres, sirve también con el grupo ya borrado): mostrar los
+    Cuerpos eliminados y los partidos, borrar pedazos, filtros y puntos (menos los de keep).
+    """
+    objs = [doc.getObject(n) for n in built]
+    objs = [o for o in objs if o is not None and o.Name not in keep]
+    restore = set(bodies)
+    for o in objs:
         if o.TypeId == "Part::FeaturePython" and getattr(o, "Base", None) is not None:
-            restore.add(o.Base.Name)
-    for o in list(group.Group):
-        if o.TypeId == BODY:
-            group.removeObject(o)
-            o.Visibility = True
-    for o in [o for o in built if o.TypeId == BODY] + [o for o in built if o.TypeId != BODY]:
+            if not any(u.Name in keep for u in o.InList):
+                restore.add(o.Base.Name)
+    for o in [o for o in objs if o.TypeId == BODY] + [o for o in objs if o.TypeId != BODY]:
+        if any(u.Name in keep for u in o.InList):
+            continue  # lo usa un pedazo que se queda
         if o.TypeId == BODY:
             o.removeObjectsFromDocument()
         doc.removeObject(o.Name)
@@ -157,7 +180,104 @@ def _teardown(doc, group):
         body = doc.getObject(name)
         if body is not None:
             body.Visibility = True
+
+
+_deleting = {"busy": False}
+
+
+def delete_operation(group):
+    """Borrar la operación como en SW: los sólidos vuelven. Un paso de deshacer. Problema o ""."""
+    doc = group.Document
+    label = group.Label
+    doc.openTransaction("Borrar %s" % label)
+    _deleting["busy"] = True
+    try:
+        problem = _teardown(doc, group)
+        if problem:
+            doc.abortTransaction()
+            return problem
+        doc.removeObject(group.Name)
+        doc.commitTransaction()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Borrar %s:\n%s\n" % (label, traceback.format_exc()))
+        doc.abortTransaction()
+        return "No se pudo borrar la operación."
+    finally:
+        _deleting["busy"] = False
+    doc.recompute()
     return ""
+
+
+class _DeleteKey(QtCore.QObject):
+    """
+    Supr con solo operaciones Eliminar/Conservar elegidas: las borra el addon (los sólidos
+    vuelven) en lugar de Std_Delete, que borraría solo el grupo. Qt resuelve los atajos con
+    ShortcutOverride: aceptarlo hace que la tecla llegue como KeyPress y Std_Delete no corra.
+    """
+
+    def eventFilter(self, _watched, event):
+        try:
+            kind = event.type()
+            if kind not in (QtCore.QEvent.Type.ShortcutOverride, QtCore.QEvent.Type.KeyPress) \
+                    or event.key() != QtCore.Qt.Key.Key_Delete:
+                return False
+            if isinstance(QtWidgets.QApplication.focusWidget(), (QtWidgets.QLineEdit, QtWidgets.QAbstractSpinBox,
+                                                                  QtWidgets.QTextEdit, QtWidgets.QPlainTextEdit)):
+                return False
+            if not dp._in_workbench() or FreeCADGui.Control.activeDialog():
+                return False
+            sels = FreeCADGui.Selection.getSelection()
+            if not sels or not all(hasattr(o, MARK) for o in sels):
+                return False
+            event.accept()
+            if kind == QtCore.QEvent.Type.KeyPress:
+                FreeCADGui.Selection.clearSelection()
+                for group in sels:
+                    problem = delete_operation(group)
+                    if problem:
+                        QtWidgets.QMessageBox.information(FreeCADGui.getMainWindow(), LABEL, problem)
+            return True
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Supr:\n%s\n" % traceback.format_exc())
+            return False
+
+
+class _DocObserver:
+    """Respaldo: el grupo se borró por otro camino (menú, Python): los sólidos vuelven igual."""
+
+    def slotDeletedObject(self, obj):
+        try:
+            if not hasattr(obj, MARK) or _deleting["busy"]:
+                return
+            doc = obj.Document
+            if getattr(doc, "Transacting", False) or getattr(doc, "Restoring", False):
+                return
+            built = built_objects(obj)
+            keep = [o.Name for o in _busy_pieces(built)]
+            bodies, names = _member_bodies(obj), [o.Name for o in built]
+        except Exception:
+            return
+        doc_name = doc.Name
+        QtCore.QTimer.singleShot(0, lambda: _restore_later(doc_name, bodies, names, keep))
+
+
+def _restore_later(doc_name, bodies, built, keep):
+    doc = FreeCAD.listDocuments().get(doc_name)
+    if doc is None:
+        return
+    doc.openTransaction("Devolver sólidos")
+    try:
+        _restore(doc, bodies, built, keep)
+        doc.commitTransaction()
+    except Exception:
+        doc.abortTransaction()
+        FreeCAD.Console.PrintError("[SWUI fork] Devolver sólidos:\n%s\n" % traceback.format_exc())
+    doc.recompute()
+    if keep:
+        QtWidgets.QMessageBox.information(
+            FreeCADGui.getMainWindow(), LABEL,
+            "Los sólidos volvieron, pero quedaron los pedazos que ya tenían operaciones propias: %s."
+            % ", ".join(doc.getObject(n).Label for n in keep if doc.getObject(n) is not None))
 
 
 def build(doc, group, spec):
@@ -443,7 +563,11 @@ class DeleteBodiesPanel:
                 self.message.setText("Elegí al menos un sólido (clic en la pieza o en el árbol).")
                 self.message.show()
                 return False
-            self.doc.removeObject(self.group.Name)  # lista vacía: la operación se borra
+            _deleting["busy"] = True  # ya se desarmó al abrir el panel
+            try:
+                self.doc.removeObject(self.group.Name)  # lista vacía: la operación se borra
+            finally:
+                _deleting["busy"] = False
         else:
             if self.group is None:
                 self.group = self.doc.addObject(GROUP, "Group")
@@ -541,9 +665,20 @@ class _Command:
         start()
 
 
+_installed = {}
+
+
 def install():
     if (edit_target, open_panel) not in dp.OPENERS:
         dp.OPENERS.append((edit_target, open_panel))
+    if not _installed:
+        _installed["doc"] = _DocObserver()
+        FreeCAD.addDocumentObserver(_installed["doc"])
+        try:
+            _installed["key"] = _DeleteKey()
+            QtWidgets.QApplication.instance().installEventFilter(_installed["key"])
+        except Exception:
+            pass
     try:
         FreeCADGui.addCommand(COMMAND, _Command())
     except Exception:
