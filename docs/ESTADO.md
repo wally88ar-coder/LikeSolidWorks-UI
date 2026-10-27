@@ -231,14 +231,30 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
   en FreeCAD real (separar, cortar "Por todo" los dos sólidos con copia, editar y sacar un sólido:
   copia y vínculo borrados; revolución separada; Cancelar no deja nada). Falta que lo pruebe el
   usuario.
-  Decisiones / límites (avisados al usuario antes de empezar): Cuerpos nuevos "Cuerpo2"... (FreeCAD
-  no repite nombres); la vista previa con el diálogo abierto muestra la extrusión fusionada (la
-  separación se ve al Aceptar); dos pasos de deshacer; la selección automática se calcula al
-  Aceptar: si después el corte cambia por una ecuación y pasa a atravesar otro sólido, la copia se
-  agrega recién al volver a editarlo y Aceptar (SW lo recalcula solo; acá no hay motor propio, por
-  decisión); "Hasta la cara" no se lleva a otros sólidos; borrar el corte original deja sus
-  copias con error (pendiente). Para más adelante: alcance en taladro, matrices, simetría,
-  barridos.
+  Decisiones / límites, con el porqué explicado al usuario (2026-10-26):
+  - Cuerpos nuevos "Cuerpo2"... (FreeCAD no repite nombres).
+  - Vista previa con el diálogo abierto: fusionada. El usuario mostró que en SW es igual (la
+    casilla no cambia la vista previa): no se hace nada.
+  - Deshacer: dos pasos ("Fusionar resultado" y "Make Pad"). Probado separar en el `pressed` de
+    Aceptar (un solo paso): FreeCAD, al terminar su Aceptar, vuelve a escribir
+    `ReferenceAxis = (croquis, N_Axis)` y la extrusión arrastra el otro sólido (los dos Cuerpos
+    con el mismo volumen; al rehacer queda con error). **Descartado: quedan dos pasos**, que se
+    deshacen y rehacen limpios (probado en FreeCAD real).
+  - Hecho después (2026-10-26, pedido del usuario):
+    - Borrar el corte original borra sus copias y lo que el asistente armó para ellas: con Supr
+      (filtro de la aplicación) se suman a la selección y Std_Delete borra todo en un paso, sin
+      aviso de vínculos rotos (probado en real: selección + Std_Delete; la tecla simulada con
+      QTest no disparó Std_Delete en la prueba: que lo confirme el usuario). Por otro camino
+      (menú, Python): respaldo que borra las copias enseguida (paso aparte).
+    - "Hasta la cara" se lleva a los otros sólidos con una copia vinculada de la cara (probado
+      sin GUI). "Hasta el sólido" (UpToShape) sigue sin llevarse.
+    - Selección automática: el modo queda en el original (`SWUI_ScopeMode`, oculta, nombre
+      estable). Después de cada recálculo, si un corte "automático" pasa a atravesar otros
+      sólidos (o deja de atravesarlos), el addon pregunta "¿Actualizar el alcance?"; no cambia
+      nada solo y no vuelve a preguntar lo mismo si se respondió No (en esa sesión). Probado en
+      real (croquis alargado: avisa y con Sí suma la copia).
+    - Las copias siguen el nombre del original al aceptar una edición.
+  Para más adelante: alcance en taladro, matrices, simetría, barridos.
 - C. Combinar (Agregar / Restar / Común) y Dividir con paneles SW.
 - D. Soldadas, después de la chapa.
 

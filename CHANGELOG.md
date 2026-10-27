@@ -230,6 +230,9 @@ Neueste Version oben. / Newest version first.
   operación** (Todos los sólidos / Sólidos seleccionados / Selección automática, como SW): el corte
   se copia en cada sólido elegido y las copias siguen las medidas del original. Todo con objetos
   nativos de FreeCAD: el archivo se abre y se recalcula bien sin el addon (`swui/fork/multibody.py`).
+  Borrar el corte original (Supr) borra también sus copias en un solo paso; "Hasta la cara" se
+  lleva a los otros sólidos; con selección automática, si el corte cambia y pasa a atravesar otro
+  sólido, el addon pregunta si actualizar el alcance.
 
 ## 0.10.0 — 2026-10-18
 
