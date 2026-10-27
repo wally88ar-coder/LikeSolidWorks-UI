@@ -70,6 +70,19 @@ Verificado en 1.1.4 sin GUI (todo nativo, en la línea "asistente, no motor"):
   cara lateral que contiene la arista, 10°: vértices y volumen exactos, 55918 mm³).
 - Consecuencia: la fase 4 se puede hacer sin FeaturePython propio (el CLAUDE.md lo preveía);
   cambio de arquitectura a confirmar con el usuario.
+- El Cuerpo y la copia vinculada NO tienen apoyo (Attachment) en 1.1.4: "Restricciones" de
+  Mover/Copiar no sale nativo; el addon calcularía la posición al aceptar (no sigue cambios solo).
+
+Respuestas del usuario (2026-10-26, con capturas de los paneles de SW 2018):
+- Mover/Copiar: usa Trasladar/Girar con números **y** Restricciones. Mover = **(b)**, paso en el
+  historial (lo de antes en el Cuerpo original, lo de después en el nuevo). Panel SW: "Sólidos para
+  mover/copiar", Copiar + cantidad de copias, Trasladar (referencia + ΔX ΔY ΔZ), Girar (referencia
+  o centro X Y Z + ángulos X Y Z), botón Restricciones.
+- Eliminar/Conservar: usa los dos casos (pedazos de un corte y sólidos enteros). Panel SW: Tipo
+  Eliminar / Conservar sólidos + "Sólidos para eliminar/conservar".
+- Mover cara: en piezas propias y en importadas. **Aprobado hacer la fase 4 con objetos nativos**
+  (Pad/Pocket/Draft), sin FeaturePython. Panel SW: Equidistanciar / Trasladar / Girar, caras,
+  Copiar, condición final (Hasta profundidad especificada...), dirección, distancia, ΔX ΔY ΔZ.
 
 ## Plan: fase 3 — Evaluar (analizado con el usuario el 2026-10-26; hecho el mismo día)
 Verificado en 1.1.4 sin GUI:
