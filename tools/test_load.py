@@ -883,6 +883,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or mat.consumes(_U("PartDesign::Body", True, BaseFeature=None), tool_)
             or not mat.consumes(_U("Part::FeaturePython", True), tool_)
             or mat.consumes(_U("PartDesign::SubShapeBinder", True), tool_)
+            or mat.consumes(_U("Part::Mirroring", True), tool_)
             or mat.consumes(_U("Sketcher::SketchObject", True), tool_)
             or mat.consumes(_U("App::Link"), tool_) or mat.consumes(_U("TechDraw::DrawViewPart"), tool_)
             or tsp.solids_text([1, 1]) != "Sólidos(2)" or tsp.solids_text([1, 2, 0]) != "Sólidos(2) ⚠"
@@ -912,6 +913,16 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or cb.next_label({"Combinar1"}) != "Combinar2"
             or dup.PANELS.get("PartDesign::Boolean") is not cb.CombinePanel):
         print("  FEHLER: fork: combinar (roles, nombres, panel registrado)")
+        return False
+    # Simetría de sólidos y alcance en el taladro
+    mi = importlib.import_module("swui.fork.mirror_bodies")
+    hpm = sys.modules["swui.fork.hole_panel"]
+    if (mi.plane_link(None) is not None or mi.plane_link((types.SimpleNamespace(TypeId="PartDesign::Plane"), [""]))[0] != "expr"
+            or "PartDesign::Hole" not in mb.SCOPED or mb.ENUM_PROPS["PartDesign::Hole"][:2] != ("ThreadType", "ThreadSize")
+            or "ThreadSize" in mb.COPY_PROPS["PartDesign::Hole"] or not hasattr(hpm.HolePanel, "_scope_box")
+            or not hasattr(sys.modules["swui.fork.pattern_panel"].MirrorPanel, "_separate")
+            or mat.consumes(_U("Part::Mirroring", True), tool_)):
+        print("  FEHLER: fork: simetría de sólidos / alcance en el taladro")
         return False
     # Punta del Cuerpo visible al reacomodar (error reportado: la placa "desaparecía")
     placa_, extr_ = types.SimpleNamespace(Visibility=False), types.SimpleNamespace(Visibility=True)

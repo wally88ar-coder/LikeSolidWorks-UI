@@ -22,6 +22,7 @@ paso, refrentados ISO 4762, etc.). Mismo enganche que el redondeo
 
 import json
 import os
+import traceback
 
 import FreeCAD
 import FreeCADGui
@@ -283,6 +284,9 @@ class HolePanel(dp.SwPanel):
         outer = QtWidgets.QVBoxLayout(box)
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(tabs)
+        self.scope = self._scope_box()
+        if self.scope is not None:
+            outer.addWidget(self.scope)
         outer.addWidget(self._message_label())
         self.form = box
         self._load()
@@ -464,6 +468,49 @@ class HolePanel(dp.SwPanel):
 
     def _nothing(self):
         return not self.centers()
+
+    # --- alcance de la operación (multicuerpo, multibody.py)
+
+    def _scope_box(self):
+        """Como en los cortes: solo si la pieza tiene más de un sólido (o ya hay copias)."""
+        from swui.fork import multibody
+
+        try:
+            original = multibody.original_of(self.obj)
+            if original is not None:
+                box = QtWidgets.QGroupBox("Alcance de la operación")
+                label = QtWidgets.QLabel("Esta es la copia de «%s» en otro sólido: sus medidas siguen al "
+                                         "original. Para cambiarlas, editá «%s»." % (original.Label, original.Label))
+                label.setWordWrap(True)
+                QtWidgets.QVBoxLayout(box).addWidget(label)
+                return box
+            if len(multibody.solid_bodies(self.doc)) > 1 or multibody.copies_of(self.obj):
+                return multibody._Section(self.obj)
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Alcance del taladro:\n%s\n" % traceback.format_exc())
+        return None
+
+    def accept(self):
+        from swui.fork import multibody
+
+        decision = None
+        if isinstance(self.scope, multibody._Section):
+            try:
+                decision = self.scope.decision()
+            except (RuntimeError, ReferenceError):
+                decision = None
+        if self.timer.isActive():
+            self.preview()
+        problems = []
+        if decision is not None and self.valid and not self._nothing():
+            try:  # dentro de la transacción del taladro: un solo paso de deshacer
+                problems = multibody.apply_scope_decision(self.obj, decision)
+            except Exception as exc:
+                problems = ["No se pudo llevar el taladro a los otros sólidos: %s" % exc]
+        done = super().accept()
+        if done and problems:
+            multibody._tell("\n".join(problems))
+        return done
 
     def _pick(self, obj, sub):
         return False  # las posiciones van en el croquis

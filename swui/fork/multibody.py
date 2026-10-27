@@ -50,7 +50,19 @@ COPY_PROPS = {
     "PartDesign::Pocket": ("Type", "Length", "Length2", "Offset", "Offset2", "TaperAngle", "TaperAngle2",
                            "Reversed", "Type2", "SideType"),
     "PartDesign::Groove": ("Type", "Angle", "Angle2", "Midplane", "Reversed"),
+    "PartDesign::Hole": ("Diameter", "Depth", "HoleCutDiameter", "HoleCutDepth", "HoleCutCountersinkAngle",
+                         "DrillPointAngle", "TaperedAngle", "ThreadDepth", "CustomThreadClearance", "Reversed",
+                         "Threaded", "ModelThread", "Tapered", "DrillForDepth", "UseCustomThreadClearance",
+                         "HoleCutCustomValues"),
 }
+# Opciones de lista que NO se pueden atar con ecuación (la lista depende de otra: el tamaño de rosca
+# según el tipo; con ecuación la copia mostró "M7" en vez de "M8"): se copian por valor, en este
+# orden, al crear la copia y cada vez que se acepta el original (sync_copies).
+ENUM_PROPS = {
+    "PartDesign::Hole": ("ThreadType", "ThreadSize", "ThreadClass", "ThreadFit", "ThreadDirection",
+                         "HoleCutType", "DepthType", "DrillPoint", "ThreadDepthType"),
+}
+SCOPED = SUBTRACTIVE + ("PartDesign::Hole",)  # lo que admite "Alcance de la operación"
 NOT_COPYABLE_TYPES = ("UpToShape",)  # "Hasta el sólido": no se lleva a otros sólidos
 # (UpToFace sí: cada copia apunta a una copia vinculada de la cara)
 SKETCH_AXES = {"V_Axis": "ObjectY", "H_Axis": "ObjectX", "N_Axis": "ObjectZ"}
@@ -419,6 +431,7 @@ def _make_copy(feature, body, sketch):
         copy.UpToFace = face
     if copy_axis is not None:
         copy.ReferenceAxis = copy_axis
+    _copy_enums(feature, copy)
     for prop in COPY_PROPS.get(feature.TypeId, ()):
         if prop in feature.PropertiesList and prop in copy.PropertiesList:
             try:
@@ -452,10 +465,25 @@ def _face_for(feature, body):
     return (binder, ["Face1"])
 
 
+def _copy_enums(feature, copy):
+    """Opciones de lista por valor y en orden (cada una arma la lista de la siguiente)."""
+    for prop in ENUM_PROPS.get(feature.TypeId, ()):
+        if prop in feature.PropertiesList and prop in copy.PropertiesList:
+            try:
+                if getattr(copy, prop) != getattr(feature, prop):
+                    setattr(copy, prop, getattr(feature, prop))
+            except Exception:
+                pass
+
+
 def sync_copies(feature):
-    """Al aceptar una edición del original: lo que no va por ecuación ("Hasta la cara", nombre) al día."""
+    """
+    Al aceptar una edición del original: lo que no va por ecuación ("Hasta la cara", opciones de
+    lista del taladro, nombre) al día.
+    """
     for copy in copies_of(feature):
         try:
+            _copy_enums(feature, copy)
             face = _face_for(feature, body_of(copy))
             if face is not None and (not copy.UpToFace or copy.UpToFace[0] is not face[0]):
                 copy.UpToFace = face
@@ -785,12 +813,7 @@ def _apply_decision(decision, doc_name, name):
             if same and getattr(feature, SCOPE_MODE_PROP, None) == decision[2] and not copies_of(feature):
                 return
             doc.openTransaction("Alcance de la operación")
-            problems = []
-            if len(solid_bodies(doc)) > 1 or copies_of(feature):
-                set_scope_mode(feature, decision[2])
-            if not same:
-                _created, _removed, problems = apply_scope(feature, bodies)
-            sync_copies(feature)
+            problems = apply_scope_decision(feature, decision)
             doc.commitTransaction()
             if problems:
                 _tell("\n".join(problems))
@@ -802,6 +825,24 @@ def _apply_decision(decision, doc_name, name):
         doc.abortTransaction()
         FreeCAD.Console.PrintError("[SWUI fork] Multicuerpo:\n%s\n" % traceback.format_exc())
         _tell("No se pudo armar los sólidos (detalle en la Vista de informe).")
+
+
+def apply_scope_decision(feature, decision):
+    """
+    ("scope", [nombres de Cuerpos], modo) -> copias del corte/taladro al día, DENTRO de la
+    transacción que esté abierta (el panel del taladro la usa así: un solo paso de deshacer).
+    Devuelve los problemas para avisar.
+    """
+    doc = feature.Document
+    bodies = [doc.getObject(n) for n in decision[1] if doc.getObject(n) is not None]
+    current = sorted([body_of(feature).Name] + [body_of(c).Name for c in copies_of(feature)])
+    problems = []
+    if len(solid_bodies(doc)) > 1 or copies_of(feature):
+        set_scope_mode(feature, decision[2])
+    if sorted(b.Name for b in bodies) != current:
+        _created, _removed, problems = apply_scope(feature, bodies)
+    sync_copies(feature)
+    return problems
 
 
 def _tell(text):
