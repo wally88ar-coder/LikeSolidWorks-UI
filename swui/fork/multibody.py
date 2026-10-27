@@ -251,6 +251,23 @@ def _direction_to(feature, old, new):
     feature.ReferenceAxis = (new, subs) if subs else None
 
 
+def _set_tip(body, feature):
+    """
+    Punta del Cuerpo + visibilidad como la deja FreeCAD: se ve la punta y se esconde la anterior.
+    (FreeCAD esconde la punta vieja al crear una operación; si después la operación se va del
+    Cuerpo, la punta vuelve a la anterior pero oculta: la placa "desaparecía". Error reportado
+    por el usuario, 2026-10-26.)
+    """
+    old = body.Tip
+    body.Tip = feature
+    try:
+        if old is not None and old is not feature and old in body.Group:
+            old.Visibility = False  # la punta vieja sigue en este Cuerpo: oculta, como FreeCAD
+        feature.Visibility = True
+    except Exception:
+        pass
+
+
 def separate(feature):
     """
     "Fusionar resultado" apagado: pasa la operación a un Cuerpo nuevo. Devuelve el Cuerpo, o
@@ -275,7 +292,7 @@ def separate(feature):
     was_tip = owner.Tip is feature
     owner.removeObject(feature)
     if was_tip and previous is not None:
-        owner.Tip = previous
+        _set_tip(owner, previous)
     binder = _binder(new, sketch, "%s (vínculo)" % sketch.Label)
     new.addObject(feature)
     feature.Profile = binder
@@ -283,7 +300,7 @@ def separate(feature):
         feature.ReferenceAxis = axis
     elif feature.TypeId == "PartDesign::Pad":
         _direction_to(feature, sketch, binder)
-    new.Tip = feature
+    _set_tip(new, feature)
     try:
         sketch.Visibility = False
     except Exception:
@@ -314,7 +331,7 @@ def rejoin(feature):
     feature.Profile = sketch
     if axis is not None:
         feature.ReferenceAxis = axis
-    owner.Tip = feature
+    _set_tip(owner, feature)
     for helper in helpers:
         doc.removeObject(helper.Name)
     if not [o for o in new.Group if o.TypeId != "App::Origin"]:
@@ -484,7 +501,7 @@ def _remove_copy(copy):
     was_tip = body is not None and body.Tip is copy
     doc.removeObject(copy.Name)
     if was_tip and previous is not None:
-        body.Tip = previous
+        _set_tip(body, previous)
     for helper in helpers:
         try:
             if helper is not None and helper.TypeId in ("PartDesign::SubShapeBinder", "PartDesign::Line") \

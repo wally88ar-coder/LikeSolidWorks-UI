@@ -903,6 +903,17 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or not any(isinstance(o, mb._EditObserver) for o in gui_._doc_observers)):
         print("  FEHLER: fork: multicuerpo (fusionar resultado, alcance de la operación)")
         return False
+    # Punta del Cuerpo visible al reacomodar (error reportado: la placa "desaparecía")
+    placa_, extr_ = types.SimpleNamespace(Visibility=False), types.SimpleNamespace(Visibility=True)
+    cuerpo_ = types.SimpleNamespace(Tip=extr_, Group=[placa_])  # la extrusión ya se fue a otro Cuerpo
+    mb._set_tip(cuerpo_, placa_)
+    otra_ = types.SimpleNamespace(Visibility=True)
+    cuerpo2_ = types.SimpleNamespace(Tip=otra_, Group=[otra_, extr_])
+    mb._set_tip(cuerpo2_, extr_)
+    if (cuerpo_.Tip is not placa_ or not placa_.Visibility or not extr_.Visibility
+            or cuerpo2_.Tip is not extr_ or otra_.Visibility):
+        print("  FEHLER: fork: multicuerpo (la punta del Cuerpo queda visible)")
+        return False
     groups_ = lay_.EVALUIEREN[1]
     flat_ = [e[0] for g in groups_ for e in g if isinstance(e, tuple)]
     if (ms.toggle_pick([1, 2], 2) != [1] or ms.toggle_pick([1], 2) != [1, 2] or "Std_Measure" in flat_
