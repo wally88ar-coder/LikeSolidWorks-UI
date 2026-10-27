@@ -85,6 +85,24 @@ def _():
     return [_face(left, mk.GEO), _face(right, mk.PLANE), _face(top, mk.GEO)]
 
 
+@icon("combine", "Combinar")
+def _():
+    # dos sólidos que se superponen y el contorno azul del resultado
+    a = "M8 22 H36 V50 H8 Z"
+    b = "M26 12 H54 V40 H26 Z"
+    return [_face(a, mk.GEO), _face(b, mk.PLANE),
+            mk.new("M8 22 H26 V12 H54 V40 H36 V50 H8 Z")]
+
+
+@icon("split", "Dividir")
+def _():
+    # un bloque partido en dos por un plano (línea roja punteada) que se separan
+    left = "M6 18 L28 18 L28 52 L6 52 Z"
+    right = "M36 12 L58 12 L58 46 L36 46 Z"
+    return [_face(left, mk.GEO), _face(right, mk.GEO),
+            '<path d="M32 4 V60" stroke="%s" stroke-width="3" stroke-dasharray="5 3"/>' % mk.RED]
+
+
 def build(target=TARGET):
     os.makedirs(target, exist_ok=True)
     written = []

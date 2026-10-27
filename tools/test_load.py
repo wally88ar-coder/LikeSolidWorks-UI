@@ -903,6 +903,16 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or not any(isinstance(o, mb._EditObserver) for o in gui_._doc_observers)):
         print("  FEHLER: fork: multicuerpo (fusionar resultado, alcance de la operación)")
         return False
+    # Combinar (etapa C): Agregar / Eliminar / Común sobre la Booleana nativa
+    cb = sys.modules["swui.fork.combine_panel"]
+    if (cb.toggle_body(["A"], "B") != ["A", "B"] or cb.toggle_body(["A", "B"], "A") != ["B"]
+            or cb.split_roles("Fuse", ["A", "B", "C"], None) != ("A", ["B", "C"])
+            or cb.split_roles("Common", [], None) != (None, [])
+            or cb.split_roles("Cut", ["B", "A", "C"], "A") != ("A", ["B", "C"])
+            or cb.next_label({"Combinar1"}) != "Combinar2"
+            or dup.PANELS.get("PartDesign::Boolean") is not cb.CombinePanel):
+        print("  FEHLER: fork: combinar (roles, nombres, panel registrado)")
+        return False
     # Punta del Cuerpo visible al reacomodar (error reportado: la placa "desaparecía")
     placa_, extr_ = types.SimpleNamespace(Visibility=False), types.SimpleNamespace(Visibility=True)
     cuerpo_ = types.SimpleNamespace(Tip=extr_, Group=[placa_])  # la extrusión ya se fue a otro Cuerpo

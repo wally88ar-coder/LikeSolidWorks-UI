@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Dividir</title>
+  <path d="M6 18 L28 18 L28 52 L6 52 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M36 12 L58 12 L58 46 L36 46 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M32 4 V60" stroke="#e0261b" stroke-width="3" stroke-dasharray="5 3"/>
+</svg>
