@@ -267,7 +267,10 @@ Plan aprobado por el usuario (2026-10-26), por etapas:
     Editar una existente abre el mismo panel (registrado en `dress_up_panel.PANELS`). Probado en
     FreeCAD real: A con B y C superpuestos, Eliminar -> 43500 mm³ (correcto), un solo deshacer,
     editar y Cancelar sin cambios. Falta que lo pruebe el usuario.
-  - Dividir: falta (pedirle capturas del panel de SW, como hizo con Combinar).
+  - Dividir: el usuario aclaró (2026-10-26) que con "Dividir" quería decir el Eliminar de
+    Combinar: **etapa C completa**. Probado por él: "quedó muy bien Combinar". El "Dividir" de SW
+    (partir un sólido con un plano en varios Cuerpos) queda sin hacer; está verificado que se
+    puede con herramientas nativas (ver arriba, BOPTools Slice + CompoundFilter) si algún día lo pide.
 - D. Soldadas, después de la chapa.
 
 ## Plan: fase 2 (aprobado por el usuario el 2026-10-26)
