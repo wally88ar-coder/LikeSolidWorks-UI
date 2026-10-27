@@ -139,6 +139,14 @@ def install(workbench=None):
         FreeCAD.Console.PrintError("[SWUI fork] Mover/Copiar y Eliminar/Conservar sólidos:\n%s\n"
                                    % traceback.format_exc())
     try:
+        from swui.fork import sheet_panels
+
+        sheet_panels.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, list(sheet_panels.COMMANDS))
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Chapa:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import always_swui
 
         always_swui.install()

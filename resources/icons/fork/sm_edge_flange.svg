@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Brida de arista</title>
+  <path d="M6 40 L30 52 V57 L6 45 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M6 40 L34 26 L58 38 L30 52 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M34 26 L58 38 V14 L34 2 Z" fill="#8b9099" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M34 26 L58 38" stroke="#3d8bff" stroke-width="4.0" fill="none" stroke-linecap="round"/>
+</svg>

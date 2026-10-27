@@ -252,6 +252,15 @@ Neueste Version oben. / Newest version first.
   corte; cada pedazo que queda es un Cuerpo nuevo, elegido por un punto adentro (sigue siendo el
   mismo aunque cambien las cotas). Borrar la operación con Supr (o editarla con la lista vacía)
   devuelve los sólidos, como SW (`swui/fork/delete_bodies.py`).
+- **Pestaña Chapa** (fase 1, primera versión) sobre el addon SheetMetal, que tiene que estar
+  instalado: **Brida base** (con el croquis abierto o eligiendo plano/cara, como Extruir; contorno
+  cerrado = placa, línea abierta = perfil plegado), **Brida de arista** (aristas con clics, ángulo,
+  longitud hasta exterior virtual / interior virtual / tangente, posición de brida, radio
+  predeterminado), **Aplanar** (muestra el desarrollo; otro clic vuelve a plegar) y **Exportar
+  DXF** con un clic: contorno en la capa CONTORNO y líneas de plegado de trazos en PLEGADO, al lado
+  de la pieza, con nombre pieza_espesor_material ("Soporte_1,5mm_SAE 1010.dxf"). Parámetros de
+  chapa en la Brida base: espesor, radio (de fábrica = espesor) y factor K (0,5), que siguen las
+  bridas y el desarrollo (`swui/fork/sheet_metal.py`, `sheet_panels.py`, `sheet_tab.py`).
 
 ## 0.10.0 — 2026-10-18
 

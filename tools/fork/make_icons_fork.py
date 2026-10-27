@@ -138,6 +138,44 @@ def _():
             '<path d="M32 4 V60" stroke="%s" stroke-width="3" stroke-dasharray="5 3"/>' % mk.RED]
 
 
+@icon("sm_base_flange", "Brida base")
+def _():
+    # placa fina en perspectiva (blanca) con el canto en gris y el croquis azul encima
+    top = "M6 34 L38 18 L58 28 L26 44 Z"
+    front = "M6 34 L26 44 V50 L6 40 Z"
+    side = "M26 44 L58 28 V34 L26 50 Z"
+    return [_face(front, mk.PLANE), _face(side, mk.OLD), _face(top, mk.GEO),
+            mk.new("M14 33 L38 21 L50 27 L26 39 Z")]
+
+
+@icon("sm_edge_flange", "Brida de arista")
+def _():
+    # placa con una pared plegada hacia arriba en el borde de atrás, y la arista azul
+    floor = "M6 40 L34 26 L58 38 L30 52 Z"
+    floor_edge = "M6 40 L30 52 V57 L6 45 Z"
+    wall = "M34 26 L58 38 V14 L34 2 Z"
+    return [_face(floor_edge, mk.OLD), _face(floor, mk.GEO), _face(wall, mk.PLANE),
+            mk.thin("M34 26 L58 38", mk.NEW, 4.0)]
+
+
+@icon("sm_flatten", "Aplanar")
+def _():
+    # pieza en U abierta en plano: placa blanca con dos líneas de plegado rojas de trazos
+    plate = "M4 22 H60 V42 H4 Z"
+    dash = '<path d="%s" stroke="%s" stroke-width="2.6" stroke-dasharray="4 3" fill="none"/>'
+    return [_face(plate, mk.GEO), dash % ("M20 22 V42", mk.RED), dash % ("M44 22 V42", mk.RED),
+            mk.arrow(32, 58, 32, 46, mk.NEW, 6.0, 2.8)]
+
+
+@icon("sm_dxf", "Exportar DXF")
+def _():
+    # hoja con el contorno azul y la línea de plegado roja, "DXF" abajo
+    sheet = "M12 4 H42 L52 14 V60 H12 Z"
+    dash = '<path d="M32 12 V36" stroke="%s" stroke-width="2.4" stroke-dasharray="4 3" fill="none"/>' % mk.RED
+    return [_face(sheet, mk.GEO), mk.new("M20 12 H44 V36 H20 Z"), dash,
+            mk.label(32, 54, "DXF", mk.NEW, 13)]
+
+
 def build(target=TARGET):
     os.makedirs(target, exist_ok=True)
     written = []

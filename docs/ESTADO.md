@@ -1,7 +1,7 @@
 # Estado del fork
 
-Última actualización: 2026-10-27 (sexta sesión: fase 4 Mover cara, Mover/Copiar sólido y
-Eliminar/Conservar sólidos; ver "Análisis: Mover/Copiar sólido..." abajo).
+Última actualización: 2026-10-27 (séptima sesión: fase 1 chapa, versión 1; ver "Plan: fase 1"
+abajo).
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -9,7 +9,9 @@ Eliminar/Conservar sólidos; ver "Análisis: Mover/Copiar sólido..." abajo).
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
-- **Fase 1 (chapa) sigue cajoneada.**
+- **Fase 1 — Chapa: versión 1 hecha (2026-10-27); falta que la pruebe el usuario.** Pestaña
+  Chapa con Brida base, Brida de arista, Aplanar y Exportar DXF. Faltan las versiones 2 y 3
+  (ver "Plan: fase 1").
 - **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
   salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
   matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
@@ -43,6 +45,69 @@ Pendiente:
 - 5) Rosca en planos: **sí, la quiere** (representación simplificada: círculo de 3/4 fino de
   frente, líneas finas en lateral/corte). Decidido: va con el trabajo de planos (ver Falta).
 - Pedido a FreeCAD (planos en ángulo / punto medio): el usuario lo dejó por ahora.
+
+## Plan: fase 1 — Chapa (aprobado por el usuario el 2026-10-27)
+Por debajo el addon SheetMetal (0.8.26 instalado; usa networkx de
+`%APPDATA%/FreeCAD/v1-1/AdditionalPythonPackages`), arriba paneles y nombres SW.
+Respuestas del usuario: radio de plegado = espesor ("me funciona muy bien"); factor K no lo dijo
+(Claude usó 0,5, el de fábrica de SW; se cambia en la Brida base); DXF bien simple, solo contorno y
+líneas de plegado de trazos; nombre "pieza_espesor_material" con coma decimal; lotes, por ahora lo
+más simple. No hace falta que mande piezas: Claude arma las de prueba y compara con la cuenta.
+Versiones:
+1. **HECHA (2026-10-27)**: pestaña Chapa (después de Croquis), Brida base, Brida de arista,
+   Aplanar, Exportar DXF de una pieza.
+2. Dobladillo, Convertir en chapa (piezas STEP de SW), cortes sobre la chapa, DXF por lotes desde
+   un ensamblaje (un DXF por pieza, lo más simple).
+3. Desdoblar/Doblar (cortar sobre el plano y volver a plegar): SheetMetal no lo trae igual; lo más
+   parecido es "Wrap Cutout". Probar antes de prometer.
+
+Hecho en la versión 1 (`swui/fork/sheet_metal.py` sin interfaz, `sheet_panels.py` paneles y
+comandos, `sheet_tab.py` la pestaña; íconos `sm_*` en `make_icons_fork.py`):
+- Brida base = `SMBaseBend` de SheetMetal (PartDesign::FeaturePython en el Cuerpo). Se llega como
+  a Extruir: con el croquis abierto (from_sketch) o sin nada elegido (pick_plane: plano/cara ->
+  croquis -> al salir se arma). Panel: Dirección 1 (profundidad, invertir, plano medio; solo perfil
+  abierto), Parámetros de chapa (espesor, invertir = lado del espesor, "Radio = espesor" prendido
+  de fábrica con la ecuación `Radius = Thickness`), Margen de pliegue (factor K en `SWUI_KFactor`,
+  propiedad de la Brida base, **nombre estable**). Perfil abierto: de fábrica el croquis da las
+  medidas de afuera (BendSide "Inside").
+- Brida de arista = `SMBendWall`. Panel: aristas con clics (sin elegir nada antes también),
+  "Usar radio predeterminado" (ecuación `radius = BaseBend.Radius`), ángulo, longitud, "Medida
+  hasta" Exterior virtual / Interior virtual / Tangente al pliegue y Posición de brida. Equivalencias
+  verificadas sin GUI (placa de 50, brida de 30, espesor 2, radio 2): Material interior = "Material
+  Inside" (cara de afuera de la brida en la arista), Material exterior = "Thickness Outside",
+  Pliegue exterior = "Material Outside"; exterior virtual = "Outer Sharp" (alto total 30).
+- Editar una brida (clic derecho > Editar operación) abre el panel SW en lugar del de SheetMetal.
+- Aplanar: Unfold de SheetMetal (raíz del documento, Label "Desarrollo", marca `SWUI_FlatOf` =
+  Name del Cuerpo, **nombre estable**), K atado a la Brida base, cara fija = la cara grande de la
+  Brida base del lado del croquis (buscada en la punta del Cuerpo cada vez que se usa). Desarrollo
+  al 60 % de transparencia: SheetMetal dibuja el croquis de plegado en la cara de abajo.
+- Exportar DXF: R12 escrito por el fork (capas CONTORNO continua y PLEGADO DASHED, mm, arranca en
+  0,0, rectas seguidas unidas), al lado del .FCStd; sin guardar, pregunta dónde. Si existe, lo pisa
+  (decidido por Claude: "un clic"; avisa en la barra de estado y en la Vista de informe).
+- Probado sin GUI (desarrollo 76,712 = cuenta a mano con K 0,5; con espesor 3 y K 0,4, 74,597 =
+  cuenta; reabierto en otro proceso se recalcula) y en FreeCAD real (Brida base por los dos
+  caminos, placa y perfil en L, brida de arista elegida antes y con clic, Cancelar sin rastros,
+  Aplanar y volver, DXF con 4 rectas de contorno + 1 de plegado a 28,356 / 48,356 = mitad del
+  pliegue, editar espesor 2 -> 3 y el radio y la brida lo siguen, un Ctrl+Z).
+
+Decisiones para revisar con el usuario (las tomó Claude):
+1. Factor K 0,5 de fábrica (SW). Si él usa otro, se cambia en la Brida base y queda para la pieza.
+2. Espesor de fábrica: el último usado (la primera vez 2 mm); largo de brida: el último (20 mm).
+3. Una segunda Brida base en una pieza que ya tiene sólido: no se deja (avisa: pieza nueva).
+4. El DXF se pisa sin preguntar.
+5. Nombres "Brida-Base1", "Brida-Arista1", "Desarrollo" (los de SW en castellano, a confirmar).
+6. "Ángulo" va dentro de "Parámetros de brida" y las opciones de longitud/posición en listas
+   desplegables (en SW son recuadros y botones con ícono): si no, el panel no entraba en 768 px.
+
+Límites / sin hacer en la versión 1: desahogo de pliegue (quedan los valores de SheetMetal; solo
+importa con bridas más cortas que la arista), alivio de esquinas, bridas con perfil editado, la
+etiqueta "90°" del plegado se ve al aplanar (no va al DXF). Al editar una brida queda un paso de
+deshacer vacío de SheetMetal ("BaseBend"). Sin GUI SheetMetal no arma los croquis del desarrollo
+(DXF solo con la interfaz; la geometría sí se recalcula con `GenerateSketch` apagado).
+
+Para que pruebe el usuario: una pieza en U con Brida base desde la Planta y dos bridas de arista,
+Aplanar y volver, Exportar DXF y abrirlo en su programa de corte (capas y trazos), editar el
+espesor y volver a exportar; un perfil en L abierto.
 
 ## Alcance: menú Insertar de SW que usa el usuario (audio + capturas, 2026-10-26)
 Lo que no está en esta lista no se hace (salvo pedido). "Por ahora no" = quizás más adelante.
@@ -654,7 +719,7 @@ Etapas:
   cinta del addon; sin fecha).
 
 ## Falta / ideas pendientes
-- Fase 1: chapa metálica + DXF (cajoneada). Pedir al usuario piezas STEP de chapa cuando se retome.
+- Fase 1: chapa, versiones 2 y 3 (ver "Plan: fase 1").
 - Simulación FEM como pestaña "Simulación" con flujo SW (estudio, material, sujeciones, cargas,
   malla, ejecutar, resultados): conversada, sin empezar; es grande.
 - Panel Ver/Datos (propiedades de FreeCAD): se deja por ahora; el usuario va a ver si le sirve.

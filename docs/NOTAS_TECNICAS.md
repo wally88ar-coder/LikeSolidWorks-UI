@@ -262,6 +262,27 @@
 - `SwPanel.preview` vuelve a leer `self.obj` después de `_apply` (un panel puede cambiar la
   operación por otra); `dress_up_panel.CHOOSERS` elige el panel por marca antes que por TypeId.
 
+## Chapa (fase 1): hallazgos con SheetMetal 0.8.26 en FreeCAD 1.1.4
+- SheetMetal se importa por módulos (`SheetMetalBaseCmd`, `SheetMetalCmd`, `SheetMetalUnfoldCmd`):
+  al importarlos registran sus comandos aunque su banco no esté activo. Sus objetos dentro de un
+  Cuerpo son `PartDesign::FeaturePython`; el Unfold va en la raíz (`Part::FeaturePython`). Al abrir
+  un archivo, FreeCAD carga sus módulos solo (hace falta el addon instalado).
+- El desarrollador nuevo necesita networkx: está en `%APPDATA%/FreeCAD/v1-1/AdditionalPythonPackages`.
+- Los croquis del desarrollo (`GenerateSketch`) solo con interfaz: sin GUI falla en
+  `ViewObject.DrawStyle` y el Unfold queda inválido. `SeparateSketchLayers` da `<Label>_Sketch`
+  (contorno), `_Sketch_Bends`, `_Sketch_Internal`, `_Sketch_Holes`, `_Sketch_Bend_Labels`; los
+  busca por `Name.startswith(...)` del Label: Label sin espacios ni paréntesis, o crea croquis
+  nuevos en cada recálculo. Los croquis quedan en el plano XY con Placement identidad.
+- El exportador DXF de FreeCAD (`importDXF.export`) pone la capa según el grupo o la capa de Draft
+  que contiene al objeto ("0" si no hay) y no lleva el tipo de línea: por eso el DXF lo escribe
+  el fork. `importDXF.insert` en una prueba abre una ventana y la prueba queda colgada.
+- Factor K: el Unfold tiene `KFactorStandard` "ansi" (K de SW, 0,5 = mitad del espesor) o "din"
+  (el doble). La brida de arista tiene su propio `kfactor` (solo para su vista "unfold").
+- Editar (setEdit) un objeto de SheetMetal abre su transacción y su panel; `resetEdit` llama a su
+  `unsetEdit` (cierra el diálogo y oculta el `baseObject`) y la transacción queda abierta.
+- Brida base cerrada: `Reverse` cambia el lado del espesor (`BendSide` no hace nada). Abierta:
+  `BendSide` Inside = el croquis es la medida de afuera, Outside = de adentro, Middle = al medio.
+
 ## Mover/Copiar y Eliminar/Conservar sólidos: hallazgos en FreeCAD 1.1.4
 - SubShapeBinder de un Cuerpo entero (`Support = [(Cuerpo, "")]`), en la raíz: su forma está en
   posición real (incluye el Placement del Cuerpo). Un Cuerpo que arranca de ella con

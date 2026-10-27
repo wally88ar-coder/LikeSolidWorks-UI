@@ -100,7 +100,11 @@ FORK_REPLACED = {"Std_Measure": "SWUI_Measure"}
 
 
 def _fork_layout_commands():
-    return _all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
+    return (_all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
+            + _all_layout_commands(os.path.join("fork", "sheet_tab.py")))
+
+
+FORK_TABS = ("Chapa",)  # fork: pestañas propias (título en castellano, sin tr())
 
 
 def _expected_buttons():
@@ -973,6 +977,35 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or gen_tc < brute_ - 1e-9 or gen_tc - brute_ > 1e-3
             or abs(mx.max_between(box_a, box_b)[0] - math_.sqrt(35 ** 2 + 10 ** 2 + 10 ** 2)) > 1e-12):
         print("  FEHLER: fork: distancia máxima (general contra fórmulas)", gen_cc, gen_pc, exa_pc, gen_tc, brute_)
+        return False
+    # Chapa (sheet_metal / sheet_panels / sheet_tab): nombres, DXF, pestaña y enganches
+    smt = importlib.import_module("swui.fork.sheet_metal")
+    smp = sys.modules.get("swui.fork.sheet_panels")
+    titles_ = [t for t, _g in lay_.TABS]
+    dxf_ = smt.dxf_text([("LINE", smt.OUTLINE_LAYER, 0.0, 0.0, 76.712, 0.0),
+                         ("ARC", smt.OUTLINE_LAYER, 10.0, 10.0, 5.0, -90.0, 0.0),
+                         ("CIRCLE", smt.OUTLINE_LAYER, 20.0, 20.0, 3.3),
+                         ("LINE", smt.BEND_LAYER, 0.0, 46.0, 100.0, 46.0)]).splitlines()
+    pick_ = sys.modules["swui.pick_plane"]
+    fsk_ = sys.modules["swui.from_sketch"]
+    if (smt.dxf_filename("Soporte", 1.5, "SAE 1010") != "Soporte_1,5mm_SAE 1010.dxf"
+            or smt.dxf_filename("Tapa", 2.0) != "Tapa_2mm.dxf" or smt.fmt_mm(0.75) != "0,75"
+            or smt.dxf_filename('a/b:c', 3) != "a_b_c_3mm.dxf"
+            or smt.next_label("Brida-Base", {"Brida-Base1"}) != "Brida-Base2"
+            or dxf_[:2] != ["  0", "SECTION"] or dxf_[-1] != "EOF" or "AC1009" not in dxf_
+            or dxf_.count("PLEGADO") != 2 or "DASHED" not in dxf_ or "76.712" not in dxf_
+            or dxf_[dxf_.index("ARC") + 12] != "270"
+            or smt.extent(smt.shift([("LINE", "X", 5.0, 6.0, 7.0, 9.0)], -5.0, -6.0)) != (0.0, 0.0, 2.0, 3.0)
+            or smt.kind(types.SimpleNamespace(Proxy=type("SMBendWall", (), {})())) != "wall"
+            or smt.kind(object()) is not None
+            or sorted(smt.merge_lines([("LINE", "C", 0.0, 0.0, 0.0, 26.0), ("LINE", "C", 0.0, 26.0, 0.0, 30.7),
+                                       ("LINE", "C", 0.0, 30.7, 50.0, 30.7), ("LINE", "P", 0.0, 28.0, 9.0, 28.0)]))
+            != [("LINE", "C", 0.0, 30.7, 0.0, 0.0), ("LINE", "C", 0.0, 30.7, 50.0, 30.7),
+                ("LINE", "P", 0.0, 28.0, 9.0, 28.0)]
+            or "Chapa" not in titles_ or titles_.index("Chapa") != titles_.index(lay_.SKIZZE[0]) + 1
+            or smp is None or smp.BASE_COMMAND not in pick_.FEATURE_COMMANDS
+            or smp.BASE_COMMAND not in fsk_.PROFILE_FEATURES or smp._choose not in dup.CHOOSERS):
+        print("  FEHLER: fork: chapa (nombre del DXF, archivo DXF, pestaña Chapa, enganches)", titles_)
         return False
     print("  Evaluar  : fork: material (copia en la pieza), propiedades físicas, ecuaciones SW, medir SW, franja")
     print("  Medir    : fork: distancia máxima general (barrido + afinado) = fórmulas exactas")
@@ -4509,7 +4542,8 @@ def run(split_namespace):
                 if tip_:
                     keys_l.append(tip_)
     for title_, groups_ in lay_l.TABS:
-        keys_l.append(title_)
+        if title_ not in FORK_TABS:  # fork
+            keys_l.append(title_)
         for g_ in groups_:
             for e_ in g_:
                 walk_l(e_)
@@ -4631,6 +4665,7 @@ def run(split_namespace):
         return False
     lang_btn = "Language" if "Language" in texts_en and "Language" in texts_de else texts_en[:3]
     fly_tip = next((x_ for x_ in tips_en if "variants" in x_), "")
+    tabs_en = [t_ for t_ in tabs_en if t_ not in FORK_TABS]  # fork: pestaña Chapa (en castellano)
     if tabs_en[:6] != ["Evaluate", "Features", "Sketch", "View", "Assembly", "Drawing"] or titles_en[2] != "Skizze":
         print("  FEHLER: Reiter auf Englisch / interne Namen", tabs_en, titles_en)
         return False

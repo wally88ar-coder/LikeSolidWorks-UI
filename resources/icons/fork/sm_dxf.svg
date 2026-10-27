@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Exportar DXF</title>
+  <path d="M12 4 H42 L52 14 V60 H12 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M20 12 H44 V36 H20 Z" stroke="#1b1b1b" stroke-width="7.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/><path d="M20 12 H44 V36 H20 Z" stroke="#3d8bff" stroke-width="4.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+  <path d="M32 12 V36" stroke="#e0261b" stroke-width="2.4" stroke-dasharray="4 3" fill="none"/>
+  <text x="32.0" y="54.0" font-family="DejaVu Sans, Arial, sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#3d8bff" stroke="#1b1b1b" stroke-width="0.6" paint-order="stroke">DXF</text>
+</svg>

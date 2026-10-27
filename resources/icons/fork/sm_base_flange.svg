@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <title>Brida base</title>
+  <path d="M6 34 L26 44 V50 L6 40 Z" fill="#8b9099" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M26 44 L58 28 V34 L26 50 Z" fill="#9a9a9a" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M6 34 L38 18 L58 28 L26 44 Z" fill="#f4f4f4" stroke="#1b1b1b" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M14 33 L38 21 L50 27 L26 39 Z" stroke="#1b1b1b" stroke-width="7.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/><path d="M14 33 L38 21 L50 27 L26 39 Z" stroke="#3d8bff" stroke-width="4.0" stroke-linejoin="round" stroke-linecap="round" fill="none"/>
+</svg>
