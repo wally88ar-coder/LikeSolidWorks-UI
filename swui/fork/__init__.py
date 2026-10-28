@@ -156,6 +156,14 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Matriz y simetría de componentes:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import assembly_features
+
+        assembly_features.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [assembly_features.HOLE_CMD, assembly_features.CUT_CMD])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Operaciones de ensamblaje:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import sheet_panels
 
         sheet_panels.install()

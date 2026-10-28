@@ -358,3 +358,12 @@
   `slotCreatedDocument` + QTimer 0. Crear un documento lo deja activo: volver al ensamblaje
   (`setActiveDocument` + `setEdit(asm)`) o los comandos ya no lo encuentran.
   Ejes del origen (App::Line): la dirección es su X local (eje de referencia con `ObjectX`).
+- Taladro/corte de ensamblaje (`assembly_features.py`, etapa 4): el binder va con
+  `Relative = False` y `Placement = vinculo.Placement.inverse() * croquis.Placement`. Con
+  `Relative = True` (lo de la etapa 1) FreeCAD llegó a aplicar la posición del componente DOS
+  veces después de crear otro objeto en el ensamblaje (probado). Un taladro nativo con un binder
+  de perfil toma solo los círculos (los puntos sueltos no pasan al binder): a cada punto se le
+  ata un círculo de 0,5 mm. `HolePanel` usa `self.kind` (un combo): no pisarlo en subclases.
+  Al salir del croquis hay que limpiar la selección o el panel de relaciones del original
+  (`assembly_mates`) toma el croquis. El nombre SW que pone `naming.py` se aplica con QTimer 0:
+  para que quede el nuestro, ponerlo con otro QTimer 0 encolado después.

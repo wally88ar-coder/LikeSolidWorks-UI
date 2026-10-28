@@ -103,7 +103,8 @@ def _fork_layout_commands():
     return (_all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
             + _all_layout_commands(os.path.join("fork", "sheet_tab.py"))
             + _all_layout_commands(os.path.join("fork", "mates_sw.py"))
-            + _all_layout_commands(os.path.join("fork", "component_patterns.py")))
+            + _all_layout_commands(os.path.join("fork", "component_patterns.py"))
+            + _all_layout_commands(os.path.join("fork", "assembly_features.py")))
 
 
 FORK_TABS = ("Chapa",)  # fork: pestañas propias (título en castellano, sin tr())
@@ -1018,6 +1019,20 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or not any(isinstance(e, dict) and e.get("flyout") == cpt.FLYOUT
                        for g in lay_.BAUGRUPPE[1] for e in g)):
         print("  FEHLER: fork: matriz y simetría de componentes (cuentas, expresiones, cinta)", lin_)
+        return False
+    # Taladro y corte de ensamblaje (assembly_features): datos guardados, piezas repetidas, cinta
+    afe = importlib.import_module("swui.fork.assembly_features")
+    _body = types.SimpleNamespace(Name="Body", Document=types.SimpleNamespace(Name="Placa"))
+    _l1 = types.SimpleNamespace(LinkedObject=_body, Label="Placa<1>")
+    _l2 = types.SimpleNamespace(LinkedObject=_body, Label="Placa<2>")
+    _l3 = types.SimpleNamespace(LinkedObject=types.SimpleNamespace(Name="Body", Document=types.SimpleNamespace(Name="Tapa")),
+                                Label="Tapa<1>")
+    uniq_ = afe.unique_parts([_l1, _l2, _l3])
+    if (afe.parse_entry(afe.entry_text("Placa", "Placa1", "Binder", "Hole")) != ("Placa", "Placa1", "Binder", "Hole")
+            or afe.parse_entry("roto") is not None
+            or uniq_ != ([_l1, _l3], [_l2]) or afe.next_title({"TaladroEnsamblaje1"}, "hole") != "TaladroEnsamblaje2"
+            or not any(isinstance(e, dict) and e.get("flyout") == afe.FLYOUT for g in lay_.BAUGRUPPE[1] for e in g)):
+        print("  FEHLER: fork: taladro y corte de ensamblaje (datos, piezas repetidas, cinta)", uniq_)
         return False
     # Chapa (sheet_metal / sheet_panels / sheet_tab): nombres, DXF, pestaña y enganches
     smt = importlib.import_module("swui.fork.sheet_metal")

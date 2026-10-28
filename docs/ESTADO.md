@@ -36,7 +36,16 @@ abajo).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
-- **Fase 5 — Ensamblaje: etapa 3 (matriz y simetría de componentes) con código completo
+- **Fase 5 — Ensamblaje: etapa 4 (taladro y corte de ensamblaje) con código completo
+  (2026-10-27, `swui/fork/assembly_features.py`); el usuario prueba las etapas 2, 3 y 4 juntas.**
+  Probada en FreeCAD real: taladro M6 desde la cara de arriba de dos placas apiladas (una
+  girada), la pieza lejana no se toca, mover la placa realinea los agujeros, corte rectangular
+  por todo, editar y cancelar. Decidido sin consultar: cada punto de posición lleva un círculo
+  chico de 0,5 mm atado (el taladro solo toma círculos de la copia del croquis); pieza repetida en
+  el ensamblaje: la operación queda en la pieza y sigue a la primera instancia (aviso en el panel;
+  sigue pendiente que el usuario decida). Falta: aviso visible al abrir la pieza sola (hoy solo en
+  la vista de informes); doble clic en el taladro dentro de la pieza abre el diálogo de FreeCAD.
+- **Etapa 3 (matriz y simetría de componentes) con código completo
   (2026-10-27, `swui/fork/component_patterns.py`); el usuario prueba las etapas 2 y 3 juntas.**
   Probada en FreeCAD real: lineal desde arista (4), circular desde cara cilíndrica (6),
   simetría con misma pieza + versión opuesta (exactas), editar desde el clic derecho (4 -> 3),

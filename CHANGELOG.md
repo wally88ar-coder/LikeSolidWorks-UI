@@ -286,6 +286,13 @@ Neueste Version oben. / Newest version first.
   reconstruye solo al abrirlo si la original cambió). Las copias siguen a la pieza semilla aunque
   la mueva el motor de cálculo. Se editan con clic derecho "Editar operación". Todo con objetos
   nativos (vínculos con copias, expresiones, VarSet) (`swui/fork/component_patterns.py`).
+- Ensamblaje (fase 5, etapa 4): **Asistente para taladro** y **Extruir corte** de ensamblaje, que
+  agujerean varias piezas de una vez. Se elige la cara, se abre un croquis ahí (puntos de posición
+  o el perfil del corte) y al salir aparece el panel: el de taladro de siempre (tipo, norma,
+  tamaño...) o profundidad del corte, más **Piezas afectadas** (arranca con las que el agujero
+  atraviesa; un clic suma o saca). El agujero queda dentro de cada pieza (sale en sus planos y en
+  el DXF), sigue al croquis del ensamblaje y se realinea solo si la pieza se mueve. Se edita con
+  clic derecho "Editar operación" (`swui/fork/assembly_features.py`).
 
 ## 0.10.0 — 2026-10-18
 
