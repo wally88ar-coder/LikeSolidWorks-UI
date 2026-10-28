@@ -68,7 +68,8 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   usuario.)
 
 **Propios del usuario:**
-- Chapa metálica (trabaja con plegadora, no punzonadora): pestaña nueva con brida base, brida de
+- (Hecho en la fase 1, versiones 1 a 3, en `swui/fork/`; falta que lo pruebe el usuario.)
+  Chapa metálica (trabaja con plegadora, no punzonadora): pestaña nueva con brida base, brida de
   arista, propiedades de chapa, desplegar/plegar, sobre SheetMetal. **Exportar DXF del desarrollo
   con un clic**: contorno y líneas de plegado en capas separadas, nombre de archivo automático
   (pieza + espesor + material), y exportación por lotes desde un ensamblaje.
@@ -84,20 +85,20 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
   arista de la cara = Ángulo de salida nativo. Límite: con vecinas inclinadas, mover deja escalón.
 
 Operaciones de pieza que usa (menú Insertar de SW, lista completa en `docs/ESTADO.md` > Alcance):
-todas hechas salvo la chapa (Mover/Copiar y Eliminar/Conservar sólido: 2026-10-27, sin
+todas hechas (Mover/Copiar y Eliminar/Conservar sólido: 2026-10-27, sin
 Restricciones por decisión del usuario); Superficie y Operación Cierre, por ahora no.
 
 El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con globos,
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-27: fase 0 terminada; fases 2, 3 y 4 con código completo, falta que las pruebe
-el usuario (de la 2 solo probó el redondeo, de la 4 girar cara) y que revise las decisiones de la
-fase 3 (lista en `docs/ESTADO.md`). Hecho además fuera de las fases: árbol de operaciones estilo SW
-(barra de retroceso, suprimir, mover, cotas con doble clic, reparar referencias...), aristas del
-modelo dentro del croquis, multicuerpo (Fusionar resultado, Alcance, Combinar, simetría de sólidos)
-y Mover/Copiar / Eliminar/Conservar sólidos. Fase 1 cajoneada a pedido del usuario. Próximo: lo que
-elija el usuario después de probar (Claude recomendó la fase 1, chapa). Ver `docs/ESTADO.md`.
+Estado al 2026-10-27: fase 0 terminada; fases 1 a 5 con código completo, falta que las pruebe
+el usuario (de la 2 solo probó el redondeo, de la 4 girar cara), que revise las decisiones de la
+fase 3 y que responda las casillas de la fase 5 (documento compartido, enlace en `docs/ESTADO.md`).
+Hecho además fuera de las fases: árbol de operaciones estilo SW (barra de retroceso, suprimir,
+mover, cotas con doble clic, reparar referencias...), aristas del modelo dentro del croquis,
+multicuerpo (Fusionar resultado, Alcance, Combinar, simetría de sólidos) y Mover/Copiar /
+Eliminar/Conservar sólidos. Próximo: lo que elija el usuario después de probar. Ver `docs/ESTADO.md`.
 Trabajo de planos (TechDraw, sin número de fase): rosca simplificada automática, rótulo en
 castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 0. Puesta en marcha: remotos (origin = fork, upstream = original), verificar que carga y que el

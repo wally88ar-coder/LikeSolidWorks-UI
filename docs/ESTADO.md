@@ -1,7 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-27 (séptima sesión: fase 1 chapa, versión 1; ver "Plan: fase 1"
-abajo).
+Última actualización: 2026-10-27 (fase 5, ensamblaje: código completo de las etapas 1 a 5).
 
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
@@ -9,7 +8,7 @@ abajo).
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
-- **Fase 1 — Chapa: versiones 1 y 2 hechas (2026-10-27/28); falta que las pruebe el usuario.**
+- **Fase 1 — Chapa: versiones 1 a 3 hechas (2026-10-27/28); falta que las pruebe el usuario.**
   Pestaña Chapa con Brida base, Brida de arista, Dobladillo, Extruir corte, Convertir en chapa
   (STEP), Aplanar, Desdoblar/Doblar y Exportar DXF (también por lotes desde un ensamblaje). Las
   tres versiones del plan están hechas (ver "Plan: fase 1").
@@ -26,73 +25,55 @@ abajo).
   Restricciones: descartado por el usuario (ecuaciones a mano si hiciera falta).
   Con esto está completo el "Alcance" del menú Insertar, salvo la chapa (fase 1).
   Detalle de las tres en "Análisis: Mover/Copiar sólido..." > Hecho.
-- **Próximo paso:** que el usuario pruebe con piezas suyas lo pendiente: fase 2 (lista sugerida:
-  chaflán, matriz lineal con Dirección 2, circular alrededor de un agujero, simetría eligiendo el
-  plano en el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a distancia /
-  en ángulo / punto medio cambiando una cota, eje en un cilindro), fase 3 (y sus decisiones),
-  mover cara (equidistanciar / trasladar), Mover/Copiar y Eliminar/Conservar sólidos.
-  Después, lo que elija el usuario: chapa (fase 1, recomendada por Claude), planos, ensamblaje
-  (fase 5).
+- **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada). Falta que
+  el usuario pruebe con piezas y conjuntos suyos: fase 1 (chapa, versiones 1 a 3), fase 2 (lista
+  sugerida: chaflán, matriz lineal con Dirección 2, circular alrededor de un agujero, simetría
+  eligiendo el plano en el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a
+  distancia / en ángulo / punto medio cambiando una cota, eje en un cilindro), fase 3 (y sus
+  decisiones), fase 4 (equidistanciar / trasladar cara), Mover/Copiar y Eliminar/Conservar
+  sólidos, y fase 5 (etapas 2 a 5, checklist en el documento compartido). Después: planos
+  (TechDraw, ver "Falta") o lo que elija el usuario.
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
 - **Fase 5 — Ensamblaje: código completo (etapas 1 a 5, 2026-10-27); falta que el usuario la
-  pruebe con conjuntos suyos y que responda las casillas "Vos" del documento compartido.**
-  Etapa 5 (geometría de referencia, `swui/fork/asm_reference.py`): probada en FreeCAD real
-  (plano a 30 del XY del origen queda fijo y una coincidente lleva el cubo ahí; plano apoyado en
-  la placa sigue a la pieza y en relaciones da el aviso; eje desde un agujero usado en una matriz
-  circular; editar desde el clic derecho con lo guardado). Hallazgo: el motor ignora un plano
-  apoyado (la unión queda, pero no mueve nada). Decidido sin consultar: si todas las referencias
-  son del origen o de planos fijos, al aceptar el plano queda fijo (sin apoyo) para que sirva en
-  relaciones; un eje/punto fijo pierde sus selecciones al editarlo (el plano no: SWUI_PlaneSpec).
-  Doble clic sobre un plano de Part no entra en edición en 1.1.4: se edita con clic derecho.
-- **Etapa 4 (taladro y corte de ensamblaje) con código completo
-  (2026-10-27, `swui/fork/assembly_features.py`); el usuario prueba las etapas 2, 3 y 4 juntas.**
-  Probada en FreeCAD real: taladro M6 desde la cara de arriba de dos placas apiladas (una
-  girada), la pieza lejana no se toca, mover la placa realinea los agujeros, corte rectangular
-  por todo, editar y cancelar. Decidido sin consultar: cada punto de posición lleva un círculo
-  chico de 0,5 mm atado (el taladro solo toma círculos de la copia del croquis); pieza repetida en
-  el ensamblaje: la operación queda en la pieza y sigue a la primera instancia (aviso en el panel;
-  sigue pendiente que el usuario decida). Falta: aviso visible al abrir la pieza sola (hoy solo en
-  la vista de informes); doble clic en el taladro dentro de la pieza abre el diálogo de FreeCAD.
-- **Etapa 3 (matriz y simetría de componentes) con código completo
-  (2026-10-27, `swui/fork/component_patterns.py`); el usuario prueba las etapas 2 y 3 juntas.**
-  Probada en FreeCAD real: lineal desde arista (4), circular desde cara cilíndrica (6),
-  simetría con misma pieza + versión opuesta (exactas), editar desde el clic derecho (4 -> 3),
-  opuesta reconstruida al abrirla (50 -> 70 mm). Decidido sin consultar: un vínculo con copias
-  por cada semilla ("MatrizLineal1 Tornillo"), los datos en un VarSet del ensamblaje; editar
-  solo con clic derecho "Editar operación" (doble clic sobre un vínculo es de FreeCAD); el
-  archivo opuesto se llama "<pieza>-opuesta" y va en la carpeta de la original (sin preguntar).
-  Falta: Matriz conducida por operación (no la pidió), borrar la operación entera de un golpe
-  (hoy: borrar el VarSet deja las copias).
-- **Etapa 2 (relaciones de posición) con código completo (2026-10-27,
-  `swui/fork/mates_sw.py`); falta que la pruebe el usuario.** Probada en FreeCAD real con
-  capturas: concéntrica + coincidente encadenadas, tangente, cambiar a distancia 15, editar con
-  doble clic y cancelar (vuelve), panel contextual del original -> panel del fork, Fijar/Flotar y
-  Ver relaciones. Decidido sin consultar (revisar con el usuario): el árbol NO muestra las
-  relaciones debajo de cada componente (FreeCAD no deja agregar hijos a un vínculo); en su lugar,
-  clic derecho "Ver relaciones de posición" las selecciona en la carpeta. Los nombres SW
-  ("(f) Placa<1>", "Coincidente1", carpeta "Relaciones de posición") ya los ponía el original
-  (`naming.py`). Límites solo en la concéntrica (FreeCAD los tiene solo en uniones cilíndricas,
-  de giro y lineales). Pendiente aparte: la cinta no pasa sola a la pestaña Ensamblaje.
-  Etapa 1 (pruebas sin GUI) hecha el 2026-10-27.
-  Decisiones del usuario (2026-10-27): 1) el addon avisa a las copias de una matriz cuando el
-  motor mueve la semilla (observador, lógica propia aceptada); 2) la versión opuesta se
-  reconstruye sola al abrirla; 3) el taladro de ensamblaje sigue solo a la pieza al moverla, como
-  SW (observador que pone `binder.Placement = vinculo.Placement.inverse()`; probado a mano y con
-  el motor); 4) distancia a una cara = elegir la cara directo, sin plano apoyado.
-  Falta que decida: pieza repetida en el ensamblaje con taladro (el binder sigue a una sola copia).
-  Hallazgos técnicos en `docs/NOTAS_TECNICAS.md` > "Ensamblaje (fase 5)".
-  Plan y checklist compartido con
-  el usuario en el documento "Fase 5 — Ensamblaje estilo SW 2018: plan y checklist"
-  (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf); se tilda ahí, etapa por etapa. Alcance (lo
-  que usa de la pestaña Ensamblaje de SW): insertar, relaciones de posición (+ tangente, panel
-  encadenado), matriz de componentes lineal y circular, simetría de componentes, taladro y
-  extruir corte de ensamblaje (quedan dentro de cada pieza, como "Propagar a piezas"), geometría
-  de referencia. Etapas: 1 pruebas sin GUI, 2 relaciones, 3 matriz/simetría, 4 taladro/corte,
-  5 referencias. Verificado en 1.1.4: el ensamblaje toma cada copia de un vínculo con
-  `ElementCount` como componente (`UtilsAssembly.isLinkGroup`); las uniones aceptan
-  `App::LocalCoordinateSystem`; hay límites (`EnableLengthMin`...) y `Suppressed` en las uniones.
+  pruebe con conjuntos suyos y que responda las casillas "Vos" del documento compartido** "Fase 5
+  — Ensamblaje estilo SW 2018: plan y checklist" (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf),
+  donde se tilda etapa por etapa. Alcance (lo que el usuario usa de la pestaña Ensamblaje de SW):
+  insertar, relaciones de posición, matriz de componentes lineal y circular, simetría de
+  componentes, taladro y extruir corte de ensamblaje, geometría de referencia. Commits 3d61268,
+  bc35bf6, 258df65, c6b3deb. Hallazgos técnicos en `docs/NOTAS_TECNICAS.md` > "Ensamblaje (fase 5)".
+  - Etapa 1 — pruebas sin GUI (FreeCADCmd): todo anda con matices.
+  - Etapa 2 — relaciones de posición (`swui/fork/mates_sw.py`): panel SW que queda abierto,
+    tangente, Alineada/Antialineada, límites en la concéntrica, editar con doble clic,
+    Fijar/Flotar y Ver relaciones en el clic derecho. Probada en FreeCAD real.
+  - Etapa 3 — matriz y simetría de componentes (`swui/fork/component_patterns.py`): lineal (una o
+    dos direcciones), circular, simetría misma pieza o versión opuesta. Probada en FreeCAD real.
+  - Etapa 4 — taladro y corte de ensamblaje (`swui/fork/assembly_features.py`): el agujero queda
+    dentro de cada pieza, sigue al croquis y se realinea si la pieza se mueve. Probada en FreeCAD real.
+  - Etapa 5 — plano/eje/punto en el ensamblaje (`swui/fork/asm_reference.py`). Probada en FreeCAD real.
+  - Decisiones del usuario (2026-10-27): 1) el addon avisa a las copias de una matriz cuando el
+    motor mueve la semilla (observador, lógica propia aceptada); 2) la versión opuesta se
+    reconstruye sola al abrirla; 3) el taladro de ensamblaje sigue solo a la pieza al moverla, como
+    SW (observador que pone el binder en `vinculo.Placement.inverse() * croquis.Placement`);
+    4) distancia a una cara = elegir la cara directo, sin plano apoyado.
+  - Decidido por Claude sin consultar (revisar con el usuario):
+    - Árbol: las relaciones NO cuelgan de cada componente (FreeCAD no deja agregar hijos a un
+      vínculo); clic derecho "Ver relaciones de posición" las selecciona en la carpeta.
+    - Límites solo en la concéntrica (FreeCAD los tiene solo en uniones cilíndricas, de giro y lineales).
+    - Matriz: un vínculo con copias por semilla ("MatrizLineal1 Tornillo"), datos en un VarSet.
+    - Versión opuesta: archivo "<pieza>-opuesta" en la carpeta de la original, sin preguntar.
+    - Taladro: cada punto de posición lleva un círculo de 0,5 mm atado (el taladro solo toma
+      círculos de la copia del croquis).
+    - Plano/eje/punto hecho solo sobre el origen: queda fijo al aceptar (el motor ignora uno apoyado).
+    - Matrices, simetrías, operaciones de ensamblaje y referencias se editan con clic derecho
+      "Editar operación" (el doble clic sobre esos objetos es de FreeCAD o no hace nada en 1.1.4).
+  - Pendiente que decida el usuario: pieza repetida en el ensamblaje con taladro (hoy sigue a la
+    primera instancia y el panel avisa); nombre automático de la versión opuesta.
+  - Falta (menor): aviso visible al abrir sola una pieza con agujeros del ensamblaje (hoy, vista
+    de informes y nombre en el árbol); borrar una matriz entera de un golpe (borrar el VarSet deja
+    las copias); un eje/punto fijo pierde sus selecciones al editarlo; la cinta no pasa sola a la
+    pestaña Ensamblaje; doble clic en el taladro dentro de la pieza abre el diálogo de FreeCAD.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías

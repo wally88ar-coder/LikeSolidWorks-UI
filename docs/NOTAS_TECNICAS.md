@@ -328,13 +328,14 @@
   `PartDesign::SubShapeBinder` a la Body original + `Part::Mirroring` + Body con BaseFeature.
   Al abrirlo solo, FreeCAD abre la original, pero el binder no se recalcula hasta `touch()`.
 - Taladro de ensamblaje: binder del croquis del ensamblaje dentro de la Body de cada pieza +
-  Pocket ThroughAll Midplane. Posición: `binder.Placement = vinculo.Placement.inverse()` fija
+  Pocket ThroughAll Midplane. Posición en la etapa 1: `binder.Placement = vinculo.Placement.inverse()` fija
+  (CORREGIDO en la etapa 4, ver abajo: `Relative = False` y `vinculo.inverse() * croquis.Placement`)
   (una expresión `minvert(Conjunto#Placa1.Placement)` es "cyclic reference"). El croquis no
   puede quedar apoyado en la cara de una pieza que se agujerea (ciclo): ubicarlo y desapoyarlo.
 - Planos en relaciones: el panel nativo acepta solo planos del ensamblaje **sin apoyo**
   (`JointObject.py`: "accept only datum that are not attached"). Origen y plano suelto: bien.
 - Taladro que sigue a la pieza: observador de documento (`slotChangedObject`, prop "Placement"
-  del vínculo) que pone `binder.Placement = vinculo.Placement.inverse()` y recalcula después el
+  del vínculo) que pone la posición del binder (fórmula de la etapa 4, abajo) y recalcula después el
   documento de la pieza. Anda al mover a mano y cuando mueve el motor. Comparar documentos por
   `.Name` (los objetos Python de un documento no son siempre el mismo: `is` falla).
   Ojo al medir: `Link.Shape` de un vínculo a otro archivo queda viejo hasta recalcular el
