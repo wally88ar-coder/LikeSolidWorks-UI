@@ -173,6 +173,12 @@ Neueste Version oben. / Newest version first.
   la vista; ahora la barra espaciadora la limpia y vuelve a mostrar la ventana.
 - **Clic derecho del árbol en castellano**: *Mostrar/Ocultar selección*, *Alternar
   transparencia*, *Colores de caras*, *Editar …* y otras que FreeCAD 1.1.4 deja en inglés.
+- **Fase 2 comparada a mano con SW 2018** (mismo volumen que SW en todo): el chaflán sigue el
+  orden de SW (Tipo, Elementos, Parámetros) con Simétrico/Asimétrico y recuadro de medidas; las
+  matrices y la simetría abren con la dirección, el eje o el plano vacíos esperando selección;
+  chaflán, matrices, ángulo de salida y taladro recuerdan las últimas medidas o tipo (la primera
+  vez, los valores de SW); el taladro vuelve a su panel después de *Editar posiciones*; el clic
+  atraviesa la vista previa de planos, ejes y puntos; las cotas se modifican con doble clic.
 - **Panel de Chaflán** igual al de redondeo, con los tipos de SW: *Ángulo-distancia* o
   *Distancia-distancia* (con *Distancia igual*) e *Invertir dirección*.
 - **Paneles de Matriz lineal, Matriz circular y Simetría** estilo SW: casillas de selección

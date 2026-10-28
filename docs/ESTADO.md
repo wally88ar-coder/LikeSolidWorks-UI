@@ -116,6 +116,33 @@ Piloto: redondeo R5 en una arista de un bloque 100x60x20 (2026-10-28).
      diálogo "Save all changes...? / Discard" al cerrar sin guardar.
 - Igual que SW: título del panel, lista de aristas, propagación tangente, vista previa en vivo.
 
+Fase 2 completa comparada con SW (noche del 2026-10-28, el usuario durmiendo; commits 77e12db a
+e48843a). Resultado geométrico: idéntico a SW (o al calculado) en todos los casos.
+
+| Operación | Volumen fork = SW | Corregido esa noche | Queda |
+| --- | --- | --- | --- |
+| Chaflán 2x2 simétrico y 3 mm x 30° | sí (119 540,192) | orden SW (Tipo, Elementos, Parámetros), Simétrico/Asimétrico, recuerda tipo y medidas (1.ª vez Ángulo-distancia 10 x 45°), recuadro Distancia/Ángulo, foco en la medida | flecha de dirección en la vista (SW la dibuja) |
+| Matriz lineal 3x30 + Dir. 2 2x30 | sí (113 968,142) | dirección vacía al abrir, 10 mm y 3 (después las últimas), sin vista previa hasta tener dirección | flechas de dirección en la vista; "Hasta la referencia" |
+| Matriz circular 6 alrededor de un agujero | sí (calculado) | eje vacío, abre esperando la operación, 4 instancias, después pasa solo al eje | — |
+| Simetría con plano del árbol flotante | sí (calculado) | plano vacío al abrir; avisa qué falta si se acepta sin él | — |
+| Taladro refrentado ISO 4762 M6 y roscado M6 pasantes | sí (1 073,495 sacados, igual que SW; roscado Ø5) | Editar posiciones vuelve al panel; recuerda el último tipo/norma/tamaño/condición | SW pide primero el tipo y después la cara: el fork al revés (aprobado por el usuario) |
+| Ángulo de salida 5°, plano neutro arriba | sí (+1 749,773, mismo sentido) | 1° al abrir y después el último; sin aviso rojo al abrir | etiquetas "Plano neutro"/"Cara" sobre la pieza (SW las pone) |
+| Planos a distancia, en ángulo y punto medio | siguen a la pieza al cambiar la altura 20 -> 40 | el clic atraviesa la vista previa del plano/eje/punto (antes la tapaba) | un plano apoyado en una cara que cambia de identidad se rompe (TNP de FreeCAD; "Reparar referencias") |
+| Eje en cilindro, punto en centro de arco | definidos solos | — | — |
+
+Otros hallazgos de esa noche:
+- Hecho: cotas con doble clic como SW (antes el segundo clic cerraba "Modificar"); barra de estado
+  sin "Área" absurda sobre planos y con su nombre en lugar del "Preselected:" en inglés.
+- Falta: el doble clic sobre una CARA en la vista 3D no muestra las cotas (en el árbol sí);
+  probablemente otro filtro de FreeCAD se come el doble clic. Revisar con gui_probe.
+- Falta: Hélice sin nada elegido cae en el selector nativo "Seleccione un plano" vacío (SW pide un
+  croquis con un círculo); no se revisaron los términos SW de barrido y hélice (hace falta armar
+  perfil y trayecto).
+- Textos en inglés que quedan: "Sketch Edit" y "Close" al editar un croquis, "2 Degrees of
+  Freedom", "Save all changes...?/Discard".
+- Memoria: con SW + FreeCAD de prueba + el FreeCAD del usuario abiertos, SW avisó "no tiene
+  suficiente memoria" (quedaban ~970 MB de 7,4 GB). Cerrar piezas que no se usan.
+
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
 como SW: **hecho**; 2) matriz vieja en Longitud total -> Espaciado: OK; 3) ver el árbol con el panel
