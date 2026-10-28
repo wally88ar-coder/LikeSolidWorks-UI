@@ -618,14 +618,21 @@ class _MeasureWindow(QtWidgets.QDialog):
             return
         super().keyPressEvent(event)
 
+    def shutdown(self):
+        """Borrar lo dibujado y soltar la selección (se puede llamar más de una vez)."""
+        self._undraw()
+        if self.observer is not None:
+            try:
+                FreeCADGui.Selection.removeObserver(self.observer)
+            except Exception:
+                pass
+            self.observer = None
+
     def closeEvent(self, event):
         global _window
-        self._undraw()
-        try:
-            FreeCADGui.Selection.removeObserver(self.observer)
-        except Exception:
-            pass
-        _window = None
+        self.shutdown()
+        if _window is self:
+            _window = None
         super().closeEvent(event)
 
 
@@ -650,17 +657,26 @@ def _element_name(element):
 
 
 def toggle():
-    """Abrir la ventana Medir (o cerrarla si ya está abierta: barra espaciadora)."""
+    """
+    Abrir la ventana Medir (o cerrarla si ya está abierta: barra espaciadora).
+    Una ventana que quedó abierta pero sin verse se cierra limpiando lo dibujado
+    (close() de Qt no avisa a una ventana oculta y la línea quedaba pegada) y se
+    abre otra: la barra pide verla.
+    """
     global _window
     if _window is not None:
+        old, _window = _window, None
+        visible = old.isVisible()
         try:
-            _window.close()
+            old.shutdown()
+            old.close()
         except Exception:
             pass
-        _window = None
-        return None
+        if visible:
+            return None
     _window = _MeasureWindow()
     _window.show()
+    _window.raise_()
     return _window
 
 

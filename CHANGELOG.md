@@ -159,6 +159,15 @@ Neueste Version oben. / Newest version first.
   de FreeCAD desde la cinta, el menú, *Editar operación* y *Reparar referencias* (las
   referencias perdidas salen en rojo). Por debajo sigue siendo el redondeo de FreeCAD
   (`swui/fork/dress_up_panel.py`).
+- **Redondeo más parecido a SW** (comparado con SW 2018 a mano, 2026-10-28): sin nada elegido
+  abre el panel callado esperando aristas (antes FreeCAD avisaba un error en inglés; igual el
+  chaflán); el radio arranca en 10 mm y después recuerda el último escrito; al elegir una
+  arista el radio queda seleccionado para escribir el número directo; recuadro *Radio:*
+  editable junto a la arista en la vista.
+- **Medir**: si la ventana quedaba abierta sin verse, la medición dibujada quedaba pegada en
+  la vista; ahora la barra espaciadora la limpia y vuelve a mostrar la ventana.
+- **Clic derecho del árbol en castellano**: *Mostrar/Ocultar selección*, *Alternar
+  transparencia*, *Colores de caras*, *Editar …* y otras que FreeCAD 1.1.4 deja en inglés.
 - **Panel de Chaflán** igual al de redondeo, con los tipos de SW: *Ángulo-distancia* o
   *Distancia-distancia* (con *Distancia igual*) e *Invertir dirección*.
 - **Paneles de Matriz lineal, Matriz circular y Simetría** estilo SW: casillas de selección

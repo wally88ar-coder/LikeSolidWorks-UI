@@ -781,6 +781,15 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or dup.chamfer_type(False, False) != "Two distances"):
         print("  FEHLER: fork: panel de redondeo/chaflán (nombres, selección, enganche, tipos)")
         return False
+    # Redondeo como SW (piloto 2026-10-28): sin selección por el fork, radio 10 y menú en castellano
+    ft_ = sys.modules["swui.fork.feature_tree"]
+    pk_ = sys.modules["swui.pick_plane"]
+    if (set(dup.EMPTY_START) != {"PartDesign_Fillet", "PartDesign_Chamfer"} or dup.DEFAULT_RADIUS != 10.0
+            or not getattr(pk_.handle, "_swui_dress_up", False) or dup.start_empty("PartDesign_Pad")
+            or ft_.menu_text_es("Show &Selection") != "Mostrar selección" or ft_.menu_text_es("Edit Pad") != "Editar Pad"
+            or ft_.menu_text_es("Editar operación") is not None or ft_.menu_text_es("Edit") is not None):
+        print("  FEHLER: fork: redondeo como SW (sin selección, radio, menú del árbol)")
+        return False
     # Paneles de matriz y simetría (pattern_panel): espaciado SW desde la longitud total, nombres
     pp = sys.modules["swui.fork.pattern_panel"]
     if (pp.spacing_from_extent(100.0, 5) != 25.0 or pp.spacing_from_extent(30.0, 1) != 30.0

@@ -711,6 +711,41 @@ def _check_saved_later(name):
     step_copy.after_save(name)
 
 
+# Opciones del clic derecho que FreeCAD 1.1.4 deja en inglés con el idioma en castellano
+MENU_ES = {
+    "Set Face Colors": "Colores de caras",
+    "Show Selection": "Mostrar selección",
+    "Hide Selection": "Ocultar selección",
+    "Toggle Selectability": "Alternar si se puede seleccionar",
+    "Toggle Transparency": "Alternar transparencia",
+    "Show Items Hidden in Tree View": "Mostrar en el árbol lo oculto",
+    "Toggle Visibility in Tree View": "Alternar visibilidad en el árbol",
+    "Add Dependent Objects to Selection": "Agregar dependientes a la selección",
+    "Active Body": "Cuerpo activo",
+}
+
+
+def menu_text_es(text):
+    """Texto de una opción en castellano, o None si no hay que cambiarlo ("&" = letra subrayada)."""
+    plain = text.replace("&", "")
+    if plain in MENU_ES:
+        return MENU_ES[plain]
+    if plain.startswith("Edit ") and len(plain) > 5:  # "Edit Pad": el "Editar ..." de FreeCAD
+        return "Editar " + plain[5:]
+    return None
+
+
+def translate_menu(menu):
+    """Pasa al castellano las opciones en inglés de FreeCAD. Devuelve True si cambió algo."""
+    changed = False
+    for action in menu.actions():
+        new = menu_text_es(action.text())
+        if new is not None and new != action.text():
+            action.setText(new)
+            changed = True
+    return changed
+
+
 def arrange_menu(menu):
     """
     FreeCAD pone arriba del menú del árbol las opciones propias de la operación
@@ -744,7 +779,7 @@ class _MenuShow:
             def eventFilter(self, obj, event):
                 try:
                     if event.type() == QtCore.QEvent.Type.Show and isinstance(obj, QtWidgets.QMenu):
-                        if arrange_menu(obj):
+                        if translate_menu(obj) | arrange_menu(obj):
                             obj.adjustSize()
                 except Exception:
                     pass

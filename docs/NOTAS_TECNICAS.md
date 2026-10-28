@@ -128,6 +128,14 @@
   transacción (abrir una propia). **`resetEdit()` confirma la transacción pendiente**: para
   cancelar, `abortTransaction()` primero y después `resetEdit()`. Sin selección,
   `PartDesign_Fillet` crea igual el redondeo (vacío, con error) sobre la punta y lo pone en edición.
+  Para evitar ese error, `dress_up_panel.start_empty` (enganchado en `pick_plane.handle`, por
+  donde la cinta pasa cada botón) hace `body.newObject(...)` + `Base = (BaseFeature, [])` +
+  `setEdit` dentro de una transacción propia, sin recalcular.
+- Una ventana Qt abierta pero oculta: `close()` no le manda `closeEvent`; lo que limpie ahí hay
+  que llamarlo aparte (`measure_sw._MeasureWindow.shutdown`).
+- Pruebas con el mouse (computer-use) en SW y FreeCAD: ver `docs/ESTADO.md` > "Pruebas
+  comparadas con SW". Un .py pasado a `freecad.exe -u <cfg> script.py` corre con GUI: sirve para
+  armar la pieza de prueba visible (un .FCStd hecho con FreeCADCmd abre con todo oculto).
 - En el envoltorio de PySide de FreeCAD 1.1 (Qt6), `QAction` está en `QtGui`, no en `QtWidgets`.
 - Paneles SW sobre operaciones nativas (`swui/fork/dress_up_panel.py`): base `SwPanel` +
   registro `PANELS` {TypeId: clase}; `pattern_panel.py` y `hole_panel.py` suman los suyos en su

@@ -26,6 +26,12 @@ desaparece, uno editado vuelve a como estaba).
 
 FreeCAD (OpenCASCADE) siempre propaga el redondeo a las aristas tangentes:
 "Propagación tangente" se muestra marcada y fija.
+
+Detalles de SW en el redondeo (piloto comparado con SW, 2026-10-28): sin nada
+elegido, el panel abre callado esperando aristas (FreeCAD lo recalculaba vacío y
+avisaba un error en inglés); el radio arranca en 10 mm y después recuerda el
+último escrito; al elegir una arista el radio queda seleccionado para escribir
+el número; y un recuadro "Radio:" editable acompaña a la arista en la vista.
 """
 
 import traceback
@@ -47,6 +53,11 @@ CURRENT_COLOR = (1.0, 0.55, 0.0)  # naranja: renglón elegido en la lista
 LINE_WIDTH = 3
 PREVIEW_DELAY_MS = 250
 MISSING_COLOR = "#C00000"
+FILLET_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Fillet"
+DEFAULT_RADIUS = 10.0  # el de SW 2018 con plantilla en mm
+CALLOUT_QSS = ("QFrame#SWUI_Callout { background: #ffffff; border: 1px solid #808080; }"
+               "QLabel { background: transparent; border: none; }")
+FOLLOW_MS = 40  # cada cuánto se reubica el recuadro si se movió la cámara
 
 _state = {"panel": None, "native": False}  # native: dejar el diálogo de FreeCAD (si el panel falló)
 
@@ -211,6 +222,101 @@ class _ListKeys(QtCore.QObject):
                 self.remove()
             return True
         return False
+
+
+def anchor_point(shape):
+    """Dónde va el recuadro de una arista (su punto medio) o de una cara (su centro)."""
+    try:
+        if hasattr(shape, "Curve"):
+            return shape.valueAt((shape.FirstParameter + shape.LastParameter) / 2.0)
+        return shape.CenterOfMass
+    except Exception:
+        return None
+
+
+class Callout:
+    """
+    Recuadro editable sobre la pieza ("Radio: 10mm" en SW), junto a la arista
+    elegida. Copia la casilla del panel y le pasa lo que se escriba ahí.
+    """
+
+    def __init__(self, title, box, suffix, low, high):
+        from swui.fork import instant_dims
+
+        self.box = box
+        self.anchor = None
+        self.camera = None
+        self.vp = instant_dims._viewport()
+        if self.vp is None:
+            raise RuntimeError("sin vista 3D")
+        self.frame = QtWidgets.QFrame(self.vp)
+        self.frame.setObjectName("SWUI_Callout")
+        self.frame.setStyleSheet(CALLOUT_QSS)
+        lay = QtWidgets.QHBoxLayout(self.frame)
+        lay.setContentsMargins(4, 2, 2, 2)
+        lay.setSpacing(4)
+        lay.addWidget(QtWidgets.QLabel(title))
+        self.spin = _spin(box.value(), suffix, low, high)
+        self.spin.setMinimumWidth(80)
+        lay.addWidget(self.spin)
+        self.spin.valueChanged.connect(self._to_panel)
+        box.valueChanged.connect(self._from_panel)
+        self.frame.hide()
+        self.follow = QtCore.QTimer()
+        self.follow.setInterval(FOLLOW_MS)
+        self.follow.timeout.connect(self._follow)
+
+    def _to_panel(self, value):
+        if abs(self.box.value() - value) > 1e-9:
+            self.box.setValue(value)
+
+    def _from_panel(self, value):
+        self.spin.blockSignals(True)
+        self.spin.setValue(value)
+        self.spin.blockSignals(False)
+
+    def place(self, point):
+        self.anchor = point
+        self.camera = None
+        if point is None:
+            self.follow.stop()
+            self.frame.hide()
+            return
+        self.frame.adjustSize()
+        self.frame.show()
+        self.frame.raise_()
+        self._follow()
+        self.follow.start()
+
+    def _follow(self):
+        """Reubica el recuadro si se movió la cámara (giro, zoom, encuadre)."""
+        if self.anchor is None:
+            return
+        try:
+            from swui.fork import sketch_model_edges
+
+            view = FreeCADGui.ActiveDocument.ActiveView
+            key = (sketch_model_edges._camera_key(view), self.vp.width(), self.vp.height())
+            if key == self.camera:
+                return
+            self.camera = key
+            ratio = self.vp.devicePixelRatioF()
+            x, y = view.getPointOnViewport(self.anchor)
+            self.frame.move(int(x / ratio) + 14, int(self.vp.height() - y / ratio) + 14)
+        except Exception:
+            pass
+
+    def close(self):
+        self.follow.stop()
+        try:
+            self.box.valueChanged.disconnect(self._from_panel)
+        except Exception:
+            pass
+        try:
+            self.frame.hide()
+            self.frame.deleteLater()
+        except Exception:
+            pass
 
 
 def _spin(value, suffix, low, high, decimals=2):
@@ -686,11 +792,49 @@ class FilletPanel(DressUpPanel):
     FAIL = "FreeCAD no puede hacer el redondeo con este radio en estas aristas."
 
     def _build_values(self, form):
-        self.radius = self._value_box("Radius", " mm", 0.01, 100000.0)
+        value = None
+        if self.is_new and not self._has_expression("Radius"):  # nuevo: el último radio escrito (SW)
+            value = FreeCAD.ParamGet(FILLET_PARAMS).GetFloat("Radius", DEFAULT_RADIUS)
+        self.radius = self._value_box("Radius", " mm", 0.01, 100000.0, value)
+        self.radius.valueChanged.connect(self._remember)
         form.addRow("Radio:", self.radius)
+        self.callout = None
+
+    def _remember(self, value):
+        """SW recuerda el radio escrito aunque no se acepte."""
+        FreeCAD.ParamGet(FILLET_PARAMS).SetFloat("Radius", float(value))
 
     def _apply_values(self):
         self._set("Radius", self.radius.value())
+
+    def _refresh(self):
+        super()._refresh()
+        if self.subs and self.radius.isEnabled():  # como SW: escribir el radio sin hacer clic
+            self.radius.setFocus()
+            self.radius.selectAll()
+
+    def _draw(self):
+        super()._draw()
+        self._place_callout()
+
+    def _place_callout(self):
+        if not self.subs or self.base is None or not self.radius.isEnabled():
+            if self.callout is not None:
+                self.callout.place(None)
+            return
+        try:
+            if self.callout is None:
+                self.callout = Callout("Radio:", self.radius, " mm", 0.01, 100000.0)
+            el = _element(_global_shape(self.base), self.subs[-1])
+            self.callout.place(anchor_point(el) if el is not None else None)
+        except Exception:
+            FreeCAD.Console.PrintLog("[SWUI fork] Recuadro del radio:\n%s\n" % traceback.format_exc())
+
+    def _close(self):
+        if self.callout is not None:
+            self.callout.close()
+            self.callout = None
+        super()._close()
 
 
 # Tipos de chaflán de SW -> ChamferType de FreeCAD (los nombres internos de 1.1.4)
@@ -960,9 +1104,68 @@ class _EditObserver:
 
 _observer = None
 
+# Botón de la cinta -> (tipo, nombre interno, transacción) para empezar sin nada elegido
+EMPTY_START = {
+    "PartDesign_Fillet": (FILLET, "Fillet", "Redondeo"),
+    "PartDesign_Chamfer": (CHAMFER, "Chamfer", "Chaflán"),
+}
+
+
+def start_empty(command):
+    """
+    Redondeo o chaflán sin nada elegido. FreeCAD los crea vacíos y los recalcula
+    ("Fillet not possible on selected shapes", en inglés, en las notificaciones);
+    SW abre el panel callado esperando aristas. Acá se crea la operación nativa
+    sin recalcular y se pone en edición: el observador abre el panel SW.
+    Devuelve True si se encargó.
+    """
+    spec = EMPTY_START.get(command)
+    if spec is None or not _in_workbench() or FreeCADGui.Selection.getSelectionEx():
+        return False
+    if FreeCADGui.Control.activeDialog():
+        return False
+    gdoc = FreeCADGui.ActiveDocument
+    body = gdoc.ActiveView.getActiveObject("pdbody") if gdoc is not None else None
+    if body is None or body.Tip is None:
+        return False  # sin cuerpo activo: que FreeCAD pregunte
+    type_id, name, transaction = spec
+    doc = body.Document
+    doc.openTransaction(transaction)
+    try:
+        obj = body.newObject(type_id, name)
+        if obj.BaseFeature is not None:
+            obj.Base = (obj.BaseFeature, [])
+        gdoc.setEdit(obj)
+    except Exception:
+        doc.abortTransaction()
+        FreeCAD.Console.PrintError("[SWUI fork] %s sin selección:\n%s\n" % (transaction, traceback.format_exc()))
+        return False
+    return True
+
+
+def _hook_ribbon():
+    """La cinta pasa los botones por pick_plane.handle: ahí se atiende el caso sin selección."""
+    from swui import pick_plane
+
+    handle = pick_plane.handle
+    if getattr(handle, "_swui_dress_up", False):
+        return
+
+    def wrapped(command, _original=handle):
+        try:
+            if start_empty(command):
+                return True
+        except Exception:
+            FreeCAD.Console.PrintLog("[SWUI fork] Redondeo sin selección:\n%s\n" % traceback.format_exc())
+        return _original(command)
+
+    wrapped._swui_dress_up = True
+    pick_plane.handle = wrapped
+
 
 def install():
     global _observer
     if _observer is None:
         _observer = _EditObserver()
         FreeCADGui.addDocumentObserver(_observer)
+    _hook_ribbon()

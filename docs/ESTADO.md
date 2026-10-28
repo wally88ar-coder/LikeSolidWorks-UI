@@ -1,6 +1,6 @@
 # Estado del fork
 
-Última actualización: 2026-10-27 (fase 5, ensamblaje: código completo de las etapas 1 a 5).
+Última actualización: 2026-10-28 (piloto de pruebas comparadas con SW usando el mouse).
 
 **Checklists compartidos con el usuario** (se tildan ahí; al cerrar algo, tildarlo también):
 - Todas las fases: "Checklists del fork: qué falta en cada fase"
@@ -81,6 +81,36 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
     de informes y nombre en el árbol); borrar una matriz entera de un golpe (borrar el VarSet deja
     las copias); un eje/punto fijo pierde sus selecciones al editarlo; la cinta no pasa sola a la
     pestaña Ensamblaje; doble clic en el taladro dentro de la pieza abre el diálogo de FreeCAD.
+
+## Pruebas comparadas con SW (Claude maneja el mouse en los dos programas)
+Forma de trabajo acordada con el usuario (2026-10-27/28): para cada renglón de los checklists,
+Claude hace la operación en SW 2018 (pieza base por la conexión directa, el comando con mouse y
+teclado) y lo mismo en FreeCAD con el fork (copia de la configuración, `-u`), compara resultado
+(volumen/área: SW `get_mass_properties`, fork Evaluar > Propiedades físicas) y flujo (capturas).
+Piezas de SW en `C:\SW-AI-Bridge\trabajos\pruebas-fork\`. La validación final sigue siendo del
+usuario. Cuidados: cambiar de ventana solo con la barra de tareas (abrir el programa de nuevo
+lanza otra instancia: así se colgó SW una vez); la ventana de Claude a veces tapa la mitad derecha.
+
+Piloto: redondeo R5 en una arista de un bloque 100x60x20 (2026-10-28).
+- Resultado: idéntico (volumen 119 463,495 mm³, área 18 174,668 mm²).
+- Diferencias de flujo encontradas y estado (corregidas y vueltas a probar en FreeCAD real con el
+  mouse el 2026-10-28; mismo volumen que SW):
+  1. Hecho: sin selección, Redondeo/Chaflán abren el panel callado (el fork crea la operación
+     sin recalcular; antes FreeCAD avisaba "Fillet not possible on selected shapes" en inglés).
+     Solo desde la cinta: el menú Insertar de FreeCAD sigue con el comportamiento nativo.
+  2. Hecho: recuadro "Radio:" editable junto a la arista (sin la línea guía de SW).
+  3. Hecho: al elegir una arista el radio queda seleccionado (se escribe el número directo).
+  4. Hecho: 10 mm la primera vez y después el último escrito (aunque se cancele, como SW).
+  5. Falta (menor): barrita de selección de SW (aristas conectadas, bucle) y "Longitud" de la
+     arista en la barra de estado.
+  6. Hecho: la medición pegada era la ventana Medir (barra espaciadora, pedido del usuario) que
+     quedó abierta sin verse; close() de Qt no avisa a una ventana oculta. Ahora se limpia
+     siempre y la barra la vuelve a mostrar. Por qué no se vio esa vez: sin aclarar.
+  7. Hecho: clic derecho del árbol en castellano. Quedan en inglés: el botón "Language" de
+     Evaluar (lo dejó así el original a propósito, para encontrarlo en cualquier idioma), los
+     nombres de propiedades de abajo del árbol ("Display Options", "Visibility"...) y el
+     diálogo "Save all changes...? / Discard" al cerrar sin guardar.
+- Igual que SW: título del panel, lista de aristas, propagación tangente, vista previa en vivo.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
