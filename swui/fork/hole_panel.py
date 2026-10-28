@@ -13,7 +13,9 @@ FreeCAD pide un croquis previo con los centros. Acá, como en SW:
    croquis y este panel reemplaza a su diálogo ("Tipo"): Refrentado,
    Avellanado, Agujero, Agujero roscado; estándar, tipo de tornillo, tamaño,
    ajuste, condición final, punta... con vista previa.
-   "Editar posiciones" vuelve al croquis de los centros.
+   "Editar posiciones" vuelve al croquis de los centros y, al salir, otra vez
+   a este panel. Un taladro nuevo arranca con el tipo, la norma, el tamaño y
+   la condición final del último aceptado (como SW).
 
 Por debajo todo es el taladro de FreeCAD (tablas ISO de FreeCAD: diámetros de
 paso, refrentados ISO 4762, etc.). Mismo enganche que el redondeo
@@ -508,6 +510,8 @@ class HolePanel(dp.SwPanel):
             except Exception as exc:
                 problems = ["No se pudo llevar el taladro a los otros sólidos: %s" % exc]
         done = super().accept()
+        if done:
+            remember(self.obj)
         if done and problems:
             multibody._tell("\n".join(problems))
         return done
@@ -523,10 +527,12 @@ class HolePanel(dp.SwPanel):
         if sk is None:
             return
         self.preview()
+        hole = self.obj
         if self.valid:
             if not self.accept():
                 return
             FreeCADGui.Control.closeDialog()
+            FreeCADGui.addDocumentObserver(_BackToHole(sk, hole))  # al salir del croquis, de vuelta acá
         else:
             self.reject()
             FreeCADGui.Control.closeDialog()
@@ -536,8 +542,32 @@ class HolePanel(dp.SwPanel):
 DEFAULT_SIZE = "M6x1.0"
 
 
+HOLE_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Hole"
+# Lo que SW recuerda del último taladro (en este orden: la norma antes que el tamaño)
+LAST_PROPS = ("ThreadType", "ThreadSize", "ThreadFit", "Threaded", "ModelThread", "ThreadDepthType",
+              "HoleCutType", "DepthType", "Depth", "DrillPoint")
+
+
+def remember(obj):
+    """Guardar tipo, norma, tamaño, ajuste y condición final del taladro aceptado (SW los recuerda)."""
+    last = {}
+    for prop in LAST_PROPS:
+        try:
+            value = getattr(obj, prop)
+            last[prop] = getattr(value, "Value", value)
+        except Exception:
+            continue
+    try:
+        FreeCAD.ParamGet(HOLE_PARAMS).SetString("Last", json.dumps(last))
+    except Exception:
+        pass
+
+
 def _defaults(obj):
-    """Valores de arranque de un taladro nuevo (FreeCAD arranca sin norma)."""
+    """
+    Valores de arranque de un taladro nuevo (FreeCAD arranca sin norma): como SW,
+    los del último aceptado; la primera vez ISO, M6, agujero normal.
+    """
     try:
         obj.ThreadType = "ISOMetricProfile"
         sizes = obj.getEnumerationsOfProperty("ThreadSize")
@@ -547,6 +577,45 @@ def _defaults(obj):
         obj.HoleCutType = "None"
     except Exception:
         FreeCAD.Console.PrintWarning("[SWUI fork] Taladro: no se pudieron poner los valores de arranque.\n")
+    try:
+        last = json.loads(FreeCAD.ParamGet(HOLE_PARAMS).GetString("Last", "") or "{}")
+    except Exception:
+        last = {}
+    for prop in LAST_PROPS:
+        if prop in last:
+            try:
+                setattr(obj, prop, last[prop])
+            except Exception:
+                pass  # un valor que esta versión no tiene: queda el de arranque
+
+
+class _BackToHole:
+    """Al salir del croquis de "Editar posiciones", volver al panel del taladro (pestaña Posiciones de SW)."""
+
+    def __init__(self, sketch, hole):
+        self.doc, self.sketch, self.hole = sketch.Document.Name, sketch.Name, hole.Name
+        self.done = False
+
+    def slotResetEdit(self, vp):
+        try:
+            if self.done or vp.Object.Name != self.sketch or vp.Object.Document.Name != self.doc:
+                return
+        except Exception:
+            return
+        self.done = True
+        QtCore.QTimer.singleShot(300, self._reopen)
+
+    def _reopen(self):
+        try:
+            FreeCADGui.removeDocumentObserver(self)
+        except Exception:
+            pass
+        try:
+            hole = FreeCAD.getDocument(self.doc).getObject(self.hole)
+            if hole is not None and not FreeCADGui.Control.activeDialog():
+                FreeCADGui.getDocument(self.doc).setEdit(hole)
+        except Exception:
+            FreeCAD.Console.PrintError("[SWUI fork] Volver al taladro:\n%s\n" % traceback.format_exc())
 
 
 def dp_fmt(value):
