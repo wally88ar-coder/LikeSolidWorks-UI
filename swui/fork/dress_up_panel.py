@@ -319,15 +319,18 @@ def anchor_point(shape):
 
 class Callout:
     """
-    Recuadro editable sobre la pieza ("Radio: 10mm" en SW), con su línea guía
-    hasta la arista elegida. Copia la casilla del panel y le pasa lo que se
-    escriba ahí. tools: botones de la barrita de selección [(texto, ayuda, función)].
+    Recuadro editable sobre la pieza ("Radio: 10mm" en SW; en el chaflán
+    "Distancia" y "Ángulo"), con su línea guía hasta la arista elegida. Cada
+    renglón copia una casilla del panel y le pasa lo que se escriba ahí.
+    rows: [(título, casilla, sufijo, mínimo, máximo)];
+    tools: botones de la barrita de selección [(texto, ayuda, función)].
     """
 
-    def __init__(self, title, box, suffix, low, high, tools=()):
+    def __init__(self, rows, tools=()):
         from swui.fork import instant_dims
 
-        self.box = box
+        self.key = tuple(r[0] for r in rows)
+        self.pairs = []  # (casilla del panel, casilla del recuadro)
         self.anchor = None
         self.camera = None
         self.leader = None  # (vista, nodo Coin) de la línea guía
@@ -340,13 +343,19 @@ class Callout:
         outer = QtWidgets.QVBoxLayout(self.frame)
         outer.setContentsMargins(4, 2, 2, 2)
         outer.setSpacing(2)
-        lay = QtWidgets.QHBoxLayout()
-        lay.setSpacing(4)
-        lay.addWidget(QtWidgets.QLabel(title))
-        self.spin = _spin(box.value(), suffix, low, high)
-        self.spin.setMinimumWidth(80)
-        lay.addWidget(self.spin)
-        outer.addLayout(lay)
+        grid = QtWidgets.QGridLayout()
+        grid.setHorizontalSpacing(4)
+        grid.setVerticalSpacing(2)
+        for i, (title, box, suffix, low, high) in enumerate(rows):
+            spin = _spin(box.value(), suffix, low, high)
+            spin.setMinimumWidth(80)
+            grid.addWidget(QtWidgets.QLabel(title), i, 0)
+            grid.addWidget(spin, i, 1)
+            spin.valueChanged.connect(lambda v, b=box: self._to_panel(b, v))
+            box.valueChanged.connect(self._from_panel)
+            self.pairs.append((box, spin))
+        self.spin = self.pairs[0][1]  # el primero: ahí apunta la línea guía
+        outer.addLayout(grid)
         self.tools = QtWidgets.QWidget()
         row = QtWidgets.QHBoxLayout(self.tools)
         row.setContentsMargins(0, 0, 0, 0)
@@ -361,8 +370,6 @@ class Callout:
         row.addStretch(1)
         outer.addWidget(self.tools)
         self.tools.setVisible(bool(tools))
-        self.spin.valueChanged.connect(self._to_panel)
-        box.valueChanged.connect(self._from_panel)
         self.frame.hide()
         self.follow = QtCore.QTimer()
         self.follow.setInterval(FOLLOW_MS)
@@ -375,14 +382,16 @@ class Callout:
             self.camera = None
             self._follow()
 
-    def _to_panel(self, value):
-        if abs(self.box.value() - value) > 1e-9:
-            self.box.setValue(value)
+    @staticmethod
+    def _to_panel(box, value):
+        if abs(box.value() - value) > 1e-9:
+            box.setValue(value)
 
-    def _from_panel(self, value):
-        self.spin.blockSignals(True)
-        self.spin.setValue(value)
-        self.spin.blockSignals(False)
+    def _from_panel(self, *_a):
+        for box, spin in self.pairs:
+            spin.blockSignals(True)
+            spin.setValue(box.value())
+            spin.blockSignals(False)
 
     def place(self, point):
         self.anchor = point
@@ -462,10 +471,11 @@ class Callout:
     def close(self):
         self.follow.stop()
         self._remove_leader()
-        try:
-            self.box.valueChanged.disconnect(self._from_panel)
-        except Exception:
-            pass
+        for box, _spin in self.pairs:
+            try:
+                box.valueChanged.disconnect(self._from_panel)
+            except Exception:
+                pass
         try:
             self.frame.hide()
             self.frame.deleteLater()
@@ -797,9 +807,13 @@ class DressUpPanel(SwPanel):
     TITLE = ""
     NOTHING = "Elegí al menos una arista o cara."
     LIST_LABEL = "Aristas y caras (clic en la pieza):"
+    VALUES_FIRST = True  # SW: en redondeo y chaflán los parámetros van debajo de la lista
+    PARAMS_LABEL = ""  # título de los parámetros cuando van debajo ("Parámetros de chaflán")
 
     def __init__(self, obj):
         self.subs = []
+        self.callout = None
+        self._built = False
         super().__init__(obj)
 
     def _base(self):
@@ -835,7 +849,8 @@ class DressUpPanel(SwPanel):
         lay = QtWidgets.QVBoxLayout(box)
         self.values = QtWidgets.QFormLayout()
         self._build_values(self.values)
-        lay.addLayout(self.values)
+        if self.VALUES_FIRST:
+            lay.addLayout(self.values)
 
         lay.addWidget(QtWidgets.QLabel(self.LIST_LABEL))
         self.list = pick_list(self.remove_current, self.clear)
@@ -847,9 +862,16 @@ class DressUpPanel(SwPanel):
         self.tangent.setEnabled(False)
         self.tangent.setToolTip("FreeCAD siempre sigue las aristas tangentes")
         lay.addWidget(self.tangent)
+        if not self.VALUES_FIRST:  # como SW: Elementos, después Parámetros
+            if self.PARAMS_LABEL:
+                title = QtWidgets.QLabel(self.PARAMS_LABEL)
+                title.setStyleSheet("font-weight: bold;")
+                lay.addWidget(title)
+            lay.addLayout(self.values)
         lay.addWidget(self._message_label())
         self.form = box
         self._fill_list()
+        self._built = True
 
     def _build_values(self, form):
         pass
@@ -872,6 +894,50 @@ class DressUpPanel(SwPanel):
     def _refresh(self):
         self._fill_list()
         self.list.setCurrentRow(-1)
+        rows = self._callout_rows()
+        if self.subs and rows:  # como SW: escribir la medida sin hacer clic
+            rows[0][1].setFocus()
+            rows[0][1].selectAll()
+
+    # --- recuadro sobre la pieza (como SW)
+
+    def _callout_rows(self):
+        """[(título, casilla, sufijo, mínimo, máximo)] del recuadro; casillas bloqueadas por una ecuación, no."""
+        return []
+
+    def _callout_tools(self):
+        return []
+
+    def _tools_on(self):
+        return True
+
+    def _draw(self):
+        super()._draw()
+        self._place_callout()
+
+    def _place_callout(self):
+        if not self._built:
+            return  # todavía armando el panel; la vista previa del final lo ubica
+        rows = [r for r in self._callout_rows() if r[1].isEnabled()]
+        if self.callout is not None and (not rows or self.callout.key != tuple(r[0] for r in rows)):
+            self.callout.close()  # cambió el tipo (chaflán): otro recuadro
+            self.callout = None
+        if not self.subs or self.base is None or not rows:
+            return
+        try:
+            if self.callout is None:
+                self.callout = Callout(rows, self._callout_tools())
+                self.callout.show_tools(self._tools_on())
+            el = _element(_global_shape(self.base), self.subs[-1])
+            self.callout.place(anchor_point(el) if el is not None else None)
+        except Exception:
+            FreeCAD.Console.PrintLog("[SWUI fork] Recuadro sobre la pieza:\n%s\n" % traceback.format_exc())
+
+    def _close(self):
+        if self.callout is not None:
+            self.callout.close()
+            self.callout = None
+        super()._close()
 
     # --- selección
 
@@ -941,9 +1007,12 @@ class DressUpPanel(SwPanel):
 
 
 class FilletPanel(DressUpPanel):
-    TITLE = "Elementos a redondear"
+    TITLE = "Redondeo"
     TRANSACTION = "Editar redondeo"
     FAIL = "FreeCAD no puede hacer el redondeo con este radio en estas aristas."
+    LIST_LABEL = "Elementos para redondear (clic en la pieza):"
+    VALUES_FIRST = False
+    PARAMS_LABEL = "Parámetros de redondeo"
 
     def _build_values(self, form):
         value = None
@@ -952,8 +1021,19 @@ class FilletPanel(DressUpPanel):
         self.radius = self._value_box("Radius", " mm", 0.01, 100000.0, value)
         self.radius.valueChanged.connect(self._remember)
         form.addRow("Radio:", self.radius)
-        self.callout = None
         self.loop_turn = 0
+
+    def _callout_rows(self):
+        return [("Radio:", self.radius, " mm", 0.01, 100000.0)]
+
+    def _callout_tools(self):
+        return [("Contorno", "Agregar las aristas del contorno de la cara (otro clic: la otra cara)", self.select_loop),
+                ("Convexas", "Agregar todas las aristas convexas del sólido", self.select_convex)]
+
+    def _tools_on(self):
+        box = getattr(self, "show_tools", None)
+        return box.isChecked() if box is not None else \
+            FreeCAD.ParamGet(FILLET_PARAMS).GetBool("ShowSelectionTools", True)
 
     def _build(self):
         super()._build()
@@ -1008,41 +1088,6 @@ class FilletPanel(DressUpPanel):
     def _apply_values(self):
         self._set("Radius", self.radius.value())
 
-    def _refresh(self):
-        super()._refresh()
-        if self.subs and self.radius.isEnabled():  # como SW: escribir el radio sin hacer clic
-            self.radius.setFocus()
-            self.radius.selectAll()
-
-    def _draw(self):
-        super()._draw()
-        self._place_callout()
-
-    def _place_callout(self):
-        if not hasattr(self, "show_tools"):
-            return  # todavía armando el panel; la vista previa del final lo ubica
-        if not self.subs or self.base is None or not self.radius.isEnabled():
-            if self.callout is not None:
-                self.callout.place(None)
-            return
-        try:
-            if self.callout is None:
-                tools = [("Contorno", "Agregar las aristas del contorno de la cara (otro clic: la otra cara)",
-                          self.select_loop),
-                         ("Convexas", "Agregar todas las aristas convexas del sólido", self.select_convex)]
-                self.callout = Callout("Radio:", self.radius, " mm", 0.01, 100000.0, tools)
-                self.callout.show_tools(self.show_tools.isChecked())
-            el = _element(_global_shape(self.base), self.subs[-1])
-            self.callout.place(anchor_point(el) if el is not None else None)
-        except Exception:
-            FreeCAD.Console.PrintLog("[SWUI fork] Recuadro del radio:\n%s\n" % traceback.format_exc())
-
-    def _close(self):
-        if self.callout is not None:
-            self.callout.close()
-            self.callout = None
-        super()._close()
-
 
 # Tipos de chaflán de SW -> ChamferType de FreeCAD (los nombres internos de 1.1.4)
 EQUAL, TWO, ANGLE = "Equal distance", "Two distances", "Distance and Angle"
@@ -1055,43 +1100,79 @@ def chamfer_type(angle_distance, equal):
     return EQUAL if equal else TWO
 
 
+CHAMFER_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Chamfer"
+CHAMFER_DEFAULTS = {"Size": 10.0, "Size2": 10.0, "Angle": 45.0}  # los de SW 2018 (plantilla en mm)
+SYMMETRIC, ASYMMETRIC = "Simétrico", "Asimétrico"  # "Método de chaflán" de SW en Distancia-distancia
+
+
 class ChamferPanel(DressUpPanel):
-    TITLE = "Parámetros del chaflán"
+    """
+    Como SW 2018: arriba "Tipo de chaflán" (Ángulo-distancia o Distancia-distancia),
+    después los elementos y abajo "Parámetros de chaflán" (en Distancia-distancia,
+    el método Simétrico / Asimétrico). Uno nuevo arranca con el último tipo y las
+    últimas medidas escritas (la primera vez, Ángulo-distancia 10 mm x 45°).
+    """
+
+    TITLE = "Chaflán"
     TRANSACTION = "Editar chaflán"
     FAIL = "FreeCAD no puede hacer el chaflán con estas medidas en estas aristas."
+    LIST_LABEL = "Elementos para achaflanar (clic en la pieza):"
+    VALUES_FIRST = False
+    PARAMS_LABEL = "Parámetros de chaflán"
 
     def _build_values(self, form):
-        kind = self.obj.ChamferType
+        params = FreeCAD.ParamGet(CHAMFER_PARAMS)
+        kind = params.GetString("Type", ANGLE) if self.is_new else self.obj.ChamferType
+        values = {}
+        for prop, default in CHAMFER_DEFAULTS.items():
+            if self.is_new and not self._has_expression(prop):
+                values[prop] = params.GetFloat(prop, default)
         self.by_angle = QtWidgets.QRadioButton("Ángulo-distancia")
         self.by_dist = QtWidgets.QRadioButton("Distancia-distancia")
         (self.by_angle if kind == ANGLE else self.by_dist).setChecked(True)
-        types = QtWidgets.QVBoxLayout()
+        self.types = QtWidgets.QWidget()
+        types = QtWidgets.QVBoxLayout(self.types)
+        types.setContentsMargins(0, 0, 0, 0)
+        title = QtWidgets.QLabel("Tipo de chaflán")
+        title.setStyleSheet("font-weight: bold;")
+        types.addWidget(title)
         types.addWidget(self.by_angle)
         types.addWidget(self.by_dist)
-        form.addRow(types)
         self.flip = QtWidgets.QCheckBox("Invertir dirección")
         self.flip.setChecked(bool(self.obj.FlipDirection))
         form.addRow(self.flip)
-        self.equal = QtWidgets.QCheckBox("Distancia igual")
-        self.equal.setChecked(kind == EQUAL)
-        form.addRow(self.equal)
-        self.size = self._value_box("Size", " mm", 0.01, 100000.0)
-        self.size2 = self._value_box("Size2", " mm", 0.01, 100000.0)
-        self.angle = self._value_box("Angle", "°", 0.1, 179.9)
+        self.method = QtWidgets.QComboBox()
+        self.method.addItems([SYMMETRIC, ASYMMETRIC])
+        self.method.setCurrentIndex(1 if kind == TWO else 0)  # SW arranca en Simétrico
+        self.method.setToolTip("Método de chaflán")
+        form.addRow(self.method)
+        self.size = self._value_box("Size", " mm", 0.01, 100000.0, values.get("Size"))
+        self.size2 = self._value_box("Size2", " mm", 0.01, 100000.0, values.get("Size2"))
+        self.angle = self._value_box("Angle", "°", 0.1, 179.9, values.get("Angle"))
         self.size_label = QtWidgets.QLabel("Distancia:")
         self.size2_label = QtWidgets.QLabel("Distancia 2:")
         self.angle_label = QtWidgets.QLabel("Ángulo:")
         form.addRow(self.size_label, self.size)
         form.addRow(self.size2_label, self.size2)
         form.addRow(self.angle_label, self.angle)
-        for w in (self.by_angle, self.by_dist, self.flip, self.equal):
+        for w in (self.by_angle, self.by_dist, self.flip):
             w.toggled.connect(self._changed)
+        self.method.currentIndexChanged.connect(self._changed)
+        for box, prop in ((self.size, "Size"), (self.size2, "Size2"), (self.angle, "Angle")):
+            box.valueChanged.connect(lambda v, p=prop: FreeCAD.ParamGet(CHAMFER_PARAMS).SetFloat(p, float(v)))
         self._update_rows()
+
+    def _build(self):
+        super()._build()
+        self.form.layout().insertWidget(0, self.types)  # "Tipo de chaflán" arriba de todo, como SW
+
+    def _equal(self):
+        return self.method.currentIndex() == 0
 
     def _update_rows(self):
         angle = self.by_angle.isChecked()
-        two = not angle and not self.equal.isChecked()
-        self.equal.setVisible(not angle)
+        two = not angle and not self._equal()
+        self.method.setVisible(not angle)
         self.flip.setVisible(angle or two)  # con distancias iguales no cambia nada
         self.size_label.setText("Distancia:" if angle or not two else "Distancia 1:")
         for w in (self.size2, self.size2_label):
@@ -1101,10 +1182,18 @@ class ChamferPanel(DressUpPanel):
 
     def _changed(self, *_a):
         self._update_rows()
+        FreeCAD.ParamGet(CHAMFER_PARAMS).SetString("Type", chamfer_type(self.by_angle.isChecked(), self._equal()))
         super()._changed()
 
+    def _callout_rows(self):
+        if self.by_angle.isChecked():
+            return [("Distancia:", self.size, " mm", 0.01, 100000.0), ("Ángulo:", self.angle, "°", 0.1, 179.9)]
+        if self._equal():
+            return [("Distancia:", self.size, " mm", 0.01, 100000.0)]
+        return [("Distancia 1:", self.size, " mm", 0.01, 100000.0), ("Distancia 2:", self.size2, " mm", 0.01, 100000.0)]
+
     def _apply_values(self):
-        self._set("ChamferType", chamfer_type(self.by_angle.isChecked(), self.equal.isChecked()))
+        self._set("ChamferType", chamfer_type(self.by_angle.isChecked(), self._equal()))
         self._set("FlipDirection", self.flip.isChecked())
         self._set("Size", self.size.value())
         self._set("Size2", self.size2.value())
