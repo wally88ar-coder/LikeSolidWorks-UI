@@ -23,7 +23,7 @@
 - **Mover/Copiar sólido y Eliminar/Conservar sólidos: terminados (2026-10-27); falta que los
   pruebe el usuario.** Incluye "de un vértice a otro" y Supr que devuelve los sólidos.
   Restricciones: descartado por el usuario (ecuaciones a mano si hiciera falta).
-  Con esto está completo el "Alcance" del menú Insertar, salvo la chapa (fase 1).
+  Con esto (y la chapa de la fase 1) está completo el "Alcance" del menú Insertar.
   Detalle de las tres en "Análisis: Mover/Copiar sólido..." > Hecho.
 - **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada). Falta que
   el usuario pruebe con piezas y conjuntos suyos: fase 1 (chapa, versiones 1 a 3), fase 2 (lista
