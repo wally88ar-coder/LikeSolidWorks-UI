@@ -537,11 +537,27 @@ class SwPanel:
     TRANSACTION = ""
     FAIL = ""
     NOTHING = ""  # mensaje si se acepta sin haber elegido nada
+    # Planos/ejes/puntos: el clic atraviesa la vista previa mientras se edita (como SW); si no,
+    # tapa las caras y aristas que se quieren tocar (probado con el mouse, 2026-10-28)
+    UNPICKABLE_PREVIEW = False
 
     def __init__(self, obj):
         self.obj = obj
         self.doc = obj.Document
         self.gdoc = FreeCADGui.getDocument(self.doc.Name)
+        self.pick_style = None
+        if self.UNPICKABLE_PREVIEW:
+            # Selectable=False no alcanza: la vista previa sigue frenando el clic. Con
+            # SoPickStyle UNPICKABLE el clic la atraviesa y llega a la cara o arista de atrás.
+            try:
+                from pivy import coin
+
+                style = coin.SoPickStyle()
+                style.style = coin.SoPickStyle.UNPICKABLE
+                obj.ViewObject.RootNode.insertChild(style, 0)
+                self.pick_style = style
+            except Exception:
+                self.pick_style = None
         self.busy = False
         self.valid = False
         self.nodes = []
@@ -761,6 +777,12 @@ class SwPanel:
         self._undraw()
         self._flyout(False)
         _restore_native_preview(getattr(self, "old_preview", None))
+        if self.pick_style is not None:
+            try:
+                self.obj.ViewObject.RootNode.removeChild(self.pick_style)
+            except Exception:
+                pass  # se deshizo (Cancelar en uno nuevo): ya no existe
+            self.pick_style = None
         _state["panel"] = None
 
     def _nothing(self):

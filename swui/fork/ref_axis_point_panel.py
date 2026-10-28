@@ -118,6 +118,7 @@ class _RefTypePanel(dp.SwPanel):
     TYPES = []
     TITLE = ""
     MAX_REFS = 2
+    UNPICKABLE_PREVIEW = True  # la vista previa del eje/punto no tapa lo que se quiere tocar
 
     def _base(self):
         return None

@@ -324,7 +324,7 @@ def show(obj):
         button.setToolTip("Atada a una ecuación: se cambia en Ecuaciones" if dim.locked else "Clic para modificar")
         button.adjustSize()
         button.setFixedWidth(button.fontMetrics().horizontalAdvance(button.text()) + 8)  # no el ancho mínimo de botón
-        button.clicked.connect(lambda *_a, d=dim, b=button: _modify(d, b))
+        button.clicked.connect(lambda *_a, d=dim, b=button: _clicked(d, b))
         button.show()
         _state["labels"].append((button, dim))
     _place()
@@ -451,6 +451,27 @@ def apply_value(dim, value):
         return False
     doc.commitTransaction()
     return True
+
+
+def _clicked(dim, button):
+    """
+    Clic o doble clic en la cota: "Modificar" una sola vez. En SW se hace doble clic;
+    sin esta espera el segundo clic caía fuera de la ventanita y la cerraba (probado
+    con el mouse, 2026-10-28). Se espera lo que dura un doble clic y se abre.
+    """
+    if _state.get("pending"):
+        return  # segundo clic del doble clic
+    _state["pending"] = True
+
+    def run():
+        _state["pending"] = False
+        try:
+            if button.isVisible():
+                _modify(dim, button)
+        except RuntimeError:
+            pass  # las cotas se escondieron mientras tanto
+
+    QtCore.QTimer.singleShot(QtWidgets.QApplication.doubleClickInterval() + 30, run)
 
 
 def _modify(dim, button):

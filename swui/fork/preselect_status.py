@@ -16,6 +16,9 @@ import FreeCADGui
 
 PREFIXES = ("Preselected:", "Preseleccionado:")
 WB_NAME = "LikeSolidWorksUIWorkbench"
+# Planos, ejes y puntos de referencia: su forma es "infinita" (área de 80.000...000 mm²)
+DATUMS = ("PartDesign::Plane", "PartDesign::Line", "PartDesign::Point", "App::Plane", "App::Line", "App::Point")
+MAX_AREA = 1e9  # mm²: más que esto no es una cara de verdad
 
 _state = {"text": "", "observer": None, "busy": False}
 
@@ -36,6 +39,8 @@ def describe(shape, decimals=2):
             return "Radio: %s   Longitud de arco: %s" % (f(shape.Curve.Radius), f(shape.Length))
         return "Longitud: %s" % f(shape.Length)
     if kind == "Face":
+        if shape.Area > MAX_AREA:
+            return ""
         surface = type(getattr(shape, "Surface", None)).__name__
         area = "Área: %s" % f(shape.Area, "mm²")
         if surface == "Cylinder":
@@ -85,6 +90,11 @@ class _Observer:
             return
         try:
             owner = FreeCAD.getDocument(doc).getObject(obj)
+            target = owner.getSubObject(sub, retType=1) if owner is not None else None
+            if getattr(target, "TypeId", "") in DATUMS:
+                _state["text"] = target.Label  # "Plano1" en lugar de "Preselected: doc.Body.DatumPlane..."
+                _show()
+                return
             shape = owner.getSubObject(sub) if owner is not None else None
             if shape is not None and not shape.isNull():
                 _state["text"] = describe(shape)

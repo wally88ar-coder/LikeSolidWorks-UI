@@ -810,6 +810,7 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or not ps_.describe(_edge(Circle(), 7.85, False)).startswith("Radio: 5,00 mm")
             or not ps_.describe(types.SimpleNamespace(ShapeType="Face", Surface=Cylinder(), Area=10.0)).startswith("Radio: 3,00 mm")
             or ps_.describe(types.SimpleNamespace(ShapeType="Solid")) != ""
+            or ps_.describe(types.SimpleNamespace(ShapeType="Face", Surface=Cylinder(), Area=8e40)) != ""
             or not callable(getattr(dup, "loop_edges", None)) or not callable(getattr(dup, "convex_edges", None))):
         print("  FEHLER: fork: barra de estado al pasar el mouse / barrita de selección")
         return False

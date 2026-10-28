@@ -453,6 +453,7 @@ class PlanePanel(dp.SwPanel):
     TRANSACTION = "Editar plano"
     FAIL = "FreeCAD no puede ubicar el plano con estas referencias."
     NOTHING = "Elegí las referencias del plano."
+    UNPICKABLE_PREVIEW = True
 
     def _base(self):
         return None
