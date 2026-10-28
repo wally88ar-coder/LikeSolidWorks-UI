@@ -1103,6 +1103,8 @@ def chamfer_type(angle_distance, equal):
 CHAMFER_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Chamfer"
 CHAMFER_DEFAULTS = {"Size": 10.0, "Size2": 10.0, "Angle": 45.0}  # los de SW 2018 (plantilla en mm)
 SYMMETRIC, ASYMMETRIC = "Simétrico", "Asimétrico"  # "Método de chaflán" de SW en Distancia-distancia
+DRAFT_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/Draft"
+DEFAULT_DRAFT_ANGLE = 1.0  # SW 2018
 
 
 class ChamferPanel(DressUpPanel):
@@ -1217,7 +1219,11 @@ class DraftPanel(DressUpPanel):
     LIST_LABEL = "Caras de salida (clic en la pieza):"
 
     def _build_values(self, form):
-        self.angle = self._value_box("Angle", "°", 0.01, 89.99)
+        value = None
+        if self.is_new and not self._has_expression("Angle"):  # SW: 1° la primera vez, después el último
+            value = FreeCAD.ParamGet(DRAFT_PARAMS).GetFloat("Angle", DEFAULT_DRAFT_ANGLE)
+        self.angle = self._value_box("Angle", "°", 0.01, 89.99, value)
+        self.angle.valueChanged.connect(lambda v: FreeCAD.ParamGet(DRAFT_PARAMS).SetFloat("Angle", float(v)))
         form.addRow("Ángulo de salida:", self.angle)
         self.neutral = RefBox(self._activate)
         self.neutral.setPlaceholderText("Cara plana o plano")
@@ -1277,11 +1283,17 @@ class DraftPanel(DressUpPanel):
         if self.neutral_ref and self.obj.NeutralPlane != self.neutral_ref:
             self.obj.NeutralPlane = self.neutral_ref
 
-    def _apply(self):
-        problem = super()._apply()
-        if not problem and not self.neutral_ref:
-            problem = "Elegí el plano neutro: tocá una cara plana o un plano."
-        return problem
+    NO_NEUTRAL = "Elegí el plano neutro: tocá una cara plana o un plano."
+
+    def _ready(self):
+        return super()._ready() and bool(self.neutral_ref)  # SW: sin plano neutro, sin vista previa ni aviso
+
+    def accept(self):
+        if self.subs and not self.neutral_ref:
+            self.message.setText(self.NO_NEUTRAL)
+            self.message.show()
+            return False
+        return super().accept()
 
 
 PANELS = {FILLET: FilletPanel, CHAMFER: ChamferPanel, DRAFT: DraftPanel}  # pattern/hole_panel suman los suyos
