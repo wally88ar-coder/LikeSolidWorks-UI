@@ -304,7 +304,19 @@ class TransformedPanel(dp.SwPanel):
 # --- Matriz lineal -----------------------------------------------------
 
 
+LINEAR_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/LinearPattern"
+LINEAR_DEFAULTS = (10.0, 3)  # SW 2018: 10 mm y 3 instancias; después, las últimas escritas
+POLAR_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/PolarPattern"
+POLAR_DEFAULT_COUNT = 4  # SW 2018
+
+
 class LinearPanel(TransformedPanel):
+    """
+    Matriz lineal como SW (comparada a mano con SW 2018, 2026-10-28): una nueva
+    arranca con la Dirección 1 vacía esperando una arista (FreeCAD le pone el eje
+    X) y con el último espaciado e instancias escritos (la primera vez, 10 mm y 3).
+    """
+
     TRANSACTION = "Editar matriz lineal"
 
     def _build(self):
@@ -326,6 +338,11 @@ class LinearPanel(TransformedPanel):
             flip.toggled.connect(self._changed)
             form.addRow(flip)
             occ = getattr(obj, "Occurrences" + suffix)
+            remembered = self.is_new and not self._has_expression("Offset" + suffix) and \
+                not self._has_expression("Occurrences" + suffix)
+            params = FreeCAD.ParamGet(LINEAR_PARAMS)
+            if remembered:
+                occ = params.GetInt("Occurrences" + suffix, LINEAR_DEFAULTS[1])
             if n == 1 and self.extent:
                 dist = self._value_box("Length", " mm", 0.001, 1e6)
                 label = "Longitud total:"
@@ -333,12 +350,16 @@ class LinearPanel(TransformedPanel):
                 value = getattr(obj, "Offset" + suffix).Value
                 if getattr(obj, "Mode" + suffix) == "Extent":
                     value = spacing_from_extent(getattr(obj, "Length" + suffix).Value, occ)
+                if remembered:
+                    value = params.GetFloat("Offset" + suffix, LINEAR_DEFAULTS[0])
                 dist = self._value_box("Offset" + suffix, " mm", 0.001, 1e6, value)
+                dist.valueChanged.connect(lambda v, k="Offset" + suffix: params.SetFloat(k, float(v)))
                 label = "Espaciado:"
             form.addRow(label, dist)
             count = QtWidgets.QSpinBox()
             count.setRange(1 if n == 2 else 2, 10000)
             count.setValue(max(occ, 2) if n == 2 and occ < 2 else occ)
+            count.valueChanged.connect(lambda v, k="Occurrences" + suffix: params.SetInt(k, int(v)))
             count.setKeyboardTracking(False)
             if self._has_expression("Occurrences" + suffix):
                 count.setEnabled(False)
@@ -349,6 +370,8 @@ class LinearPanel(TransformedPanel):
             setattr(self, "count%d" % n, count)
             boxes.append(box)
         self.form = boxes + [self._features_box()]
+        if self.is_new and not obj.Originals:
+            self.refs["Direction"] = None  # como SW: vacía hasta que se elija (el objeto sigue con su eje)
         self._start()
         self._show_dir2()
 
@@ -363,6 +386,9 @@ class LinearPanel(TransformedPanel):
 
     def _unused_refs(self):
         return () if self.use2.isChecked() else ("Direction2",)  # apagada: no se toca
+
+    def _ready(self):
+        return super()._ready() and bool(self.refs.get("Direction"))  # SW: sin dirección no hay vista previa
 
     def _apply(self):
         problem = super()._apply()
@@ -392,6 +418,8 @@ class LinearPanel(TransformedPanel):
 
 class PolarPanel(TransformedPanel):
     TRANSACTION = "Editar matriz circular"
+    # Como SW 2018 (comparado a mano, 2026-10-28): nueva con el eje vacío, "Operaciones y caras"
+    # esperando y 4 instancias (después, las últimas escritas).
 
     def _accepts_face(self, face):
         return False  # FreeCAD pide una arista; la cara cilíndrica se cambia por su borde (_pick)
@@ -412,10 +440,18 @@ class PolarPanel(TransformedPanel):
                         for i, cand in enumerate(shape.Edges):
                             if cand.isSame(edge):
                                 return super()._pick(obj, "Edge%d" % (i + 1))
-        return super()._pick(obj, sub)
+        changed = super()._pick(obj, sub)
+        if changed and self.originals and not self.refs.get("Axis"):
+            self._activate(self.ref_boxes["Axis"])  # operación elegida: lo que falta es el eje
+        return changed
+
+    def _ready(self):
+        return super()._ready() and bool(self.refs.get("Axis"))  # SW: sin eje no hay vista previa
 
     def _build(self):
         obj = self.obj
+        params = FreeCAD.ParamGet(POLAR_PARAMS)
+        remember = self.is_new and not self._has_expression("Occurrences")
         box = QtWidgets.QWidget()
         box.setWindowTitle("Parámetros")
         form = QtWidgets.QFormLayout(box)
@@ -437,15 +473,20 @@ class PolarPanel(TransformedPanel):
         form.addRow(self.angle_label, self.angle)
         self.count = QtWidgets.QSpinBox()
         self.count.setRange(2, 10000)
-        self.count.setValue(max(obj.Occurrences, 2))
+        self.count.setValue(params.GetInt("Occurrences", POLAR_DEFAULT_COUNT) if remember else max(obj.Occurrences, 2))
         self.count.setKeyboardTracking(False)
         if self._has_expression("Occurrences"):
             self.count.setEnabled(False)
         self.count.valueChanged.connect(self._changed)
+        self.count.valueChanged.connect(lambda v: params.SetInt("Occurrences", int(v)))
         form.addRow("Instancias:", self.count)
         self._label()
         self.form = [box, self._features_box()]
+        if self.is_new and not obj.Originals:
+            self.refs["Axis"] = None  # como SW: vacío hasta que se elija (el objeto sigue con su eje)
         self._start()
+        if self.is_new and not obj.Originals:
+            self._activate(self.list)  # SW abre con "Operaciones y caras" esperando
 
     def _label(self):
         self.angle_label.setText("Ángulo total:" if self.equal.isChecked() else "Ángulo entre copias:")
