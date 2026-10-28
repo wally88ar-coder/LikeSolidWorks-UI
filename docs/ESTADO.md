@@ -36,7 +36,17 @@ abajo).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
-- **Fase 5 — Ensamblaje: etapa 2 (relaciones de posición) con código completo (2026-10-27,
+- **Fase 5 — Ensamblaje: etapa 3 (matriz y simetría de componentes) con código completo
+  (2026-10-27, `swui/fork/component_patterns.py`); el usuario prueba las etapas 2 y 3 juntas.**
+  Probada en FreeCAD real: lineal desde arista (4), circular desde cara cilíndrica (6),
+  simetría con misma pieza + versión opuesta (exactas), editar desde el clic derecho (4 -> 3),
+  opuesta reconstruida al abrirla (50 -> 70 mm). Decidido sin consultar: un vínculo con copias
+  por cada semilla ("MatrizLineal1 Tornillo"), los datos en un VarSet del ensamblaje; editar
+  solo con clic derecho "Editar operación" (doble clic sobre un vínculo es de FreeCAD); el
+  archivo opuesto se llama "<pieza>-opuesta" y va en la carpeta de la original (sin preguntar).
+  Falta: Matriz conducida por operación (no la pidió), borrar la operación entera de un golpe
+  (hoy: borrar el VarSet deja las copias).
+- **Etapa 2 (relaciones de posición) con código completo (2026-10-27,
   `swui/fork/mates_sw.py`); falta que la pruebe el usuario.** Probada en FreeCAD real con
   capturas: concéntrica + coincidente encadenadas, tangente, cambiar a distancia 15, editar con
   doble clic y cancelar (vuelve), panel contextual del original -> panel del fork, Fijar/Flotar y

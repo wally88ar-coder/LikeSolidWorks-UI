@@ -279,6 +279,13 @@ Neueste Version oben. / Newest version first.
   en el mismo panel; los botones del panel contextual del original también lo abren. Clic derecho
   sobre un componente: **Fijar / Flotar** y **Ver relaciones de posición**. Todo sobre las uniones
   nativas de FreeCAD (`swui/fork/mates_sw.py`).
+- Ensamblaje (fase 5, etapa 3): **Matriz de componente lineal** (una o dos direcciones, desde una
+  arista, una cara o un eje), **Matriz de componente circular** (eje desde una arista circular,
+  una cara cilíndrica o un eje; "Separación igual") y **Simetría de componentes** (misma pieza si
+  es simétrica, o **versión opuesta**: archivo nuevo "<pieza>-opuesta" atado a la original, que se
+  reconstruye solo al abrirlo si la original cambió). Las copias siguen a la pieza semilla aunque
+  la mueva el motor de cálculo. Se editan con clic derecho "Editar operación". Todo con objetos
+  nativos (vínculos con copias, expresiones, VarSet) (`swui/fork/component_patterns.py`).
 
 ## 0.10.0 — 2026-10-18
 

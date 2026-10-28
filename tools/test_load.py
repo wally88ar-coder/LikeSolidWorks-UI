@@ -102,7 +102,8 @@ FORK_REPLACED = {"Std_Measure": "SWUI_Measure"}
 def _fork_layout_commands():
     return (_all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
             + _all_layout_commands(os.path.join("fork", "sheet_tab.py"))
-            + _all_layout_commands(os.path.join("fork", "mates_sw.py")))
+            + _all_layout_commands(os.path.join("fork", "mates_sw.py"))
+            + _all_layout_commands(os.path.join("fork", "component_patterns.py")))
 
 
 FORK_TABS = ("Chapa",)  # fork: pestañas propias (título en castellano, sin tr())
@@ -1000,6 +1001,23 @@ def _check_feature_tree(commands, mw, layout, hooked):
                 isinstance(x, tuple) and x[0] == "Assembly_CreateJointDistance" for x in e.get("flyout", ()))
                 for e in mate_group_)):
         print("  FEHLER: fork: relaciones de posición (posibles, nombres, cinta)", mate_group_)
+        return False
+    # Matriz y simetría de componentes (component_patterns): cuentas, expresiones, cinta
+    cpt = importlib.import_module("swui.fork.component_patterns")
+    lin_ = cpt.linear_expression("Tornillo", "VarSet", "Dir", 2, -1, "Dir2", 1, 1)
+    if (cpt.grid_indices(3) != [(1, 0), (2, 0)] or cpt.grid_indices(2, 2) != [(1, 0), (0, 1), (1, 1)]
+            or cpt.grid_indices(1) != []
+            or lin_ != ("Dir.Placement * translationm(0; 0; -2 * VarSet.Espaciado) * minvert(Dir.Placement) * "
+                        "Dir2.Placement * translationm(0; 0; 1 * VarSet.Espaciado2) * minvert(Dir2.Placement) * "
+                        "Tornillo.Placement")
+            or "rotationz(3 * VarSet.Angulo)" not in cpt.circular_expression("T", "VarSet", "Eje", 3)
+            or cpt.step_angle(360, 6, True) != 60 or cpt.step_angle(90, 4, True) != 30
+            or cpt.step_angle(45, 4, False) != 45
+            or cpt.opposite_name("Soporte", {"Soporte-opuesta"}) != "Soporte-opuesta2"
+            or cpt.next_title({"MatrizLineal1"}, "linear") != "MatrizLineal2"
+            or not any(isinstance(e, dict) and e.get("flyout") == cpt.FLYOUT
+                       for g in lay_.BAUGRUPPE[1] for e in g)):
+        print("  FEHLER: fork: matriz y simetría de componentes (cuentas, expresiones, cinta)", lin_)
         return False
     # Chapa (sheet_metal / sheet_panels / sheet_tab): nombres, DXF, pestaña y enganches
     smt = importlib.import_module("swui.fork.sheet_metal")

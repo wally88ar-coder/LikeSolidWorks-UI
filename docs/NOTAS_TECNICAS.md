@@ -349,3 +349,12 @@
   (giro, lineal, engranajes...) sigue con el diálogo de FreeCAD. Bloquear = Fixed con `Offset2`
   calculado para que no se mueva nada. El test lee como botón de la cinta toda tupla
   ("Assembly_...", "texto", ...): armar las demás con `tuple([...])`.
+- Matriz/simetría de componentes (`component_patterns.py`, etapa 3): la selección en la vista trae
+  subnombres con el nombre topológico de FreeCAD 1.x (`Body.;Face14;:Hda2,F….Face14`); para
+  armar otro subnombre (una arista de esa cara) limpiar con `Part.splitSubname` (ruta +
+  elemento). `isSame` no sirve entre la forma del vínculo y la de `getSubObject` (copias):
+  comparar por geometría. Un VarSet que guarda vínculos a las copias que lo leen = ciclo: guardar
+  nombres (StringList). A Python no le llega `slotFinishRestoreDocument` (1.1.4): usar
+  `slotCreatedDocument` + QTimer 0. Crear un documento lo deja activo: volver al ensamblaje
+  (`setActiveDocument` + `setEdit(asm)`) o los comandos ya no lo encuentran.
+  Ejes del origen (App::Line): la dirección es su X local (eje de referencia con `ObjectX`).

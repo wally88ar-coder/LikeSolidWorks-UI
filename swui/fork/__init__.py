@@ -147,6 +147,15 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Relaciones de posición:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import component_patterns
+
+        component_patterns.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [component_patterns.LINEAR, component_patterns.CIRCULAR,
+                                        component_patterns.MIRROR])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Matriz y simetría de componentes:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import sheet_panels
 
         sheet_panels.install()
