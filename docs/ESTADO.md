@@ -887,7 +887,7 @@ Etapas:
   tener); cada función cede a lo nativo si la versión de FreeCAD lo trae.
 
 ## Git
-- `origin` = fork del usuario (todo subido al 2026-10-25), `upstream` = Schlauminik/LikeSolidWorks-UI.
+- `origin` = fork del usuario (todo subido al 2026-10-27), `upstream` = Schlauminik/LikeSolidWorks-UI.
 - `master` = versión que usa el usuario (ramas generales unidas + código del fork).
 
 ## PR al original
