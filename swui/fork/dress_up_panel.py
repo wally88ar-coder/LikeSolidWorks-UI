@@ -31,7 +31,10 @@ Detalles de SW en el redondeo (piloto comparado con SW, 2026-10-28): sin nada
 elegido, el panel abre callado esperando aristas (FreeCAD lo recalculaba vacío y
 avisaba un error en inglés); el radio arranca en 10 mm y después recuerda el
 último escrito; al elegir una arista el radio queda seleccionado para escribir
-el número; y un recuadro "Radio:" editable acompaña a la arista en la vista.
+el número; un recuadro "Radio:" editable, con línea guía, acompaña a la arista
+en la vista; y debajo, la barrita de selección de SW ("Contorno" de la cara
+vecina, otro clic la otra cara; "Convexas": todas las aristas convexas), que se
+apaga con "Mostrar barra de herramientas de selección" como en SW.
 """
 
 import traceback
@@ -58,6 +61,7 @@ DEFAULT_RADIUS = 10.0  # el de SW 2018 con plantilla en mm
 CALLOUT_QSS = ("QFrame#SWUI_Callout { background: #ffffff; border: 1px solid #808080; }"
                "QLabel { background: transparent; border: none; }")
 FOLLOW_MS = 40  # cada cuánto se reubica el recuadro si se movió la cámara
+LEADER_PX = 40  # largo de la línea guía del recuadro (en pantalla)
 
 _state = {"panel": None, "native": False}  # native: dejar el diálogo de FreeCAD (si el panel falló)
 
@@ -117,6 +121,85 @@ def to_base(shape, sub, base):
         return None
     found = ft.remap([(sub, geo)], base)
     return found[0] if found else None
+
+
+def _edge_names(shape, edges):
+    """Aristas de shape -> sus nombres ("Edge4") en el mismo shape."""
+    out = []
+    for edge in edges:
+        for i, e in enumerate(shape.Edges):
+            if e.isSame(edge):
+                name = "Edge%d" % (i + 1)
+                if name not in out:
+                    out.append(name)
+                break
+    return out
+
+
+def loop_edges(shape, sub, turn=0):
+    """
+    Barrita de selección de SW, "bucle": las aristas del contorno de una cara
+    vecina a la arista sub que la contiene. turn elige la cara (0, 1, 2...: van
+    alternando). Devuelve (nombres, cuántas caras vecinas hay).
+    """
+    import Part
+
+    edge = _element(shape, sub)
+    if edge is None or not sub.startswith("Edge"):
+        return [], 0
+    faces = shape.ancestorsOfType(edge, Part.Face)
+    if not faces:
+        return [], 0
+    face = faces[turn % len(faces)]
+    for wire in face.Wires:
+        if any(e.isSame(edge) for e in wire.Edges):
+            return _edge_names(shape, wire.Edges), len(faces)
+    return [], len(faces)
+
+
+def is_convex(shape, edge, faces=None):
+    """
+    Arista convexa (canto hacia afuera, la que se redondea quitando material):
+    saliendo de la arista sobre la segunda cara, se baja respecto de la primera
+    (el sentido de avance sobre esa cara va contra la normal de la otra). En un
+    rincón (cóncava) sube. Tangentes (sin canto): no.
+    """
+    import Part
+
+    faces = faces if faces is not None else shape.ancestorsOfType(edge, Part.Face)
+    if len(faces) != 2:
+        return False
+    mid = (edge.FirstParameter + edge.LastParameter) / 2.0
+    p = edge.valueAt(mid)
+    along = edge.tangentAt(mid)
+    step = max(1e-3, min(0.5, shape.BoundBox.DiagonalLength * 1e-3))
+    normals = []
+    for face in faces:
+        u, v = face.Surface.parameter(p)
+        normals.append(face.normalAt(u, v))
+    n1, n2 = normals
+    if abs(n1.getAngle(n2)) < 1e-3:
+        return False  # tangentes: no hay canto
+    into = n2.cross(along)  # perpendicular a la arista, sobre la cara 2: ¿hacia adentro de la cara?
+    if into.Length < 1e-9:
+        return False
+    into.normalize()
+    probe = Part.Vertex(p + into * step)
+    if faces[1].distToShape(probe)[0] > step * 0.1:
+        into = into * -1.0
+    return n1.dot(into) < -1e-6
+
+
+def convex_edges(shape):
+    """Barrita de selección de SW: todas las aristas convexas del sólido."""
+    out = []
+    for i, edge in enumerate(shape.Edges):
+        try:
+            if is_convex(shape, edge):
+                out.append("Edge%d" % (i + 1))
+        except Exception:
+            continue
+    return out
 
 
 def nearest(geo, base, subs):
@@ -236,35 +319,61 @@ def anchor_point(shape):
 
 class Callout:
     """
-    Recuadro editable sobre la pieza ("Radio: 10mm" en SW), junto a la arista
-    elegida. Copia la casilla del panel y le pasa lo que se escriba ahí.
+    Recuadro editable sobre la pieza ("Radio: 10mm" en SW), con su línea guía
+    hasta la arista elegida. Copia la casilla del panel y le pasa lo que se
+    escriba ahí. tools: botones de la barrita de selección [(texto, ayuda, función)].
     """
 
-    def __init__(self, title, box, suffix, low, high):
+    def __init__(self, title, box, suffix, low, high, tools=()):
         from swui.fork import instant_dims
 
         self.box = box
         self.anchor = None
         self.camera = None
+        self.leader = None  # (vista, nodo Coin) de la línea guía
         self.vp = instant_dims._viewport()
         if self.vp is None:
             raise RuntimeError("sin vista 3D")
         self.frame = QtWidgets.QFrame(self.vp)
         self.frame.setObjectName("SWUI_Callout")
         self.frame.setStyleSheet(CALLOUT_QSS)
-        lay = QtWidgets.QHBoxLayout(self.frame)
-        lay.setContentsMargins(4, 2, 2, 2)
+        outer = QtWidgets.QVBoxLayout(self.frame)
+        outer.setContentsMargins(4, 2, 2, 2)
+        outer.setSpacing(2)
+        lay = QtWidgets.QHBoxLayout()
         lay.setSpacing(4)
         lay.addWidget(QtWidgets.QLabel(title))
         self.spin = _spin(box.value(), suffix, low, high)
         self.spin.setMinimumWidth(80)
         lay.addWidget(self.spin)
+        outer.addLayout(lay)
+        self.tools = QtWidgets.QWidget()
+        row = QtWidgets.QHBoxLayout(self.tools)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(2)
+        for text, tip, run in tools:
+            button = QtWidgets.QToolButton()
+            button.setText(text)
+            button.setToolTip(tip)
+            button.setAutoRaise(True)
+            button.clicked.connect(lambda *_a, r=run: r())
+            row.addWidget(button)
+        row.addStretch(1)
+        outer.addWidget(self.tools)
+        self.tools.setVisible(bool(tools))
         self.spin.valueChanged.connect(self._to_panel)
         box.valueChanged.connect(self._from_panel)
         self.frame.hide()
         self.follow = QtCore.QTimer()
         self.follow.setInterval(FOLLOW_MS)
         self.follow.timeout.connect(self._follow)
+
+    def show_tools(self, on):
+        if self.tools.layout().count() > 1:  # hay botones (más el estiramiento)
+            self.tools.setVisible(on)
+            self.frame.adjustSize()
+            self.camera = None
+            self._follow()
 
     def _to_panel(self, value):
         if abs(self.box.value() - value) > 1e-9:
@@ -281,6 +390,7 @@ class Callout:
         if point is None:
             self.follow.stop()
             self.frame.hide()
+            self._remove_leader()
             return
         self.frame.adjustSize()
         self.frame.show()
@@ -289,7 +399,7 @@ class Callout:
         self.follow.start()
 
     def _follow(self):
-        """Reubica el recuadro si se movió la cámara (giro, zoom, encuadre)."""
+        """Reubica el recuadro y su línea guía si se movió la cámara (giro, zoom, encuadre)."""
         if self.anchor is None:
             return
         try:
@@ -302,12 +412,56 @@ class Callout:
             self.camera = key
             ratio = self.vp.devicePixelRatioF()
             x, y = view.getPointOnViewport(self.anchor)
-            self.frame.move(int(x / ratio) + 14, int(self.vp.height() - y / ratio) + 14)
+            # como SW: el recuadro a la izquierda y arriba de la arista, unido por una línea
+            left = int(x / ratio) - self.frame.width() - LEADER_PX
+            top = int(self.vp.height() - y / ratio) - self.frame.height() - LEADER_PX // 2
+            left = max(4, min(left, self.vp.width() - self.frame.width() - 4))
+            top = max(4, min(top, self.vp.height() - self.frame.height() - 4))
+            self.frame.move(left, top)
+            end_x = (left + self.frame.width()) * ratio  # borde derecho, en el medio del renglón del radio
+            end_y = (self.vp.height() - (top + self.spin.height() / 2.0 + 2)) * ratio
+            self._draw_leader(view, view.getPoint(int(end_x), int(end_y)))
         except Exception:
             pass
 
+    def _draw_leader(self, view, end):
+        from pivy import coin
+
+        self._remove_leader()
+        a = (self.anchor.x, self.anchor.y, self.anchor.z)
+        b = (end.x, end.y, end.z)
+        node = coin.SoAnnotation()  # siempre por delante de la pieza
+        color = coin.SoBaseColor()
+        color.rgb = (0.1, 0.1, 0.1)
+        style = coin.SoDrawStyle()
+        style.lineWidth = 1
+        line = coin.SoCoordinate3()
+        line.point.setValues(0, 2, [a, b])
+        for child in (color, style, line, coin.SoLineSet()):
+            node.addChild(child)
+        dot = coin.SoSeparator()  # puntito en la arista, como SW
+        where = coin.SoCoordinate3()
+        where.point.setValues(0, 1, [a])
+        marker = coin.SoMarkerSet()
+        marker.markerIndex = coin.SoMarkerSet.CIRCLE_LINE_7_7
+        for child in (where, marker):
+            dot.addChild(child)
+        node.addChild(dot)
+        view.getSceneGraph().addChild(node)
+        self.leader = (view, node)
+
+    def _remove_leader(self):
+        if self.leader is not None:
+            view, node = self.leader
+            try:
+                view.getSceneGraph().removeChild(node)
+            except Exception:
+                pass
+            self.leader = None
+
     def close(self):
         self.follow.stop()
+        self._remove_leader()
         try:
             self.box.valueChanged.disconnect(self._from_panel)
         except Exception:
@@ -799,6 +953,53 @@ class FilletPanel(DressUpPanel):
         self.radius.valueChanged.connect(self._remember)
         form.addRow("Radio:", self.radius)
         self.callout = None
+        self.loop_turn = 0
+
+    def _build(self):
+        super()._build()
+        self.show_tools = QtWidgets.QCheckBox("Mostrar barra de herramientas de selección")
+        self.show_tools.setChecked(FreeCAD.ParamGet(FILLET_PARAMS).GetBool("ShowSelectionTools", True))
+        self.show_tools.toggled.connect(self._tools_toggled)
+        lay = self.form.layout()
+        lay.insertWidget(lay.indexOf(self.tangent), self.show_tools)
+
+    def _tools_toggled(self, on):
+        FreeCAD.ParamGet(FILLET_PARAMS).SetBool("ShowSelectionTools", bool(on))
+        if self.callout is not None:
+            self.callout.show_tools(on)
+
+    # --- barrita de selección (como SW: sobre la última arista elegida)
+
+    def _add_edges(self, names):
+        added = [n for n in names if n not in self.subs]
+        if added:
+            self.subs = self.subs + added
+            self._fill_list()
+            self.preview()
+
+    def select_loop(self):
+        """Contorno de la cara vecina; otro clic pasa a la otra cara (saca las del contorno anterior)."""
+        if not self.subs or self.base is None:
+            return
+        last = self.subs[-1]
+        if getattr(self, "loop_of", None) != last:
+            self.loop_turn = 0  # arista nueva: empezar por su primera cara
+        names, count = loop_edges(self.base.Shape, last, self.loop_turn)
+        if not names:
+            return
+        previous = getattr(self, "loop_added", [])
+        if previous and getattr(self, "loop_of", None) == last:
+            self.subs = [s for s in self.subs if s not in previous or s == last]
+        added = [n for n in names if n not in self.subs]
+        self.subs = [s for s in self.subs if s != last] + added + [last]  # la tocada sigue al final
+        self.loop_added, self.loop_of = added, last
+        self.loop_turn = (self.loop_turn + 1) % max(1, count)
+        self._fill_list()
+        self.preview()
+
+    def select_convex(self):
+        if self.base is not None:
+            self._add_edges(convex_edges(self.base.Shape))
 
     def _remember(self, value):
         """SW recuerda el radio escrito aunque no se acepte."""
@@ -818,13 +1019,19 @@ class FilletPanel(DressUpPanel):
         self._place_callout()
 
     def _place_callout(self):
+        if not hasattr(self, "show_tools"):
+            return  # todavía armando el panel; la vista previa del final lo ubica
         if not self.subs or self.base is None or not self.radius.isEnabled():
             if self.callout is not None:
                 self.callout.place(None)
             return
         try:
             if self.callout is None:
-                self.callout = Callout("Radio:", self.radius, " mm", 0.01, 100000.0)
+                tools = [("Contorno", "Agregar las aristas del contorno de la cara (otro clic: la otra cara)",
+                          self.select_loop),
+                         ("Convexas", "Agregar todas las aristas convexas del sólido", self.select_convex)]
+                self.callout = Callout("Radio:", self.radius, " mm", 0.01, 100000.0, tools)
+                self.callout.show_tools(self.show_tools.isChecked())
             el = _element(_global_shape(self.base), self.subs[-1])
             self.callout.place(anchor_point(el) if el is not None else None)
         except Exception:

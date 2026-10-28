@@ -790,6 +790,29 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or ft_.menu_text_es("Editar operación") is not None or ft_.menu_text_es("Edit") is not None):
         print("  FEHLER: fork: redondeo como SW (sin selección, radio, menú del árbol)")
         return False
+    # Barra de estado al pasar el mouse (preselect_status): textos de SW
+    ps_ = importlib.import_module("swui.fork.preselect_status")
+
+    class Circle:  # noqa: los nombres de clase son los que mira describe()
+        Radius = 5.0
+
+    class Line:
+        pass
+
+    class Cylinder:
+        Radius = 3.0
+
+    def _edge(curve, length, closed):
+        return types.SimpleNamespace(ShapeType="Edge", Curve=curve, Length=length, isClosed=lambda: closed)
+
+    if (ps_.describe(_edge(Line(), 100.0, False)) != "Longitud: 100,00 mm"
+            or ps_.describe(_edge(Circle(), 31.4, True)) != "Diámetro: 10,00 mm"
+            or not ps_.describe(_edge(Circle(), 7.85, False)).startswith("Radio: 5,00 mm")
+            or not ps_.describe(types.SimpleNamespace(ShapeType="Face", Surface=Cylinder(), Area=10.0)).startswith("Radio: 3,00 mm")
+            or ps_.describe(types.SimpleNamespace(ShapeType="Solid")) != ""
+            or not callable(getattr(dup, "loop_edges", None)) or not callable(getattr(dup, "convex_edges", None))):
+        print("  FEHLER: fork: barra de estado al pasar el mouse / barrita de selección")
+        return False
     # Paneles de matriz y simetría (pattern_panel): espaciado SW desde la longitud total, nombres
     pp = sys.modules["swui.fork.pattern_panel"]
     if (pp.spacing_from_extent(100.0, 5) != 25.0 or pp.spacing_from_extent(30.0, 1) != 30.0

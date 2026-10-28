@@ -90,6 +90,12 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Paneles de operación SW:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import preselect_status
+
+        preselect_status.install()
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Barra de estado al pasar el mouse:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import sketch_model_edges
 
         sketch_model_edges.install()

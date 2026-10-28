@@ -98,11 +98,15 @@ Piloto: redondeo R5 en una arista de un bloque 100x60x20 (2026-10-28).
   1. Hecho: sin selección, Redondeo/Chaflán abren el panel callado (el fork crea la operación
      sin recalcular; antes FreeCAD avisaba "Fillet not possible on selected shapes" en inglés).
      Solo desde la cinta: el menú Insertar de FreeCAD sigue con el comportamiento nativo.
-  2. Hecho: recuadro "Radio:" editable junto a la arista (sin la línea guía de SW).
+  2. Hecho: recuadro "Radio:" editable junto a la arista, con línea guía y puntito.
   3. Hecho: al elegir una arista el radio queda seleccionado (se escribe el número directo).
   4. Hecho: 10 mm la primera vez y después el último escrito (aunque se cancele, como SW).
-  5. Falta (menor): barrita de selección de SW (aristas conectadas, bucle) y "Longitud" de la
-     arista en la barra de estado.
+  5. Hecho: barrita de selección debajo del recuadro ("Contorno" de la cara vecina, otro clic la
+     otra cara; "Convexas": todas) con su casilla "Mostrar barra de herramientas de selección";
+     y en la barra de estado, al pasar el mouse, "Longitud" / radio / diámetro / "Área" (en
+     todo el banco, no solo en el redondeo). Diferencias con SW que quedan: la barrita va pegada
+     al recuadro (en SW flota aparte, con íconos) y tiene dos opciones (SW trae más: cóncavas,
+     de la operación...); el recuadro sigue a la última arista agregada.
   6. Hecho: la medición pegada era la ventana Medir (barra espaciadora, pedido del usuario) que
      quedó abierta sin verse; close() de Qt no avisa a una ventana oculta. Ahora se limpia
      siempre y la barra la vuelve a mostrar. Por qué no se vio esa vez: sin aclarar.

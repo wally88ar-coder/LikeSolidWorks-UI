@@ -163,7 +163,12 @@ Neueste Version oben. / Newest version first.
   abre el panel callado esperando aristas (antes FreeCAD avisaba un error en inglés; igual el
   chaflán); el radio arranca en 10 mm y después recuerda el último escrito; al elegir una
   arista el radio queda seleccionado para escribir el número directo; recuadro *Radio:*
-  editable junto a la arista en la vista.
+  editable junto a la arista en la vista, con línea guía; barrita de selección de SW debajo
+  (*Contorno* de la cara vecina —otro clic, la otra cara— y *Convexas*), que se apaga con
+  *Mostrar barra de herramientas de selección*.
+- **Barra de estado como SW al pasar el mouse**: *Longitud* de una arista, radio o diámetro de
+  un arco o círculo, *Área* de una cara, en lugar del *Preselected: …* en inglés de FreeCAD
+  (`swui/fork/preselect_status.py`).
 - **Medir**: si la ventana quedaba abierta sin verse, la medición dibujada quedaba pegada en
   la vista; ahora la barra espaciadora la limpia y vuelve a mostrar la ventana.
 - **Clic derecho del árbol en castellano**: *Mostrar/Ocultar selección*, *Alternar
