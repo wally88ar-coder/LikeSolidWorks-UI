@@ -2,6 +2,13 @@
 
 Última actualización: 2026-10-27 (fase 5, ensamblaje: código completo de las etapas 1 a 5).
 
+**Checklists compartidos con el usuario** (se tildan ahí; al cerrar algo, tildarlo también):
+- Todas las fases: "Checklists del fork: qué falta en cada fase"
+  (https://claude.ai/artifact/URHdbLtcw8n3aXAYoYt6U1).
+- Fase 5 en detalle: "Fase 5 — Ensamblaje estilo SW 2018: plan y checklist"
+  (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf).
+Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
+
 ## Fase actual
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
 - **Árbol de operaciones estilo SW (trabajo extra, no estaba en las fases): terminado**

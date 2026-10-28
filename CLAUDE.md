@@ -123,6 +123,9 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
   reportados por el usuario, decisiones nuevas y estado de los PR al original. Leerlo al inicio
   de cada sesión, junto con `docs/NOTAS_TECNICAS.md` (cómo probar en FreeCAD real con
   `tools/fork/gui_probe.py`, hallazgos de FreeCAD 1.1.4 en Windows).
+- Checklists compartidos con el usuario (documentos de Claude, enlaces arriba en `docs/ESTADO.md`):
+  uno con lo que falta en cada fase y uno por fase grande (fase 5). Leerlos al inicio de cada
+  sesión (qué tildó o comentó el usuario) y tildar ahí lo que se cierra, además de ESTADO.md.
 - Antes de entregar cambios de interfaz, probarlos en FreeCAD real con la plantilla de prueba
   (copia de la configuración, nunca la del usuario) y mirar las capturas; después la valida él.
 - Ser honesto sobre límites que el addon no puede resolver.
