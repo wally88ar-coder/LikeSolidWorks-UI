@@ -271,6 +271,14 @@ Neueste Version oben. / Newest version first.
   plegar con Doblar o al salir del croquis (por debajo el "Wrap Cutout" de SheetMetal). Un corte
   entero sobre una brida avisa que va con Extruir corte. Editar un Corte-Desdoblado abre un panel
   en castellano (factor K y "Editar croquis sobre el desarrollo") en lugar del de SheetMetal.
+- Ensamblaje (fase 5, etapa 2): **Relación de posición** como el PropertyManager de SW. Se eligen
+  dos entidades, la relación que corresponde se aplica sola, "Agregar relación (✓)" la confirma y
+  el panel queda abierto para la siguiente. Coincidente, Paralela, Perpendicular, **Tangente**,
+  Concéntrica, Bloquear (deja las piezas donde están), Distancia y Ángulo (arrancan con el valor
+  actual), Alineada / Antialineada y límites en la concéntrica. Doble clic en una relación la edita
+  en el mismo panel; los botones del panel contextual del original también lo abren. Clic derecho
+  sobre un componente: **Fijar / Flotar** y **Ver relaciones de posición**. Todo sobre las uniones
+  nativas de FreeCAD (`swui/fork/mates_sw.py`).
 
 ## 0.10.0 — 2026-10-18
 

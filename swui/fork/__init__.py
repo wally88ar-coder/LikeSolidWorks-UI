@@ -139,6 +139,14 @@ def install(workbench=None):
         FreeCAD.Console.PrintError("[SWUI fork] Mover/Copiar y Eliminar/Conservar sólidos:\n%s\n"
                                    % traceback.format_exc())
     try:
+        from swui.fork import mates_sw
+
+        mates_sw.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [mates_sw.COMMAND])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Relaciones de posición:\n%s\n" % traceback.format_exc())
+    try:
         from swui.fork import sheet_panels
 
         sheet_panels.install()

@@ -101,7 +101,8 @@ FORK_REPLACED = {"Std_Measure": "SWUI_Measure"}
 
 def _fork_layout_commands():
     return (_all_layout_commands(os.path.join("fork", "evaluate_tab.py"))
-            + _all_layout_commands(os.path.join("fork", "sheet_tab.py")))
+            + _all_layout_commands(os.path.join("fork", "sheet_tab.py"))
+            + _all_layout_commands(os.path.join("fork", "mates_sw.py")))
 
 
 FORK_TABS = ("Chapa",)  # fork: pestañas propias (título en castellano, sin tr())
@@ -978,6 +979,28 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or abs(mx.max_between(box_a, box_b)[0] - math_.sqrt(35 ** 2 + 10 ** 2 + 10 ** 2)) > 1e-12):
         print("  FEHLER: fork: distancia máxima (general contra fórmulas)", gen_cc, gen_pc, exa_pc, gen_tc, brute_)
         return False
+    # Relaciones de posición (mates_sw): relaciones posibles, nombres de relación, cinta
+    msw = importlib.import_module("swui.fork.mates_sw")
+    mate_group_ = next((g for g in lay_.BAUGRUPPE[1]
+                        if any(isinstance(e, tuple) and e[0] == msw.COMMAND for e in g)), None)
+    if (msw.applicable(["plane", "plane"])[:2] != ["coincident", "parallel"]
+            or msw.applicable(["plane", "cylinder"])[0] != "tangent"
+            or "coincident" in msw.applicable(["plane", "cylinder"])
+            or msw.applicable(["cylinder", "circle"])[0] != "concentric"
+            or "tangent" not in msw.applicable(["cylinder", "cylinder"])
+            or msw.applicable(["part", "plane"]) != ["lock"] or msw.applicable(["plane"])
+            or msw.applicable(["point", "plane"])[-1] != "lock"
+            or msw.next_label({"Coincidente1", "Coincidente3"}, "Coincidente") != "Coincidente2"
+            or msw.key_of(types.SimpleNamespace(JointType="Distance", Distance=0.0)) != "coincident"
+            or msw.key_of(types.SimpleNamespace(JointType="Distance", Distance=5.0)) != "distance"
+            or msw.key_of(types.SimpleNamespace(JointType="Distance", Distance=0.0, SWUI_MateType="tangent")) != "tangent"
+            or msw.key_of(types.SimpleNamespace(JointType="Cylindrical")) != "concentric"
+            or msw.key_of(types.SimpleNamespace(JointType="Revolute")) is not None
+            or mate_group_ is None or not any(isinstance(e, dict) and any(
+                isinstance(x, tuple) and x[0] == "Assembly_CreateJointDistance" for x in e.get("flyout", ()))
+                for e in mate_group_)):
+        print("  FEHLER: fork: relaciones de posición (posibles, nombres, cinta)", mate_group_)
+        return False
     # Chapa (sheet_metal / sheet_panels / sheet_tab): nombres, DXF, pestaña y enganches
     smt = importlib.import_module("swui.fork.sheet_metal")
     smp = sys.modules.get("swui.fork.sheet_panels")
@@ -1698,8 +1721,8 @@ def run(split_namespace):
     if first is None or first[0][0] != ribbon._tab_titles.index("Zeichnungen") or again:
         print("  FEHLER: Reiterwechsel beim Zeichenblatt", first, again)
         return False
-    for big in ("Assembly_CreateJointDistance", "Assembly_CreateJointParallel", "Assembly_CreateJointCylindrical",
-                "Assembly_CreateView", "Assembly_CreateBom", "Assembly_InsertLink"):
+    # fork: un solo botón grande "Relación de posición" (mates_sw); las uniones nativas, en el menú
+    for big in ("SWUI_Mate", "Assembly_CreateView", "Assembly_CreateBom", "Assembly_InsertLink"):
         if big not in ribbon._buttons:
             print("  FEHLER: Baugruppen-Knopf fehlt oder steckt im Ausklappmenü:", big)
             return False
@@ -3088,10 +3111,11 @@ def run(split_namespace):
     mcases = [
         (("plane", "plane"), ["coincident", "parallel", "perpendicular", "distance", "angle"]),
         (("cylinder", "circle"), ["concentric", "coincident", "revolute", "parallel", "perpendicular", "distance"]),
-        (("cylinder", "plane"), ["parallel", "perpendicular", "distance"]),
+        # fork (mates_sw): Tangente agregada donde SW la ofrece
+        (("cylinder", "plane"), ["tangent", "parallel", "perpendicular", "distance"]),
         (("line", "cylinder"), ["concentric", "coincident", "parallel", "perpendicular", "slider", "distance"]),
         (("point", "plane"), ["coincident", "distance"]),
-        (("sphere", "sphere"), ["ball", "coincident", "distance"]),
+        (("sphere", "sphere"), ["tangent", "ball", "coincident", "distance"]),
         (("plane",), []),
         (("part", "plane"), []),
     ]
@@ -3137,13 +3161,21 @@ def run(split_namespace):
         dialog_cur = mt.current()
         gui._mw.dialog_open = False
         gui.runCommand = lambda c, *a: ran_mates.append(c)
+        # fork (mates_sw): dentro del banco, el botón abre el panel SW del fork
+        msw_ = sys.modules.get("swui.fork.mates_sw")
+        real_start_ = msw_.start if msw_ else None
+        if msw_:
+            msw_.start = lambda key=None, joint=None: ran_mates.append("SWUI:" + str(key))
         mt.run_mate("concentric")
+        mt.run_mate("revolute")
+        if msw_:
+            msw_.start = real_start_
     finally:
         gui.runCommand = real_run
         lay._find_dock = real_find
         del sys.modules["UtilsAssembly"]
         gui._sel = []
-    if first != ["concentric", "coincident", "revolute", "parallel", "perpendicular", "distance"]:
+    if first != ["concentric", "tangent", "coincident", "revolute", "parallel", "perpendicular", "distance"]:
         print("  FEHLER: Panel bietet für zwei Zylinder an zwei Teilen", first)
         return False
     if not mins.called or mins.call_args[0][0] != 0 or mins.call_args[0][1] is not mt._panel.widget:
@@ -3152,7 +3184,8 @@ def run(split_namespace):
     if same or "selben Bauteil" not in same_hint:
         print("  FEHLER: zwei Elemente am selben Teil", same, same_hint)
         return False
-    if dialog_cur != (None, []) or ran_mates != ["Assembly_CreateJointCylindrical"]:
+    if dialog_cur != (None, []) or ran_mates not in (["SWUI:concentric", "Assembly_CreateJointRevolute"],
+                                                     ["Assembly_CreateJointCylindrical", "Assembly_CreateJointRevolute"]):
         print("  FEHLER: Dialog offen / Knopf startet falschen Befehl", dialog_cur, ran_mates)
         return False
     print("  Verknüpf.: %d Auswahl-Fälle; Panel nur bei aktiver Baugruppe ohne Dialog; gleiches Teil abgelehnt" % len(mcases))

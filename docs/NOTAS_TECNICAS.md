@@ -298,3 +298,54 @@
   MapMode "Vertex", apoyo `(Cuerpo, "Box.Vertex3")`) no deriva de Part::Feature: no "consume".
 - Tomar Supr para algo propio: aceptar el ShortcutOverride en un filtro de la aplicación (la tecla
   llega como KeyPress y Std_Delete no corre) y actuar en el KeyPress (`delete_bodies._DeleteKey`).
+
+## Ensamblaje (fase 5): hallazgos en FreeCAD 1.1.4 (pruebas sin GUI, 2026-10-27)
+- Crear uniones por script (FreeCADCmd): `asm.Type = "Assembly"` (si no, `setJointConnectors` no
+  resuelve); `JointObject.Joint(j, JointTypes.index("Distance"))` en un `App::FeaturePython` del
+  JointGroup; referencias = `[componente, [sub, sub]]` con
+  `UtilsAssembly.getComponentReference(asm, asm, "Placa.Body.Face7")` -> `(Placa, "Body.Face7")`.
+  `asm.solve()` devuelve 0 si converge; no hay API de redundantes/grados de libertad en Python.
+- Concéntrica (Cylindrical) + coincidente (Distance 0) en la misma pieza: converge sin quejas.
+  Tangente = Distance 0 entre plano y cilindro (probado; con Distance 5 queda a 5).
+- Matriz: `App::Link` con `ShowElement=True`, `ElementCount=n`; cada `App::LinkElement`
+  (`Matriz_i0`...) con expresión `Eje.Placement * translationm(0; 0; i * Datos.Espaciado) *
+  minvert(Eje.Placement) * Semilla.Placement` (circular: `rotationz(i * Datos.Angulo)`).
+  Eje = `Part::DatumLine` en el ensamblaje apoyado a través del vínculo: arista recta
+  `TwoPointLine`, arista circular `AxisOfCurvature` (`AxisOfInertia1` falla en un cilindro).
+  Los datos van en un `App::VarSet` aparte: una propiedad en el propio vínculo da "cyclic
+  reference". Una relación se puede poner contra una copia (`getComponentReference` devuelve
+  `Matriz_i1`). **El motor mueve piezas sin marcar a los que dependen**: las copias no se
+  recalculan; tocarlas (`touch()`) desde un observador de documento al cambiar Placement de la
+  semilla lo arregla en el mismo recálculo.
+- Expresiones: un objeto llamado "A" no se puede usar (choca con la unidad Ampere);
+  `rotation()` sin argumentos no se acepta; `Matriz.Placement.Matrix` y `minvert(...)` sí;
+  `matrix(16 números) * X.Placement.Matrix * matrix(...)` asignado a un Placement funciona aunque
+  tenga espejos (si el resultado es rígido).
+- Simetría misma pieza: `Plano.Placement.Matrix * F * minvert(Plano.Placement.Matrix) *
+  Semilla.Placement.Matrix * S` (F = espejo en Z, S = espejo propio de la pieza como literal),
+  exacta. Plano propio detectado probando los 3 planos por el CDG del primer sólido.
+- Versión opuesta: documento nuevo **guardado antes** ("Owner document not saved") con
+  `PartDesign::SubShapeBinder` a la Body original + `Part::Mirroring` + Body con BaseFeature.
+  Al abrirlo solo, FreeCAD abre la original, pero el binder no se recalcula hasta `touch()`.
+- Taladro de ensamblaje: binder del croquis del ensamblaje dentro de la Body de cada pieza +
+  Pocket ThroughAll Midplane. Posición: `binder.Placement = vinculo.Placement.inverse()` fija
+  (una expresión `minvert(Conjunto#Placa1.Placement)` es "cyclic reference"). El croquis no
+  puede quedar apoyado en la cara de una pieza que se agujerea (ciclo): ubicarlo y desapoyarlo.
+- Planos en relaciones: el panel nativo acepta solo planos del ensamblaje **sin apoyo**
+  (`JointObject.py`: "accept only datum that are not attached"). Origen y plano suelto: bien.
+- Taladro que sigue a la pieza: observador de documento (`slotChangedObject`, prop "Placement"
+  del vínculo) que pone `binder.Placement = vinculo.Placement.inverse()` y recalcula después el
+  documento de la pieza. Anda al mover a mano y cuando mueve el motor. Comparar documentos por
+  `.Name` (los objetos Python de un documento no son siempre el mismo: `is` falla).
+  Ojo al medir: `Link.Shape` de un vínculo a otro archivo queda viejo hasta recalcular el
+  ensamblaje; medir con `LinkedObject.Shape` + `Link.Placement`.
+- Panel de relaciones (`mates_sw.py`, etapa 2): crea las uniones como el diálogo nativo
+  (`Joint` + `ViewProviderJoint` + `setJointConnectors`) con transacción propia por relación;
+  cambiar de tipo = `abortTransaction()` y crear de nuevo (las piezas vuelven a su lugar). En
+  edición, una sola transacción: la unión vieja se borra y se crea otra; Cancelar la recupera.
+  Selección como el diálogo nativo: `addObserver(obs, ResolveMode.NoResolve)` y estilo
+  `GreedySelection` (sin Ctrl), devuelto a Normal al cerrar. Doble clic: se envuelve
+  `JointObject.ViewProviderJoint.doubleClicked` (marca `_swui_mates`); lo que no es relación SW
+  (giro, lineal, engranajes...) sigue con el diálogo de FreeCAD. Bloquear = Fixed con `Offset2`
+  calculado para que no se mueva nada. El test lee como botón de la cinta toda tupla
+  ("Assembly_...", "texto", ...): armar las demás con `tuple([...])`.

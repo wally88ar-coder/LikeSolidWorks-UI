@@ -36,6 +36,34 @@ abajo).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
+- **Fase 5 — Ensamblaje: etapa 2 (relaciones de posición) con código completo (2026-10-27,
+  `swui/fork/mates_sw.py`); falta que la pruebe el usuario.** Probada en FreeCAD real con
+  capturas: concéntrica + coincidente encadenadas, tangente, cambiar a distancia 15, editar con
+  doble clic y cancelar (vuelve), panel contextual del original -> panel del fork, Fijar/Flotar y
+  Ver relaciones. Decidido sin consultar (revisar con el usuario): el árbol NO muestra las
+  relaciones debajo de cada componente (FreeCAD no deja agregar hijos a un vínculo); en su lugar,
+  clic derecho "Ver relaciones de posición" las selecciona en la carpeta. Los nombres SW
+  ("(f) Placa<1>", "Coincidente1", carpeta "Relaciones de posición") ya los ponía el original
+  (`naming.py`). Límites solo en la concéntrica (FreeCAD los tiene solo en uniones cilíndricas,
+  de giro y lineales). Pendiente aparte: la cinta no pasa sola a la pestaña Ensamblaje.
+  Etapa 1 (pruebas sin GUI) hecha el 2026-10-27.
+  Decisiones del usuario (2026-10-27): 1) el addon avisa a las copias de una matriz cuando el
+  motor mueve la semilla (observador, lógica propia aceptada); 2) la versión opuesta se
+  reconstruye sola al abrirla; 3) el taladro de ensamblaje sigue solo a la pieza al moverla, como
+  SW (observador que pone `binder.Placement = vinculo.Placement.inverse()`; probado a mano y con
+  el motor); 4) distancia a una cara = elegir la cara directo, sin plano apoyado.
+  Falta que decida: pieza repetida en el ensamblaje con taladro (el binder sigue a una sola copia).
+  Hallazgos técnicos en `docs/NOTAS_TECNICAS.md` > "Ensamblaje (fase 5)".
+  Plan y checklist compartido con
+  el usuario en el documento "Fase 5 — Ensamblaje estilo SW 2018: plan y checklist"
+  (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf); se tilda ahí, etapa por etapa. Alcance (lo
+  que usa de la pestaña Ensamblaje de SW): insertar, relaciones de posición (+ tangente, panel
+  encadenado), matriz de componentes lineal y circular, simetría de componentes, taladro y
+  extruir corte de ensamblaje (quedan dentro de cada pieza, como "Propagar a piezas"), geometría
+  de referencia. Etapas: 1 pruebas sin GUI, 2 relaciones, 3 matriz/simetría, 4 taladro/corte,
+  5 referencias. Verificado en 1.1.4: el ensamblaje toma cada copia de un vínculo con
+  `ElementCount` como componente (`UtilsAssembly.isLinkGroup`); las uniones aceptan
+  `App::LocalCoordinateSystem`; hay límites (`EnableLengthMin`...) y `Suppressed` en las uniones.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
