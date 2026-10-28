@@ -293,6 +293,12 @@ Neueste Version oben. / Newest version first.
   atraviesa; un clic suma o saca). El agujero queda dentro de cada pieza (sale en sus planos y en
   el DXF), sigue al croquis del ensamblaje y se realinea solo si la pieza se mueve. Se edita con
   clic derecho "Editar operación" (`swui/fork/assembly_features.py`).
+- Ensamblaje (fase 5, etapa 5): **Plano, Eje y Punto de referencia** en la pestaña Ensamblaje, con
+  los mismos paneles SW de la pieza. Lo que se toca pasa por el componente, así que el plano sigue
+  a la pieza. Un plano hecho solo sobre el origen del ensamblaje queda fijo y sirve para relaciones
+  de posición; uno apoyado en una pieza sirve para matrices y simetría (en relaciones el panel
+  avisa que conviene la cara con Distancia: FreeCAD no lo toma). Se editan con clic derecho
+  "Editar operación" (`swui/fork/asm_reference.py`).
 
 ## 0.10.0 — 2026-10-18
 

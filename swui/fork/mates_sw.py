@@ -55,7 +55,7 @@ ROUND = ("cylinder", "sphere", "cone")
 KIND_NAMES = {
     "plane": "Cara plana", "cylinder": "Cara cilíndrica", "cone": "Cara cónica",
     "sphere": "Cara esférica", "face": "Cara", "line": "Arista recta", "circle": "Arista circular",
-    "edge": "Arista", "point": "Vértice", "part": "Componente",
+    "edge": "Arista", "point": "Vértice", "part": "Componente", "attached": "Plano/eje apoyado en una pieza",
 }
 
 _panel = None
@@ -71,6 +71,8 @@ def applicable(kinds):
         return []
     pair = set(kinds)
     a, b = kinds
+    if "attached" in pair:
+        return []
     if "part" in pair:
         return ["lock"]
     out = []
@@ -193,8 +195,26 @@ def entities_from_selection(asm):
             except Exception:
                 pass
             kind = kind_of(shape) if leaf else "part"
+            if not leaf:
+                kind = _datum_kind(sel.Object, sub) or kind
             out.append((comp, rel, kind, shape))
     return out
+
+
+DATUM_KINDS = {"App::Plane": "plane", "Part::DatumPlane": "plane", "App::Line": "line",
+               "Part::DatumLine": "line", "App::Point": "point", "Part::DatumPoint": "point"}
+
+
+def _datum_kind(root, sub):
+    """Plano/eje/punto del ensamblaje o del origen; 'attached' si está apoyado en una pieza."""
+    try:
+        obj = root.getSubObject(sub, 1)
+    except Exception:
+        return None
+    kind = DATUM_KINDS.get(getattr(obj, "TypeId", ""))
+    if kind and obj.TypeId.startswith("Part::Datum") and getattr(obj, "MapMode", "Deactivated") != "Deactivated":
+        return "attached"  # el motor de FreeCAD no lo toma (probado en 1.1.4)
+    return kind
 
 
 def joints_of(asm):
@@ -522,6 +542,9 @@ class MatePanel:
             text = "Hay más de dos entidades elegidas: sacá las que sobran."
         elif self.entities[0][0] is self.entities[1][0]:
             text = "Las dos entidades son del mismo componente: elegí una de otro."
+        elif "attached" in kinds:
+            text = ("Ese plano/eje está apoyado en una pieza y FreeCAD no lo toma en relaciones: elegí la "
+                    "cara de la pieza y usá Distancia (o un plano hecho sobre el origen del ensamblaje).")
         elif self.joint is not None and not self.editing:
             text = "Revisá la vista y apretá Agregar (o elegí otra relación)."
         else:

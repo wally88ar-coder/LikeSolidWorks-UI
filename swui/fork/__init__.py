@@ -164,6 +164,15 @@ def install(workbench=None):
     except Exception:
         FreeCAD.Console.PrintError("[SWUI fork] Operaciones de ensamblaje:\n%s\n" % traceback.format_exc())
     try:
+        from swui.fork import asm_reference
+
+        asm_reference.install()
+        if workbench is not None:
+            workbench.appendMenu(MENU, [asm_reference.PLANE_CMD, asm_reference.AXIS_CMD, asm_reference.POINT_CMD])
+    except Exception:
+        FreeCAD.Console.PrintError("[SWUI fork] Geometría de referencia del ensamblaje:\n%s\n"
+                                   % traceback.format_exc())
+    try:
         from swui.fork import sheet_panels
 
         sheet_panels.install()

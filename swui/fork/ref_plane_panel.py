@@ -40,9 +40,9 @@ from swui.fork import dress_up_panel as dp
 
 PLANE = "PartDesign::Plane"
 SPEC_PROP = "SWUI_PlaneSpec"  # NO CAMBIAR: queda en los archivos
-PLANE_TYPES = ("App::Plane", "PartDesign::Plane")
-LINE_TYPES = ("App::Line", "PartDesign::Line")
-POINT_TYPES = ("App::Point", "PartDesign::Point")
+PLANE_TYPES = ("App::Plane", "PartDesign::Plane", "Part::DatumPlane")
+LINE_TYPES = ("App::Line", "PartDesign::Line", "Part::DatumLine")
+POINT_TYPES = ("App::Point", "PartDesign::Point", "Part::DatumPoint")
 
 # Relaciones de SW (clave interna -> texto del botón)
 COINCIDENT, PARALLEL, PERPENDICULAR, DISTANCE, ANGLE, MIDPLANE, TANGENT = (
@@ -132,6 +132,23 @@ def pick_mode(mode, allowed):
 # --- Geometría ----------------------------------------------------------
 
 
+def element(obj, sub):
+    """
+    Cara/arista/vértice tocado. En un ensamblaje el subnombre pasa por el componente
+    ('Body.Face7' de un vínculo): ahí se toma con getSubObject (coordenadas del ensamblaje).
+    """
+    if "." in sub:
+        try:
+            return obj.getSubObject(sub)
+        except Exception:
+            return None
+    return dp._element(obj.Shape, sub)
+
+
+def leaf(sub):
+    return sub.rsplit(".", 1)[-1]
+
+
 def kind_of(obj, sub):
     """Qué es lo tocado: 'plane', 'edge', 'vertex', 'cyl' o None."""
     if not sub:
@@ -142,12 +159,12 @@ def kind_of(obj, sub):
         if obj.TypeId in POINT_TYPES:
             return "vertex"
         return None
-    el = dp._element(obj.Shape, sub)
+    el = element(obj, sub)
     if el is None:
         return None
-    if sub.startswith("Vertex"):
+    if leaf(sub).startswith("Vertex"):
         return "vertex"
-    if sub.startswith("Edge"):
+    if leaf(sub).startswith("Edge"):
         return "edge"
     surf = type(getattr(el, "Surface", None)).__name__
     if surf == "Plane":
@@ -160,7 +177,7 @@ def kind_of(obj, sub):
 def _plane_geo(obj, sub):
     """(punto, normal) de un plano/cara, en coordenadas del cuerpo."""
     if sub:
-        face = obj.Shape.getElement(sub)
+        face = element(obj, sub)
         n = face.normalAt(*face.Surface.parameter(face.CenterOfMass))
         return face.CenterOfMass, n
     pl = obj.Placement
@@ -170,7 +187,7 @@ def _plane_geo(obj, sub):
 def _line_geo(obj, sub):
     """(punto, dirección) de una arista recta o eje."""
     if sub:
-        edge = obj.Shape.getElement(sub)
+        edge = element(obj, sub)
     elif hasattr(obj, "Shape") and not obj.Shape.isNull() and obj.Shape.Edges:
         edge = obj.Shape.Edges[0]
     else:
@@ -507,7 +524,7 @@ class PlanePanel(dp.SwPanel):
     def _pick(self, obj, sub):
         if obj == self.obj:
             return False
-        if sub and not sub.startswith(("Face", "Edge", "Vertex")):
+        if sub and not leaf(sub).startswith(("Face", "Edge", "Vertex")):
             return False
         kind = kind_of(obj, sub)
         if kind is None:

@@ -36,7 +36,17 @@ abajo).
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
-- **Fase 5 — Ensamblaje: etapa 4 (taladro y corte de ensamblaje) con código completo
+- **Fase 5 — Ensamblaje: código completo (etapas 1 a 5, 2026-10-27); falta que el usuario la
+  pruebe con conjuntos suyos y que responda las casillas "Vos" del documento compartido.**
+  Etapa 5 (geometría de referencia, `swui/fork/asm_reference.py`): probada en FreeCAD real
+  (plano a 30 del XY del origen queda fijo y una coincidente lleva el cubo ahí; plano apoyado en
+  la placa sigue a la pieza y en relaciones da el aviso; eje desde un agujero usado en una matriz
+  circular; editar desde el clic derecho con lo guardado). Hallazgo: el motor ignora un plano
+  apoyado (la unión queda, pero no mueve nada). Decidido sin consultar: si todas las referencias
+  son del origen o de planos fijos, al aceptar el plano queda fijo (sin apoyo) para que sirva en
+  relaciones; un eje/punto fijo pierde sus selecciones al editarlo (el plano no: SWUI_PlaneSpec).
+  Doble clic sobre un plano de Part no entra en edición en 1.1.4: se edita con clic derecho.
+- **Etapa 4 (taladro y corte de ensamblaje) con código completo
   (2026-10-27, `swui/fork/assembly_features.py`); el usuario prueba las etapas 2, 3 y 4 juntas.**
   Probada en FreeCAD real: taladro M6 desde la cara de arriba de dos placas apiladas (una
   girada), la pieza lejana no se toca, mover la placa realinea los agujeros, corte rectangular

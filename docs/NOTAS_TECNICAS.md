@@ -367,3 +367,9 @@
   Al salir del croquis hay que limpiar la selección o el panel de relaciones del original
   (`assembly_mates`) toma el croquis. El nombre SW que pone `naming.py` se aplica con QTimer 0:
   para que quede el nuestro, ponerlo con otro QTimer 0 encolado después.
+- Geometría de referencia en el ensamblaje (`asm_reference.py`, etapa 5): Part::DatumPlane/Line/
+  Point en la raíz del ensamblaje con los paneles de la pieza (subclases que toman la selección
+  por el componente; `ref_plane_panel.element()` entiende subnombres con punto). El motor del
+  ensamblaje IGNORA una unión contra un plano apoyado (la unión existe, no mueve nada; probado):
+  sin apoyo sí lo toma. `Gui.Document.setEdit` sobre un Part::DatumPlane devuelve False en 1.1.4
+  (ni saliendo del ensamblaje): editar desde el clic derecho (`dp.OPENERS`).

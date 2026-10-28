@@ -62,7 +62,8 @@ un croquis abierto (`swui/from_sketch.py`); términos SW en diálogos de extruir
 - (Hecho en la fase 2, en `swui/fork/`: paneles SW de redondeo, chaflán, simetría, matriz lineal y
   circular, ángulo de salida, plano/eje/punto de referencia; asistente para taladro con flujo SW;
   términos SW en barrido y hélice. Son propios del fork, no candidatos a PR tal cual.)
-- Relaciones de posición: agregar tangente y que el panel quede abierto para encadenar relaciones.
+- (Hecho en la fase 5, `swui/fork/mates_sw.py`: tangente y panel que queda abierto para encadenar
+  relaciones; propio del fork, no candidato a PR tal cual.)
 - (Hecho en el fork: panel de tareas a la izquierda, sin opción a la derecha, por decisión del
   usuario.)
 
@@ -106,7 +107,9 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 2. Flujos de pieza: diálogos restantes adaptados y asistente para taladro.
 3. Evaluar: propiedades físicas, material, ecuaciones.
 4. Mover/rotar cara (hecha 2026-10-27).
-5. Ensamblaje: tangente, panel encadenado, mediciones.
+5. Ensamblaje (código completo 2026-10-27, falta que la pruebe el usuario): relaciones SW, matriz y
+   simetría de componentes, taladro/corte de ensamblaje, geometría de referencia. Plan y checklist
+   en el documento compartido (enlace en `docs/ESTADO.md`).
 
 ## Forma de trabajo
 - Antes de tocar algo grande, explicar el plan al usuario en lenguaje simple (no es programador).

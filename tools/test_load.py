@@ -104,7 +104,8 @@ def _fork_layout_commands():
             + _all_layout_commands(os.path.join("fork", "sheet_tab.py"))
             + _all_layout_commands(os.path.join("fork", "mates_sw.py"))
             + _all_layout_commands(os.path.join("fork", "component_patterns.py"))
-            + _all_layout_commands(os.path.join("fork", "assembly_features.py")))
+            + _all_layout_commands(os.path.join("fork", "assembly_features.py"))
+            + _all_layout_commands(os.path.join("fork", "asm_reference.py")))
 
 
 FORK_TABS = ("Chapa",)  # fork: pestañas propias (título en castellano, sin tr())
@@ -1033,6 +1034,17 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or uniq_ != ([_l1, _l3], [_l2]) or afe.next_title({"TaladroEnsamblaje1"}, "hole") != "TaladroEnsamblaje2"
             or not any(isinstance(e, dict) and e.get("flyout") == afe.FLYOUT for g in lay_.BAUGRUPPE[1] for e in g)):
         print("  FEHLER: fork: taladro y corte de ensamblaje (datos, piezas repetidas, cinta)", uniq_)
+        return False
+    # Geometría de referencia en el ensamblaje (asm_reference): fijo si va al origen, cinta, relaciones
+    arf = importlib.import_module("swui.fork.asm_reference")
+    _org = types.SimpleNamespace(TypeId="App::Plane")
+    _fixed = types.SimpleNamespace(TypeId="Part::DatumPlane", MapMode="Deactivated")
+    _comp = types.SimpleNamespace(TypeId="App::Link")
+    if (not arf.fixed_only([(_org, ("",)), (_fixed, ("",))]) or arf.fixed_only([(_org, ("",)), (_comp, ("Body.Face1",))])
+            or arf.fixed_only([])
+            or not any(isinstance(e, dict) and e.get("flyout") == arf.FLYOUT for g in lay_.BAUGRUPPE[1] for e in g)
+            or msw.applicable(["attached", "plane"]) != []):
+        print("  FEHLER: fork: geometría de referencia en el ensamblaje (fijo, cinta, relaciones)")
         return False
     # Chapa (sheet_metal / sheet_panels / sheet_tab): nombres, DXF, pestaña y enganches
     smt = importlib.import_module("swui.fork.sheet_metal")

@@ -105,7 +105,7 @@ def kind_of(obj, sub):
     """Como en el plano, más 'arc' para una arista circular."""
     kind = rp.kind_of(obj, sub)
     if kind == "edge" and sub:
-        el = dp._element(obj.Shape, sub)
+        el = rp.element(obj, sub)
         if type(getattr(el, "Curve", None)).__name__ in ("Circle", "ArcOfCircle"):
             return ARC_EDGE
     return kind
@@ -187,7 +187,7 @@ class _RefTypePanel(dp.SwPanel):
         return self.chosen or self._guess(self._kinds())
 
     def _pick(self, obj, sub):
-        if obj == self.obj or (sub and not sub.startswith(("Face", "Edge", "Vertex"))):
+        if obj == self.obj or (sub and not rp.leaf(sub).startswith(("Face", "Edge", "Vertex"))):
             return False
         kind = kind_of(obj, sub)
         if kind is None:
@@ -280,6 +280,11 @@ class AxisPanel(_RefTypePanel):
         if mode != "AxisOfInertia1":
             return mode, support
         obj, sub = support[0]
+        if "." in sub:  # en un ensamblaje: cara de un componente
+            from swui.fork import component_patterns
+
+            edge = component_patterns._circle_edge_of(obj, sub)
+            return ("AxisOfCurvature", [(obj, edge)]) if edge else (mode, support)
         face = dp._element(obj.Shape, sub)
         for edge in getattr(face, "Edges", []):
             if type(getattr(edge, "Curve", None)).__name__ == "Circle":
