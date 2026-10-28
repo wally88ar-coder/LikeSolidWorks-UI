@@ -264,11 +264,24 @@ class TransformedPanel(dp.SwPanel):
     def _unused_refs(self):
         return ()
 
-    def _ready(self):
+    REQUIRED_REF = None  # referencia sin la que no hay vista previa (como SW): "Direction", "Axis"...
+    REQUIRED_MSG = ""
+
+    def _has_items(self):
         return self.whole.isChecked() or bool(self.originals)
 
+    def _ready(self):
+        return self._has_items() and (not self.REQUIRED_REF or bool(self.refs.get(self.REQUIRED_REF)))
+
     def _nothing(self):
-        return not self._ready()
+        return not self._has_items()
+
+    def accept(self):
+        if self.REQUIRED_REF and not self.refs.get(self.REQUIRED_REF) and self._has_items():
+            self.message.setText(self.REQUIRED_MSG)
+            self.message.show()
+            return False
+        return super().accept()
 
     def _new_faces(self):
         from swui.fork import feature_tree as ft
@@ -318,6 +331,8 @@ class LinearPanel(TransformedPanel):
     """
 
     TRANSACTION = "Editar matriz lineal"
+    REQUIRED_REF = "Direction"
+    REQUIRED_MSG = "Elegí la dirección 1 (una arista, eje o cara plana)."
 
     def _build(self):
         obj = self.obj
@@ -387,8 +402,6 @@ class LinearPanel(TransformedPanel):
     def _unused_refs(self):
         return () if self.use2.isChecked() else ("Direction2",)  # apagada: no se toca
 
-    def _ready(self):
-        return super()._ready() and bool(self.refs.get("Direction"))  # SW: sin dirección no hay vista previa
 
     def _apply(self):
         problem = super()._apply()
@@ -418,6 +431,8 @@ class LinearPanel(TransformedPanel):
 
 class PolarPanel(TransformedPanel):
     TRANSACTION = "Editar matriz circular"
+    REQUIRED_REF = "Axis"
+    REQUIRED_MSG = "Elegí el eje (un eje, una arista o la cara de un agujero)."
     # Como SW 2018 (comparado a mano, 2026-10-28): nueva con el eje vacío, "Operaciones y caras"
     # esperando y 4 instancias (después, las últimas escritas).
 
@@ -445,8 +460,6 @@ class PolarPanel(TransformedPanel):
             self._activate(self.ref_boxes["Axis"])  # operación elegida: lo que falta es el eje
         return changed
 
-    def _ready(self):
-        return super()._ready() and bool(self.refs.get("Axis"))  # SW: sin eje no hay vista previa
 
     def _build(self):
         obj = self.obj
@@ -512,6 +525,8 @@ class PolarPanel(TransformedPanel):
 class MirrorPanel(TransformedPanel):
     TRANSACTION = "Editar simetría"
     FAIL = "FreeCAD no puede hacer la simetría así: revisá el plano."
+    REQUIRED_REF = "MirrorPlane"
+    REQUIRED_MSG = "Elegí la cara o el plano de simetría."
     ONLY_OWN = ("Con «Fusionar sólidos» va solo el sólido de esta operación: para espejar otros "
                 "sólidos, destildalo (quedan como sólidos aparte).")
 
@@ -544,6 +559,8 @@ class MirrorPanel(TransformedPanel):
         self.merge.toggled.connect(self._changed)
         lay.addWidget(self.merge)
         self.form = [box, features, solids]
+        if self.is_new and not self.obj.Originals and not self.mirror_bodies:
+            self.refs["MirrorPlane"] = None  # como SW: vacío hasta que se elija (FreeCAD pone Planta)
         self._start()
 
     # --- sólidos
@@ -606,7 +623,7 @@ class MirrorPanel(TransformedPanel):
         self.whole.blockSignals(False)
         return super()._apply()
 
-    def _ready(self):
+    def _has_items(self):
         return bool(self.mirror_bodies) or bool(self.originals)
 
     def preview(self):
