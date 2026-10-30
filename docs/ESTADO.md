@@ -276,6 +276,22 @@ Commits sin subir a GitHub (pedido del usuario): e70f8a4, 22ce54b, 4d8dc11 y el 
   que se eligió (centro, eje, normal) y, cuando una pieza cambia, vuelva a buscar la arista/cara
   equivalente y corrija la referencia ("Reparar referencias" de ensamblaje), avisando si no la
   encuentra. Hasta entonces: después de cambiar una pieza, revisar las relaciones.
+  ARREGLADO (2026-10-30, a pedido del usuario: "Sí, arreglalo"): `swui/fork/mate_refs.py`. Causa
+  exacta: UtilsAssembly.getObject se queda con el Cuerpo y busca "Edge15" en la forma final (Tip),
+  no en "Pad". Cada unión guarda `SWUI_MateGeom` (firma: tipo, centro/eje/radio/normal, en
+  coordenadas de la pieza); al recalcular una pieza, al recalcular el ensamblaje y al abrirlo, si
+  el número ya no es esa geometría busca la más parecida y corrige la referencia (también las que
+  FreeCAD marca con "?"), y vuelve a resolver. Los cambios de nombre que hace FreeCAD solo ocurren
+  con la pieza recalculándose y no se toman como buenos. Probado: sin interfaz (agujero nuevo,
+  agujero movido, guardar y reabrir, otro corte, unión vieja sin firma, pieza cambiada con el
+  ensamblaje cerrado) y en FreeCAD con interfaz (sin el arreglo el ensamblaje deja de resolver y
+  los marcadores van a otra arista; con el arreglo quedan en su lugar). Falta: que lo pruebe el
+  usuario con el taladro de ensamblaje del mouse. Límite: si se borra la entidad elegida, toma la
+  más parecida y avisa "Revisala" (SW marca la relación con error). Queda en FreeCAD un aviso rojo
+  "Broken link" pasajero cuando FreeCAD marca la referencia con "?" antes de que se corrija.
+- De paso (2026-10-30): FreeCAD 1.1.4 no llama `slotFinishRestoreDocument` en los observadores de
+  Python (ni con interfaz): el aviso de material faltante al abrir nunca salía. Ahora usa
+  `slotCreatedDocument` + demora (probado: lo detecta al abrir).
 - Otras diferencias vistas en fase 5: textos en inglés "1 inserted" (Insertar), "Preselected:" en
   la barra de estado dentro del ensamblaje, "Sketch Edit"/"Close" en el croquis del taladro; los
   ejes de las relaciones (flechas de colores) quedan a la vista después de cerrar el panel; la
@@ -1089,6 +1105,8 @@ Etapas:
   conflictos al traer novedades de upstream.
 - Lo que sirve a todos va en ramas limpias para PR; antes de abrir PR/issue, consultar al usuario.
 - `SWUI_PlaneSpec` (texto JSON en los planos hechos con el panel SW): nombre estable (2026-10-27).
+- `SWUI_MateGeom` (texto JSON oculto en cada unión del ensamblaje: geometría elegida en cada
+  referencia, para volver a encontrarla si la pieza renumera): nombre estable (2026-10-30).
 - **Nombres internos estables (2026-10-25):** el nombre de clase/módulo con que se guarda en el
   archivo cada objeto propio del fork (p. ej. mover/rotar cara, FeaturePython) no cambia nunca. Si
   algún día hay que cambiarlo, dejar un alias y convertir los objetos viejos al abrir el archivo.

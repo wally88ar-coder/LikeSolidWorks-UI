@@ -338,6 +338,14 @@ Neueste Version oben. / Newest version first.
   vaciado" (en SW Vaciado es otra operación): ahora "Parámetros de corte".
 - Combinar abre con la lista vacía, como SW (antes traía ya el sólido activo y al hacer clic en los
   dos se sacaba); en Eliminar el "Sólido principal" arranca vacío y esperando el clic.
+- Ensamblaje: las **relaciones de posición ya no saltan cuando cambia una pieza**. FreeCAD guarda
+  la arista o cara de cada relación por su número, y al agregar una operación (un taladro de
+  ensamblaje, por ejemplo) los números cambian: los pernos saltaban a otro agujero. Ahora cada
+  relación guarda también cómo era lo elegido (centro, eje, radio, normal) y, cuando la pieza se
+  recalcula o se abre el ensamblaje, vuelve a encontrarlo y corrige la referencia. Si lo elegido
+  cambió de verdad, toma lo más parecido y avisa en la vista de informe (`swui/fork/mate_refs.py`).
+- Material: el aviso de "material faltante" al abrir una pieza no salía nunca (FreeCAD 1.1.4 no
+  avisa el fin de la carga); ahora sale.
 
 ## 0.10.0 — 2026-10-18
 

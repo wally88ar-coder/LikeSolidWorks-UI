@@ -1039,6 +1039,26 @@ def _check_feature_tree(commands, mw, layout, hooked):
                 for e in mate_group_)):
         print("  FEHLER: fork: relaciones de posición (posibles, nombres, cinta)", mate_group_)
         return False
+    # Relaciones que no saltan (mate_refs): volver a encontrar la arista del agujero por su geometría
+    mrf = importlib.import_module("swui.fork.mate_refs")
+    hole_ = {"t": "Edge", "g": "circle", "c": [20, 30, 10], "d": [0, 0, 1], "r": 3.25, "p": [23.25, 30, 10]}
+    cands_ = [("Edge15", {"t": "Edge", "g": "line", "c": [50, 60, 10], "d": [1, 0, 0], "s": 100}),
+              ("Edge16", dict(hole_, c=[20, 30, 0], p=[23.25, 30, 0])),
+              ("Edge17", hole_),
+              ("Edge18", dict(hole_, c=[80, 30, 10], p=[83.25, 30, 10])),
+              ("Edge19", dict(hole_, r=4.0, c=[50, 15, 10], p=[54, 15, 10]))]
+    top_ = {"t": "Face", "g": "plane", "n": [0, 0, 1], "p": [50, 30, 10], "s": 5966.8}
+    faces_ = [("Face5", dict(top_, p=[50, 30.13, 10], s=5884.3)), ("Face6", dict(top_, n=[0, 0, -1], p=[50, 30, 0])),
+              ("Face7", {"t": "Face", "g": "cylinder", "c": [50, 15, 0], "d": [0, 0, 1], "r": 4.0, "p": [50, 15, 5]})]
+    if (mrf.best_match(hole_, cands_)[0] != "Edge17" or mrf.best_match(top_, faces_)[0] != "Face5"
+            or mrf.best_match(dict(hole_, c=[25, 30, 10]), cands_)[0] != "Edge17"
+            or mrf.best_match({"t": "Vertex", "g": "point", "p": [0, 0, 0]}, cands_) != (None, None)
+            or mrf.cost(hole_, top_) is not None or mrf.cost(hole_, hole_) != 0
+            or mrf.split_sub("Pad.Edge15") != ("Pad.", "Edge15") or mrf.split_sub("Pad.?Face5") != ("Pad.", "Face5")
+            or mrf.split_sub("Edge3") != ("", "Edge3") or not mrf.is_broken("Pad.?Face5")
+            or mrf.element_type("Face12") != "Face" or mrf.element_type("Plane") is not None):
+        print("  FEHLER: fork: relaciones que no saltan (volver a encontrar la entidad)")
+        return False
     # Matriz y simetría de componentes (component_patterns): cuentas, expresiones, cinta
     cpt = importlib.import_module("swui.fork.component_patterns")
     lin_ = cpt.linear_expression("Tornillo", "VarSet", "Dir", 2, -1, "Dir2", 1, 1)

@@ -28,6 +28,9 @@
 - La página de Inicio ("Cuerpo paramétrico", "Ensamblaje") cambia de banco desde C++ sin pasar por
   Python: solo se puede reaccionar después con la señal `MainWindow.workbenchActivated(nombre)`.
 - `ParamGet(...).GetBools()` devuelve solo los NOMBRES (no pares nombre-valor).
+- Observadores de documento en Python: `slotFinishRestoreDocument` y `slotBeforeRecomputeDocument`
+  NO llegan (ni con interfaz, probado 2026-10-30). Para "al abrir": `slotCreatedDocument` + QTimer
+  (el documento ya está cargado cuando corre). `doc.Recomputing` sí existe.
 - Barra de menú: FreeCAD 1.1 trae `MenuBarLeftArea` / `MenuBarRightArea` como cornerWidgets.
 - Al tabificar paneles, Qt deja barras de pestañas vacías encima de la buena: ocultarlas.
   FreeCAD repone la barra de título del panel Tareas al abrir operaciones: volver a quitarla.
@@ -382,3 +385,11 @@
   ensamblaje IGNORA una unión contra un plano apoyado (la unión existe, no mueve nada; probado):
   sin apoyo sí lo toma. `Gui.Document.setEdit` sobre un Part::DatumPlane devuelve False en 1.1.4
   (ni saliendo del ensamblaje): editar desde el clic derecho (`dp.OPENERS`).
+- Uniones y renumeración (2026-10-30): `UtilsAssembly.getObject` devuelve el Cuerpo (o el vínculo)
+  aunque la referencia diga "Pad.Edge15": el elemento se busca en la forma FINAL del Cuerpo, que
+  renumera con cada operación nueva. FreeCAD además actualiza solo los nombres (contra "Pad", no
+  contra la forma final) mientras recalcula la pieza, o los marca "Pad.?Face5" (error "Broken
+  link"). La forma del vínculo del ensamblaje queda vieja hasta recalcular el ensamblaje: leer la
+  del objeto enlazado y recalcular el vínculo antes de cambiar una referencia ("Shape index out of
+  bound"). Arreglo en `mate_refs.py`. Sin interfaz, el motor mueve la pieza fija (la unión de
+  fijar no cuenta): medir posiciones relativas.
