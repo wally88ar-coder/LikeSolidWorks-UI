@@ -1,7 +1,7 @@
 # Estado del fork
 
-Última actualización: 2026-10-29 (fases 2 y 1 comparadas con SW 2018 usando el mouse; la fase 1
-quedó ahí por decisión del usuario).
+Última actualización: 2026-10-30 (pruebas de todos los checklists terminadas por Claude;
+relaciones de posición que ya no saltan; checklists unidos en un solo documento).
 
 **Checklists compartidos con el usuario** (se tildan ahí; al cerrar algo, tildarlo también):
 - Todas las fases, incluida la fase 5 en detalle: "Checklists del fork: qué falta en cada fase"
@@ -16,8 +16,15 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
 - **Noche 29-30/10: Claude terminó las pruebas de los checklists (fases 1 a 5 y trabajos extra)
   a las 00:37 del 2026-10-30**, con el mouse en FreeCAD de prueba. Resultados, arreglos y un
   hallazgo grave del ensamblaje (relaciones que saltan al cambiar una pieza) en "Pruebas
-  comparadas con SW". Commits sin subir. Plan de Planos: documento compartido "Planos estilo SW
+  comparadas con SW". Plan de Planos: documento compartido "Planos estilo SW
   2018: análisis y plan" (enlace arriba, en Checklists).
+- **30/10 (día): arreglado el hallazgo grave** (relaciones que saltaban: `swui/fork/mate_refs.py`)
+  **y probado lo que había quedado sin probar** ("Sobre entidad", aviso ⚠ de Sólidos, Mover/Copiar
+  girar y de un vértice a otro, simetría, matriz circular, corte de ensamblaje y planos de
+  referencia): todo anda; "de un vértice a otro" no seguía a la pieza y quedó arreglado. Todo
+  subido a GitHub (a pedido del usuario). Ya no queda nada sin probar por Claude en los checklists,
+  salvo lo que depende de mover el mouse (resaltado naranja de aristas del modelo): lo prueba el
+  usuario.
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
 - **Árbol de operaciones estilo SW (trabajo extra, no estaba en las fases): terminado**
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
@@ -32,23 +39,24 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
   Convertir en chapa con un STEP suyo y DXF por lotes. Detalle en "Pruebas comparadas con SW".
 - **Fase 2 — Flujos de pieza: código completo (2026-10-27); comparada con SW por Claude con el
   mouse (2026-10-28), mismo resultado que SW en todo; falta que la pruebe el usuario** (el
-  redondeo ya lo probó: "anda OK"). Sin comparar: términos SW en barrido y hélice. Detalle en
+  redondeo ya lo probó: "anda OK"). Términos SW en barrido y hélice: probados por Claude el 30/10. Detalle en
   "Pruebas comparadas con SW" y "Plan: fase 2" > Avance.
 - **Fase 4 — Mover cara: terminada (2026-10-27)**, con operaciones nativas (Pad / Pocket /
   Draft), sin FeaturePython (aprobado por el usuario). Probado por él: girar cara ("muy bueno");
   falta que pruebe equidistanciar y trasladar.
-- **Mover/Copiar sólido y Eliminar/Conservar sólidos: terminados (2026-10-27); falta que los
-  pruebe el usuario.** Incluye "de un vértice a otro" y Supr que devuelve los sólidos.
+- **Mover/Copiar sólido y Eliminar/Conservar sólidos: terminados (2026-10-27); probados por
+  Claude (29 y 30/10); falta que los pruebe el usuario.** Incluye "de un vértice a otro" y Supr que devuelve los sólidos.
   Restricciones: descartado por el usuario (ecuaciones a mano si hiciera falta).
   Con esto (y la chapa de la fase 1) está completo el "Alcance" del menú Insertar.
   Detalle de las tres en "Análisis: Mover/Copiar sólido..." > Hecho.
-- **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada). Las fases 1
-  y 2 ya pasaron por la comparación con SW de Claude; falta que el usuario pruebe con piezas y
+- **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada) y Claude ya
+  probó todo lo de los checklists (fases 1 y 2 comparadas con SW); falta que el usuario pruebe con piezas y
   conjuntos suyos: fase 1 (chapa, sobre todo Convertir en chapa con STEP y DXF por lotes), fase 2,
   fase 3 (y sus decisiones), fase 4 (equidistanciar / trasladar cara), Mover/Copiar y
   Eliminar/Conservar sólidos, y fase 5 (etapas 2 a 5, checklist en su sección del documento de checklists).
-  Candidatas para el mismo ciclo de comparación con SW: fases 3, 4 y 5. Después: planos
-  (TechDraw, ver "Falta") o lo que elija el usuario.
+  Después: planos (plan en el documento "Planos estilo SW 2018", ver Checklists), aplicar el
+  arreglo de mate_refs a matrices / simetrías / planos del ensamblaje (ver Falta) o lo que elija
+  el usuario.
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
@@ -1087,6 +1095,12 @@ Etapas:
   que NO siguen a la pieza): el addon las pone solo al crear/actualizar vistas, con el Ø nominal,
   y las rehace si cambia el modelo; además esos 4 botones en la pestaña Dibujo.
 - Color de las piezas (gris de SW): no se tocó; pedir captura si el usuario lo quiere.
+- Ensamblaje: matrices, simetrías de componentes y planos/ejes del ensamblaje se apoyan en caras y
+  aristas de la pieza por número (Part::DatumPlane/Line con "Pad.Face5"): si la pieza renumera
+  pueden saltar, como pasaba con las relaciones. Aplicarles el mismo arreglo (`mate_refs`:
+  firma de la geometría y volver a encontrarla). Encontrado el 2026-10-30.
+- Ensamblaje: en el árbol quedan "EjeMatriz" y "PlanoSimetria" (ocultos); SW no los muestra.
+- Croquis: la relación hecha desde el panel se llama "Constraint1" en la lista (SW: "Sobre entidad1"...).
 
 ## Problemas reportados por el usuario (todos resueltos)
 - 2026-10-26 (archivo "fallo multiples solidos.FCStd" en Documentos\FreeCAD pruebas, captura):
@@ -1138,7 +1152,7 @@ Etapas:
   tener); cada función cede a lo nativo si la versión de FreeCAD lo trae.
 
 ## Git
-- `origin` = fork del usuario (todo subido al 2026-10-27), `upstream` = Schlauminik/LikeSolidWorks-UI.
+- `origin` = fork del usuario (subido al 2026-10-30, salvo lo que diga "sin subir"), `upstream` = Schlauminik/LikeSolidWorks-UI.
 - `master` = versión que usa el usuario (ramas generales unidas + código del fork).
 
 ## PR al original

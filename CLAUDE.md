@@ -92,7 +92,8 @@ El usuario NO usa en planos: tablas/notas de plegado, listas de materiales con g
 tolerancias geométricas.
 
 ## Fases (orden propuesto; el usuario puede reordenar)
-Estado al 2026-10-27: fase 0 terminada; fases 1 a 5 con código completo, falta que las pruebe
+Estado al 2026-10-30: fase 0 terminada; fases 1 a 5 con código completo y probadas por Claude
+(todo lo de los checklists); falta que las pruebe
 el usuario (de la 2 solo probó el redondeo, de la 4 girar cara), que revise las decisiones de la
 fase 3 y que responda las casillas de la fase 5 (sección Fase 5 del documento de checklists, enlace en `docs/ESTADO.md`).
 Hecho además fuera de las fases: árbol de operaciones estilo SW (barra de retroceso, suprimir,
@@ -108,7 +109,8 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 2. Flujos de pieza: diálogos restantes adaptados y asistente para taladro.
 3. Evaluar: propiedades físicas, material, ecuaciones.
 4. Mover/rotar cara (hecha 2026-10-27).
-5. Ensamblaje (código completo 2026-10-27, falta que la pruebe el usuario): relaciones SW, matriz y
+5. Ensamblaje (código completo 2026-10-27, probada por Claude 2026-10-30, falta que la pruebe el
+   usuario; las relaciones ya no saltan al cambiar una pieza): relaciones SW, matriz y
    simetría de componentes, taladro/corte de ensamblaje, geometría de referencia. Plan y checklist
    en la sección Fase 5 del documento de checklists (enlace en `docs/ESTADO.md`).
 
