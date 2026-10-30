@@ -112,6 +112,31 @@ DIALOGS = {
 }
 
 
+# Encabezados de las cajas del panel de tareas que FreeCAD 1.1.4 deja en inglés (vistos con el
+# mouse en el barrido, 2026-10-30). Textos de SW 2018 donde los hay.
+HEADERS = {
+    "Pipe Parameters": "Perfil y trayecto",
+    "Pipe parameters": "Perfil y trayecto",
+    "Section Orientation": "Opciones",
+    "Section orientation": "Opciones",
+    "Section Transformation": "Transformación de la sección",
+    "Helix parameters": "Parámetros de hélice",
+    "Helix Parameters": "Parámetros de hélice",
+}
+
+
+def translate_headers(mw):
+    """
+    Encabezados del panel de tareas en castellano (solo los de la tabla). El encabezado de
+    cada caja es un botón (QSint::ActionLabel), no una etiqueta: se miran los dos.
+    """
+    for kind in (QtWidgets.QLabel, QtWidgets.QAbstractButton):
+        for widget in mw.findChildren(kind):
+            text = widget.text()
+            if text in HEADERS:
+                widget.setText(HEADERS[text])
+
+
 def root_names(name):
     """FreeCAD en Windows usa '__' en vez de '::' en los objectName."""
     return (name, name.replace("::", "__"))
@@ -146,7 +171,6 @@ def _path_active(root):
     """Barrido: si el perfil ya está y el trayecto no, dejar prendido "Elegir trayecto"."""
     if root.property("swui_path_armed"):
         return
-    root.setProperty("swui_path_armed", True)
     try:
         vp = FreeCADGui.ActiveDocument.getInEdit()
         obj = vp.Object if vp is not None else None
@@ -155,8 +179,11 @@ def _path_active(root):
     if obj is None or not hasattr(obj, "Spine") or obj.Spine or not obj.Profile:
         return
     for button in root.findChildren(QtWidgets.QAbstractButton, "buttonSpineBase"):
+        if not button.isEnabled() or not button.isVisible():
+            return  # todavía armándose: probar en el próximo tick (antes se daba por hecho)
         if button.isCheckable() and not button.isChecked():
             button.click()
+        root.setProperty("swui_path_armed", True)
 
 
 def tick():
@@ -167,6 +194,7 @@ def tick():
         return
     try:
         mw = FreeCADGui.getMainWindow()
+        translate_headers(mw)
         for name, spec in DIALOGS.items():
             for root_name in root_names(name):
                 for root in mw.findChildren(QtWidgets.QWidget, root_name):
@@ -181,8 +209,27 @@ def tick():
 _timer = None
 
 
+# Nombres en el árbol que la tabla del original no trae (quedaba "AdditiveHelix"). SW arma la
+# hélice como curva + barrido; acá es una operación sola, con el nombre del botón.
+# Clave alemana como las del original (i18n.tree busca "Baum|<clave>" en cada idioma).
+TREE_NAMES = {
+    "PartDesign::AdditiveHelix": ("Helix", {"en": "Helix", "es": "Hélice"}),
+    "PartDesign::SubtractiveHelix": ("Helix-Schnitt", {"en": "Cut-Helix", "es": "Cortar-Hélice"}),
+}
+
+
+def add_tree_names():
+    from swui import i18n, naming
+    langs = i18n.languages()
+    for type_id, (key, names) in TREE_NAMES.items():
+        naming.FEATURE_NAMES.setdefault(type_id, key)
+        for code, mod in langs.items():
+            mod.TEXTS.setdefault(i18n.TREE + key, names.get(code, names["en"]))
+
+
 def install():
     global _timer
+    add_tree_names()
     if _timer is None:
         _timer = QtCore.QTimer()
         _timer.setInterval(POLL_MS)

@@ -328,6 +328,10 @@ Neueste Version oben. / Newest version first.
   de posición; uno apoyado en una pieza sirve para matrices y simetría (en relaciones el panel
   avisa que conviene la cara con Distancia: FreeCAD no lo toma). Se editan con clic derecho
   "Editar operación" (`swui/fork/asm_reference.py`).
+- Barrido y hélice: encabezados del panel en castellano ("Perfil y trayecto", "Opciones",
+  antes "Pipe Parameters"/"Section Orientation"); con el perfil elegido, el botón del trayecto
+  queda prendido de verdad (antes a veces no) y un clic en el croquis del trayecto alcanza, como
+  en SW. La hélice se llama "Hélice1" en el árbol (antes "AdditiveHelix") (`swui/fork/native_terms.py`).
 
 ## 0.10.0 — 2026-10-18
 
