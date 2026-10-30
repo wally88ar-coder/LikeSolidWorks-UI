@@ -11,6 +11,11 @@ quedó ahí por decisión del usuario).
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
 
 ## Fase actual
+- **Noche 29-30/10: Claude terminó las pruebas de los checklists (fases 1 a 5 y trabajos extra)
+  a las 00:37 del 2026-10-30**, con el mouse en FreeCAD de prueba. Resultados, arreglos y un
+  hallazgo grave del ensamblaje (relaciones que saltan al cambiar una pieza) en "Pruebas
+  comparadas con SW". Commits sin subir. Plan de Planos: documento compartido "Planos estilo SW
+  2018: análisis y plan" (enlace arriba, en Checklists).
 - **Fase 0 — Puesta en marcha: terminada y probada por el usuario.**
 - **Árbol de operaciones estilo SW (trabajo extra, no estaba en las fases): terminado**
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
@@ -221,6 +226,60 @@ Fase 3 (Evaluar) contra SW, 2026-10-29:
   Corregido: la ventana Medir caía encima de la pieza; ahora va arriba a la izquierda, sobre el
   árbol, como la de SW. Diferencias que quedan: SW muestra a la vez "Distancia entre centros" y la
   del modo elegido y, para cada círculo, su Ø y centro en la vista; el fork muestra la del modo.
+- (2026-10-30, sin interfaz) Material propio nuevo: se guarda como .FCMat, se asigna, densidad
+  bien. Borrando el .FCMat y abriendo la pieza en otro FreeCAD: detecta el faltante, la masa usa
+  la copia guardada (misma densidad) y "recrear" lo vuelve a poner. La ventana del aviso no se vio
+  (prueba sin interfaz). Biblioteca de materiales del usuario limpiada después.
+- (2026-10-30, sin interfaz) Ecuaciones con una variable y dos cotas: D1 = "Largo", D2 = "Largo"/2;
+  Largo 80 -> 32 000 mm³, Largo 100 -> 50 000 mm³ (exacto).
+
+Noche del 2026-10-29 al 30 (Claude solo, el usuario durmiendo). PRUEBAS TERMINADAS: 00:37 del 30/10.
+Commits sin subir a GitHub (pedido del usuario): e70f8a4, 22ce54b, 4d8dc11 y el de este cierre.
+- Fase 2, barrido y hélice (con el mouse): encabezados en inglés ("Pipe Parameters", "Section
+  Orientation") -> "Perfil y trayecto" / "Opciones"; el botón del trayecto no quedaba prendido
+  -> ahora sí: perfil + botón + un clic en el trayecto = vista previa, como SW. Barrido de un
+  perfil Ø6 por una L con radio: anda ("Barrer1"). Hélice: términos SW bien; en el árbol decía
+  "AdditiveHelix" -> "Hélice1". Corregido y commiteado (22ce54b).
+- Multicuerpo (con el mouse, cuentas exactas): Combinar Agregar 168 000, Eliminar 104 000, Común
+  20x40x20 (bloques 100x60x20 y 40x40x40 cruzados). Corregido: la lista arrancaba con el sólido
+  activo (en SW vacía) y en Eliminar el principal venía puesto (en SW vacío y esperando).
+  Fusionar resultado apagado: el cilindro queda como sólido aparte (Sólidos(3)). Alcance con
+  "Sólidos seleccionados": el agujero Por todo corta solo el elegido (180 858,407 = exacto).
+  CORREGIDO, IMPORTANTE: con dos sólidos y ninguno "activo" (por ejemplo al abrir el archivo),
+  Extruir pedía en inglés "Cuerpo Activo Requerido", y un croquis de otro sólido daba error
+  "debe pertenecer al cuerpo activo". SW no tiene ese concepto: ahora al elegir algo su sólido pasa
+  a ser el activo (`swui/fork/auto_body.py`). Además el corte decía "Parámetros de vaciado" (en SW
+  Vaciado es otra operación) -> "Parámetros de corte". Commit 4d8dc11.
+- Mover/Copiar sólido: trasladar ΔZ 60 con Copiar y 2 copias -> Sólidos(4). Sin probar hoy: girar
+  y "de un vértice a otro". Eliminar/Conservar: eliminar el original deja las copias (Sólidos(3));
+  Supr sobre la operación lo devuelve (Sólidos(4)). Diferencia: cada sólido nuevo muestra su
+  propio origen en el árbol ("Planta003", "Eje X003"...); SW tiene un solo origen.
+- Chequear carpeta (sin interfaz): pieza buena = OK; pieza con el croquis apoyado en una cara que
+  ya no existe = "Croquis2: Perdió la cara donde estaba apoyado (Pad.Face66)".
+- Sin probar: "Sobre entidad" (punto del croquis + arista del modelo), cotas con doble clic sobre
+  una cara de la vista (ya anotado: no las muestra).
+- Fase 5 (con el mouse, conjunto de prueba: base 100x60x10 con agujero Ø6,5, tapa 100x60x5, perno
+  Ø6 x 30): insertar (la primera queda fija en el origen, nombres "(f) Base<1>", "Tapa<1>"); panel
+  de relaciones: cilindro + arista circular = Concéntrica sola; dos caras planas = Coincidente
+  sola; pasarla a Distancia 20; el panel queda abierto para encadenar, como SW. Matriz lineal de
+  componente: arista como dirección, 3 pernos cada 20 mm. Posiciones guardadas exactas (perno
+  centrado en (20;30), tope a 20 de la cara, copias en x = 40 y 60). Taladro de ensamblaje: cara,
+  croquis con punto, panel con "Piezas afectadas" (base y tapa), M6 Por todo: se crea.
+- HALLAZGO GRAVE (fase 5): después del taladro de ensamblaje, los pernos SALTARON al agujero nuevo
+  y quedaron abajo de la base. Las relaciones guardan la arista o cara por número ("Pad.Edge15",
+  "Pad.Face7", sin nombre persistente); al agregar el agujero la pieza renumera y la Concéntrica
+  pasa a tomar el agujero nuevo. Es el problema de nombres topológicos de FreeCAD en Assembly
+  (lo mismo pasaría al agregar una operación dentro de la pieza). En SW las relaciones no se
+  mueven. PROPUESTA (para decidir con el usuario): que el fork guarde en cada relación la geometría
+  que se eligió (centro, eje, normal) y, cuando una pieza cambia, vuelva a buscar la arista/cara
+  equivalente y corrija la referencia ("Reparar referencias" de ensamblaje), avisando si no la
+  encuentra. Hasta entonces: después de cambiar una pieza, revisar las relaciones.
+- Otras diferencias vistas en fase 5: textos en inglés "1 inserted" (Insertar), "Preselected:" en
+  la barra de estado dentro del ensamblaje, "Sketch Edit"/"Close" en el croquis del taladro; los
+  ejes de las relaciones (flechas de colores) quedan a la vista después de cerrar el panel; la
+  cinta no pasa sola a la pestaña Ensamblaje (ya anotado); la barra espaciadora abre Medir (en SW
+  abre el menú de orientación). En la lista de componentes de la matriz, Supr no saca el elegido
+  (sí un clic sobre él en el árbol).
 Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud
