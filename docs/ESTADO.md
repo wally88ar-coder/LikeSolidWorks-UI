@@ -143,6 +143,19 @@ Otros hallazgos de esa noche:
 - Memoria: con SW + FreeCAD de prueba + el FreeCAD del usuario abiertos, SW avisó "no tiene
   suficiente memoria" (quedaban ~970 MB de 7,4 GB). Cerrar piezas que no se usan.
 
+Fase 1 (chapa) contra SW: EMPEZADA el 2026-10-29, cortada por el aviso de límite de uso semanal.
+Referencia de SW lista (falta hacer lo mismo en el fork y comparar):
+- Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
+  un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud
+  medida por fuera (40 total), posición "Pliegue hacia fuera" (la brida queda por fuera de la
+  base: caja 100 x 40 x 64). Volumen 20 142,478 mm³ = desarrollo 100,71 mm en esa dirección.
+- Panel de SW (Brida de arista): Parámetros de brida (arista, radio predeterminado, separación
+  1 mm), Ángulo 90°, Longitud de brida (Hasta profundidad especificada + 3 formas de medir:
+  intersección virtual exterior / interior / tangente), Posición de brida (5 íconos), Recortar
+  pliegues de lados, Equidistanciar, Fibra neutra personalizada. La vista previa sigue al mouse.
+- Próximo: la misma pieza en el fork (pestaña Chapa) comparando caja, volumen y DXF; después
+  Aplanar/volver, espesor, perfil en L, dobladillo, extruir corte, desdoblar/doblar.
+
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías
 como SW: **hecho**; 2) matriz vieja en Longitud total -> Espaciado: OK; 3) ver el árbol con el panel
