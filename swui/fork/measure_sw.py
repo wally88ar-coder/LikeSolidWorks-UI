@@ -363,12 +363,16 @@ class _MeasureWindow(QtWidgets.QDialog):
         self._take_current()
 
     def _place(self, mw):
-        """Arriba a la izquierda de la vista 3D, como aparece la de SW."""
+        """
+        Arriba a la izquierda, sobre el árbol y apenas entrando en la vista, como la de SW: en
+        medio de la vista tapaba la pieza que se quiere medir (visto con el mouse, 2026-10-29).
+        """
         try:
             area = mw.findChild(QtWidgets.QMdiArea)
             if area is not None:
-                top_left = area.mapToGlobal(QtCore.QPoint(20, 20))
-                self.move(top_left)
+                corner = area.mapToGlobal(QtCore.QPoint(0, 20))
+                left = max(mw.mapToGlobal(QtCore.QPoint(0, 0)).x() + 4, corner.x() - self.width() + 40)
+                self.move(left, corner.y())
         except Exception:
             pass
 

@@ -201,7 +201,12 @@ Fase 3 (Evaluar) contra SW, 2026-10-29:
 - Ecuaciones: igual que el diálogo de SW (columnas, secciones, comillas). Variable global +
   ecuación sobre la cota de la extrusión: anda (= "Ancho" / 2 -> 17,5). Detalle: el doble clic en
   una cota inserta sólo si hay un renglón elegido; si se apretó Escape antes, no hace nada.
-- Medir: no comparado esta vez (usado en el piloto: dos vértices).
+- Medir (barra espaciadora), prueba completa: dos agujeros Ø8 centro a centro = 30,00 (SW: 30);
+  en un ensamblaje con la segunda pieza girada 90°: centro a centro 30 con dX 0 / dY 30 (posición
+  real del conjunto) y dos caras paralelas de piezas distintas = 130,00 (distancia y normal).
+  Corregido: la ventana Medir caía encima de la pieza; ahora va arriba a la izquierda, sobre el
+  árbol, como la de SW. Diferencias que quedan: SW muestra a la vez "Distancia entre centros" y la
+  del modo elegido y, para cada círculo, su Ø y centro en la vista; el fork muestra la del modo.
 Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud
