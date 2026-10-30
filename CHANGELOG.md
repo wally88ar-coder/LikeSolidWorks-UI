@@ -173,6 +173,10 @@ Neueste Version oben. / Newest version first.
   la vista; ahora la barra espaciadora la limpia y vuelve a mostrar la ventana.
 - **Clic derecho del árbol en castellano**: *Mostrar/Ocultar selección*, *Alternar
   transparencia*, *Colores de caras*, *Editar …* y otras que FreeCAD 1.1.4 deja en inglés.
+- **Chapa comparada con SW 2018**: brida base + bridas de arista dan el mismo volumen y el mismo
+  desarrollo (DXF) que SW. La brida de arista recuerda cómo se mide y la posición (como SW);
+  *Exportar DXF* con la pieza sin guardar propone la última carpeta o Documentos (antes, la del
+  addon).
 - **Fase 2 comparada a mano con SW 2018** (mismo volumen que SW en todo): el chaflán sigue el
   orden de SW (Tipo, Elementos, Parámetros) con Simétrico/Asimétrico y recuadro de medidas; las
   matrices y la simetría abren con la dirección, el eje o el plano vacíos esperando selección;

@@ -143,8 +143,21 @@ Otros hallazgos de esa noche:
 - Memoria: con SW + FreeCAD de prueba + el FreeCAD del usuario abiertos, SW avisó "no tiene
   suficiente memoria" (quedaban ~970 MB de 7,4 GB). Cerrar piezas que no se usan.
 
-Fase 1 (chapa) contra SW: EMPEZADA el 2026-10-29, cortada por el aviso de límite de uso semanal.
-Referencia de SW lista (falta hacer lo mismo en el fork y comparar):
+Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el usuario pidió seguir):
+- HECHO: brida base + brida de arista 40 mm "Pliegue exterior": volumen 20 142,478 y área
+  20 945,327 = SW exacto. DXF: contorno 100 x 100,712 (= desarrollo de SW), capas CONTORNO y
+  PLEGADO, pliegue a 38,356 (mitad del arco). U con dos bridas: DXF 100 x 141,425 = 60 + 2 x
+  40,712, pliegues simétricos. Nombre automático "chapa_2mm.dxf".
+- Corregido: la brida de arista recuerda cómo se mide y la posición (SW recuerda; el usuario usa
+  "Pliegue hacia fuera"); Exportar DXF con la pieza sin guardar proponía la carpeta del addon:
+  ahora la última carpeta de DXF o Documentos.
+- Visto, sin corregir: antes de elegir arista, "Radio de plegado" muestra 1,00 mm (después pasa
+  al de la chapa, 2,00); la primera Brida base de la sesión no pasó sola a la pestaña Tareas (la
+  segunda sí: parece la primera carga de SheetMetal); al exportar sale un aviso de SheetMetal en
+  inglés ("Link(s) ... go out of the allowed scope 'Unfold'"); "Sólidos(2)" cuenta el desarrollo.
+- Falta probar: aplanar y volver, cambiar espesor y reexportar, perfil en L abierto, dobladillo,
+  extruir corte, convertir STEP, DXF por lotes, desdoblar/doblar.
+Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud
   medida por fuera (40 total), posición "Pliegue hacia fuera" (la brida queda por fuera de la
@@ -153,8 +166,6 @@ Referencia de SW lista (falta hacer lo mismo en el fork y comparar):
   1 mm), Ángulo 90°, Longitud de brida (Hasta profundidad especificada + 3 formas de medir:
   intersección virtual exterior / interior / tangente), Posición de brida (5 íconos), Recortar
   pliegues de lados, Equidistanciar, Fibra neutra personalizada. La vista previa sigue al mouse.
-- Próximo: la misma pieza en el fork (pestaña Chapa) comparando caja, volumen y DXF; después
-  Aplanar/volver, espesor, perfil en L, dobladillo, extruir corte, desdoblar/doblar.
 
 ## Preguntas para el usuario
 Respuestas del usuario (2026-10-27) a las dudas de la fase 2: 1) matriz/simetría arrancan vacías

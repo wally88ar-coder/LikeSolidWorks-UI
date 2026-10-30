@@ -381,7 +381,26 @@ class EdgeFlangePanel(dp.SwPanel):
         ok = super().accept()
         if ok:
             sm.remember("FlangeLength", self.length.value())
+            _remember_text("FlangeSpec", self.spec_value)
+            _remember_text("FlangePosition", self.position)
         return ok
+
+
+def _last_text(name, default, choices):
+    """Una opción recordada (como SW, la de la última vez) si sigue siendo válida."""
+    try:
+        value = FreeCAD.ParamGet(sm.PREFS).GetString(name, default)
+    except Exception:
+        return default
+    return value if value in [v for _t, v in choices] else default
+
+
+def _remember_text(name, value):
+    try:
+        if value:
+            FreeCAD.ParamGet(sm.PREFS).SetString(name, str(value))
+    except Exception:
+        pass
 
 
 # --- Dobladillo ----------------------------------------------------------------
@@ -946,8 +965,9 @@ def _start_on_edges(kind):
                 obj.radius = sm.radius(body) or sm.thickness(body)  # pieza convertida: por valor
             obj.length = sm.last("FlangeLength", sm.DEFAULT_LENGTH)
             obj.angle = 90.0
-            obj.LengthSpec = "Outer Sharp"
-            obj.BendType = "Material Inside"
+            # como SW: cómo se mide y la posición, las de la última brida (la primera vez, las de SW)
+            obj.LengthSpec = _last_text("FlangeSpec", "Outer Sharp", LENGTH_SPECS)
+            obj.BendType = _last_text("FlangePosition", "Material Inside", POSITIONS)
             prefix, panel_cls = "Brida-Arista", EdgeFlangePanel
         else:
             obj.HemType = "Flat"
@@ -1147,9 +1167,17 @@ def export_dxf():
     if doc.FileName:
         path = os.path.join(os.path.dirname(doc.FileName), name)
     else:
-        path, _f = QtWidgets.QFileDialog.getSaveFileName(_mw(), "Exportar DXF", name, "DXF (*.dxf)")
+        # pieza sin guardar: la última carpeta de DXF o Documentos (sin carpeta, Qt abría en la del
+        # addon, el directorio de trabajo de FreeCAD; visto con el mouse, 2026-10-29)
+        params = FreeCAD.ParamGet(sm.PREFS)
+        folder = params.GetString("DxfFolder", "") or os.path.join(os.path.expanduser("~"), "Documents")
+        if not os.path.isdir(folder):
+            folder = os.path.expanduser("~")
+        path, _f = QtWidgets.QFileDialog.getSaveFileName(_mw(), "Exportar DXF", os.path.join(folder, name),
+                                                         "DXF (*.dxf)")
         if not path:
             return None
+        params.SetString("DxfFolder", os.path.dirname(path))
     try:
         flat = _flat(body, "Desarrollo")
         sm.write_dxf(body, path)
