@@ -617,7 +617,9 @@ def refresh_copies(doc):
 
 
 class _DocObserver:
-    def slotFinishRestoreDocument(self, doc):
+    # Al abrir. FreeCAD 1.1.4 no le avisa a Python el fin de la carga (slotFinishRestoreDocument no
+    # llega, probado 2026-10-30): se usa el aviso de documento creado y se mira cuando ya cargó.
+    def slotCreatedDocument(self, doc):
         name = doc.Name
 
         def later():
