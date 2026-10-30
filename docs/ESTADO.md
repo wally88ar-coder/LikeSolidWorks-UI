@@ -194,7 +194,8 @@ Fase 3 (Evaluar) contra SW, 2026-10-29:
   masa, volumen, área, CDG, ejes y momentos principales, Lxx..Lzz en el CDG y en el origen:
   IDÉNTICOS a SW, incluido el SIGNO de los productos (Lxy = -2000 g·mm², Ixy = +2550). La decisión
   "productos con el signo de SW" queda verificada. Diferencia: unidades. SW (plantilla MMGS del
-  usuario) informa gramos y g·mm²; el fork kg y kg·mm². PREGUNTA para el usuario.
+  usuario) informa gramos y g·mm²; el fork kg y kg·mm². DECIDIDO por el usuario (2026-10-29):
+  queda en kilogramos.
 - Material: asignar Steel-1C22 no cambia el color; la franja muestra el material; densidad y masa
   bien. Corregido: el buscador sólo miraba el nombre (en inglés): "acero" no encontraba nada.
   Ahora busca también en la categoría traducida (Metales / Acero).
