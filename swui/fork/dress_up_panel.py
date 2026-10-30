@@ -800,10 +800,27 @@ class SwPanel:
         self._close()
         self._restore_visibility()
         self.obj.Visibility = self._tip_or_self()
+        self._show_tip()
         self.doc.recompute()
         self.gdoc.resetEdit()
         self.doc.commitTransaction()
         return True
+
+    def _show_tip(self):
+        """
+        Al cerrar, la punta del cuerpo a la vista. Editando una operación que no es la
+        última, FreeCAD esconde la punta antes de que el panel anote qué se veía, y al
+        "devolver" lo visto quedaba todo oculto (Brida base con bridas después, 2026-10-29).
+        """
+        from swui.fork import feature_tree as ft
+
+        try:
+            body = ft.body_of(self.obj)
+            tip = body.Tip if body is not None else None
+            if tip is not None and tip != self.obj and not tip.Visibility:
+                tip.Visibility = True
+        except Exception:
+            pass
 
     def _tip_or_self(self):
         """La operación queda visible solo si es la punta del cuerpo."""
@@ -815,6 +832,7 @@ class SwPanel:
     def reject(self):
         self._close()
         self._restore_visibility()
+        self._show_tip()
         # Primero deshacer: resetEdit confirma la transacción abierta (probado en 1.1.4)
         self.doc.abortTransaction()
         if self.gdoc.getInEdit() is not None:

@@ -155,8 +155,15 @@ Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el us
   al de la chapa, 2,00); la primera Brida base de la sesión no pasó sola a la pestaña Tareas (la
   segunda sí: parece la primera carga de SheetMetal); al exportar sale un aviso de SheetMetal en
   inglés ("Link(s) ... go out of the allowed scope 'Unfold'"); "Sólidos(2)" cuenta el desarrollo.
-- Falta probar: aplanar y volver, cambiar espesor y reexportar, perfil en L abierto, dobladillo,
-  extruir corte, convertir STEP, DXF por lotes, desdoblar/doblar.
+- HECHO: Aplanar y volver (anda; con la chapa plana se vieron líneas rojas de trazos FUERA de la
+  pieza, revisar: ¿croquis de pliegues del "Desarrollo" de la exportación?). Espesor 2 -> 3 con
+  Editar operación: DXF "chapa_3mm" de 100 x 142,137 = lo que da SW con 3 mm (30 320,575 mm³).
+- Corregido: al aceptar la edición de la Brida base (con bridas después) la pieza quedaba toda
+  OCULTA (FreeCAD esconde la punta al editar una operación del medio y el panel la "devolvía"
+  oculta). Ahora al cerrar cualquier panel SW la punta del cuerpo queda visible. Falta verlo en
+  FreeCAD real (se cortó la sesión: SW quedó "No responde" con un menú abierto y la captura negra).
+- Falta probar: perfil en L abierto, dobladillo, extruir corte, convertir STEP, DXF por lotes,
+  desdoblar/doblar.
 Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud
