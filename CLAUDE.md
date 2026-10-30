@@ -94,7 +94,7 @@ tolerancias geométricas.
 ## Fases (orden propuesto; el usuario puede reordenar)
 Estado al 2026-10-27: fase 0 terminada; fases 1 a 5 con código completo, falta que las pruebe
 el usuario (de la 2 solo probó el redondeo, de la 4 girar cara), que revise las decisiones de la
-fase 3 y que responda las casillas de la fase 5 (documento compartido, enlace en `docs/ESTADO.md`).
+fase 3 y que responda las casillas de la fase 5 (sección Fase 5 del documento de checklists, enlace en `docs/ESTADO.md`).
 Hecho además fuera de las fases: árbol de operaciones estilo SW (barra de retroceso, suprimir,
 mover, cotas con doble clic, reparar referencias...), aristas del modelo dentro del croquis,
 multicuerpo (Fusionar resultado, Alcance, Combinar, simetría de sólidos) y Mover/Copiar /
@@ -110,7 +110,7 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
 4. Mover/rotar cara (hecha 2026-10-27).
 5. Ensamblaje (código completo 2026-10-27, falta que la pruebe el usuario): relaciones SW, matriz y
    simetría de componentes, taladro/corte de ensamblaje, geometría de referencia. Plan y checklist
-   en el documento compartido (enlace en `docs/ESTADO.md`).
+   en la sección Fase 5 del documento de checklists (enlace en `docs/ESTADO.md`).
 
 ## Forma de trabajo
 - Antes de tocar algo grande, explicar el plan al usuario en lenguaje simple (no es programador).
@@ -124,7 +124,7 @@ castellano, coma decimal; ver "Falta" en `docs/ESTADO.md`.
   de cada sesión, junto con `docs/NOTAS_TECNICAS.md` (cómo probar en FreeCAD real con
   `tools/fork/gui_probe.py`, hallazgos de FreeCAD 1.1.4 en Windows).
 - Checklists compartidos con el usuario (documentos de Claude, enlaces arriba en `docs/ESTADO.md`):
-  uno con lo que falta en cada fase y uno por fase grande (fase 5). Leerlos al inicio de cada
+  un solo documento con lo que falta en cada fase (la fase 5 en detalle, adentro). Leerlo al inicio de cada
   sesión (qué tildó o comentó el usuario) y tildar ahí lo que se cierra, además de ESTADO.md.
 - Antes de entregar cambios de interfaz, probarlos en FreeCAD real con la plantilla de prueba
   (copia de la configuración, nunca la del usuario) y mirar las capturas; después la valida él.

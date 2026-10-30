@@ -4,10 +4,10 @@
 quedó ahí por decisión del usuario).
 
 **Checklists compartidos con el usuario** (se tildan ahí; al cerrar algo, tildarlo también):
-- Todas las fases: "Checklists del fork: qué falta en cada fase"
-  (https://claude.ai/artifact/URHdbLtcw8n3aXAYoYt6U1).
-- Fase 5 en detalle: "Fase 5 — Ensamblaje estilo SW 2018: plan y checklist"
-  (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf).
+- Todas las fases, incluida la fase 5 en detalle: "Checklists del fork: qué falta en cada fase"
+  (https://claude.ai/artifact/URHdbLtcw8n3aXAYoYt6U1). Un solo documento desde el 2026-10-30 (a
+  pedido del usuario); el viejo de la fase 5 (YNSyZA5W3hnRB9McFjJGyf) quedó como archivo, con un
+  aviso arriba, y no se actualiza más.
 - Planos (análisis y plan por etapas, 2026-10-30): "Planos estilo SW 2018: análisis y plan"
   (https://claude.ai/artifact/VCs12zJs53dygn4xY7RtVD).
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
@@ -46,16 +46,15 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
   y 2 ya pasaron por la comparación con SW de Claude; falta que el usuario pruebe con piezas y
   conjuntos suyos: fase 1 (chapa, sobre todo Convertir en chapa con STEP y DXF por lotes), fase 2,
   fase 3 (y sus decisiones), fase 4 (equidistanciar / trasladar cara), Mover/Copiar y
-  Eliminar/Conservar sólidos, y fase 5 (etapas 2 a 5, checklist en el documento compartido).
+  Eliminar/Conservar sólidos, y fase 5 (etapas 2 a 5, checklist en su sección del documento de checklists).
   Candidatas para el mismo ciclo de comparación con SW: fases 3, 4 y 5. Después: planos
   (TechDraw, ver "Falta") o lo que elija el usuario.
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de
   "Plan: fase 3" > Decisiones para revisar. Probada por Claude sin GUI y en FreeCAD real.
 - **Fase 5 — Ensamblaje: código completo (etapas 1 a 5, 2026-10-27); falta que el usuario la
-  pruebe con conjuntos suyos y que responda las casillas "Vos" del documento compartido** "Fase 5
-  — Ensamblaje estilo SW 2018: plan y checklist" (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf),
-  donde se tilda etapa por etapa. Alcance (lo que el usuario usa de la pestaña Ensamblaje de SW):
+  pruebe con conjuntos suyos y que responda las casillas "Vos" de la sección Fase 5 del
+  documento de checklists** (enlace arriba), donde se tilda etapa por etapa. Alcance (lo que el usuario usa de la pestaña Ensamblaje de SW):
   insertar, relaciones de posición, matriz de componentes lineal y circular, simetría de
   componentes, taladro y extruir corte de ensamblaje, geometría de referencia. Commits 3d61268,
   bc35bf6, 258df65, c6b3deb. Hallazgos técnicos en `docs/NOTAS_TECNICAS.md` > "Ensamblaje (fase 5)".
