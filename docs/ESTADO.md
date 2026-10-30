@@ -160,10 +160,21 @@ Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el us
   Editar operación: DXF "chapa_3mm" de 100 x 142,137 = lo que da SW con 3 mm (30 320,575 mm³).
 - Corregido: al aceptar la edición de la Brida base (con bridas después) la pieza quedaba toda
   OCULTA (FreeCAD esconde la punta al editar una operación del medio y el panel la "devolvía"
-  oculta). Ahora al cerrar cualquier panel SW la punta del cuerpo queda visible. Falta verlo en
-  FreeCAD real (se cortó la sesión: SW quedó "No responde" con un menú abierto y la captura negra).
-- Falta probar: perfil en L abierto, dobladillo, extruir corte, convertir STEP, DXF por lotes,
-  desdoblar/doblar.
+  oculta). Ahora al cerrar cualquier panel SW la punta del cuerpo queda visible. Verificado en
+  FreeCAD real (dos veces).
+- Dobladillo cerrado 10 mm "Material interior" (t=2): volumen fork 13 828,319 vs SW 13 839,734
+  (= 0,057 mm de desarrollo: despreciable). Área muy distinta porque SW deja 0,1 mm de luz entre las
+  dos chapas del dobladillo cerrado y SheetMetal las pega. Arranca con el último tipo/medida.
+- Corregido: Extruir corte de la pestaña Chapa quedaba con 5 mm fijos (con chapa de más de 5 mm no
+  atravesaba). Ahora "Vincular al espesor" como SW: profundidad = fórmula al espesor de la Brida
+  base. Probado: 2 mm atraviesa; espesor a 6 mm, sigue atravesando.
+- Visto, sin corregir: el panel del corte dice "Parámetros de vaciado" (término de FreeCAD) y
+  muestra la vista previa superpuesta de FreeCAD; la flecha de la vista previa apunta hacia afuera
+  aunque el corte va hacia adentro.
+- Falta probar: perfil en L abierto, convertir STEP, DXF por lotes, desdoblar/doblar.
+- Cuidado con el mouse: hacer clic en el ícono de la barra de tareas de la ventana que YA está al
+  frente la minimiza (los clics siguientes caen en la otra). SW se colgó una vez abriendo el menú
+  Insertar > Chapa metálica rápido: ir despacio, mirando cada submenú.
 Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud

@@ -1044,10 +1044,49 @@ def start_convert():
         return None
 
 
+class _CutThroughThickness:
+    """
+    El próximo Vaciado que nazca en una chapa queda "Vincular al espesor" (como el corte de chapa
+    de SW): profundidad = espesor de la Brida base, con fórmula, así sigue si el espesor cambia.
+    Antes quedaba en 5 mm fijos: con chapa de más de 5 mm no atravesaba (visto con el mouse,
+    2026-10-29). Se desengancha con el primer Vaciado que aparezca.
+    """
+
+    def slotCreatedObject(self, obj):
+        if getattr(obj, "TypeId", "") != "PartDesign::Pocket":
+            return
+        _cut_watch["observer"] = None
+        try:
+            FreeCAD.removeDocumentObserver(self)
+        except Exception:
+            pass
+        name, doc = obj.Name, obj.Document.Name
+        QtCore.QTimer.singleShot(0, lambda: _link_to_thickness(doc, name))
+
+
+_cut_watch = {"observer": None}
+
+
+def _link_to_thickness(doc_name, name):
+    try:
+        obj = FreeCAD.getDocument(doc_name).getObject(name)
+        body = sm.body_of(obj) if obj is not None else None
+        base = sm.sheet_base(body) if body is not None else None
+        if base is None:
+            return  # no es chapa: queda el corte común
+        obj.Type = "Length"
+        obj.setExpression("Length", "%s.Thickness" % base.Name)
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] Corte de chapa:\n%s\n" % traceback.format_exc())
+
+
 def start_cut():
     """Extruir corte nativo, con el mismo flujo SW de la pestaña Operaciones (plano o cara, croquis)."""
     from swui import ribbon
 
+    if _cut_watch["observer"] is None:
+        _cut_watch["observer"] = _CutThroughThickness()
+        FreeCAD.addDocumentObserver(_cut_watch["observer"])
     # fuera del Activated de este comando (correr un comando adentro de otro: ver NOTAS_TECNICAS)
     QtCore.QTimer.singleShot(0, lambda: ribbon._run("PartDesign_Pocket"))
 
