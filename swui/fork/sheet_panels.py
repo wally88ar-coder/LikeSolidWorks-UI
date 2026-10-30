@@ -135,7 +135,7 @@ class BaseFlangePanel(dp.SwPanel):
         self.thick = self._value_box("Thickness", " mm", 0.01, 1000.0)
         self.flip = QtWidgets.QCheckBox("Invertir dirección")
         self.flip.setToolTip("Lado del croquis hacia el que va el espesor")
-        self.flip.setChecked(bool(obj.Reverse) if self.closed else obj.BendSide == "Outside")
+        self.flip.setChecked(bool(obj.Reverse) if self.closed else obj.BendSide == "Inside")
         self.flip.toggled.connect(self._changed)
         self.tied = QtWidgets.QCheckBox("Radio = espesor")
         self.tied.setChecked(dict(obj.ExpressionEngine).get("Radius") == "Thickness")
@@ -172,7 +172,7 @@ class BaseFlangePanel(dp.SwPanel):
             self._set("Length", self.length.value())
             self._set("Reverse", self.reverse.isChecked())
             self._set("MidPlane", self.mid.isChecked())
-            self._set("BendSide", "Outside" if self.flip.isChecked() else "Inside")
+            self._set("BendSide", "Inside" if self.flip.isChecked() else "Outside")
         expr = dict(obj.ExpressionEngine).get("Radius")
         if self.tied.isChecked():
             if expr != "Thickness":
@@ -859,7 +859,9 @@ def start_base_flange():
         obj.Thickness = sm.last("Thickness", sm.DEFAULT_THICKNESS)
         obj.setExpression("Radius", "Thickness")  # radio = espesor (como trabaja el usuario)
         obj.Length = sm.last("BaseLength", 100.0)
-        obj.BendSide = "Inside"  # el croquis da las medidas de afuera
+        # perfil abierto: espesor hacia afuera del croquis, como SW (el croquis da las medidas de
+        # adentro; elegido por el usuario el 2026-10-29). "Invertir dirección" lo pasa adentro.
+        obj.BendSide = "Outside"
         obj.Reverse = False
         obj.MidPlane = False
         multibody._keep_label(obj, sm.next_label("Brida-Base", _labels(doc)))

@@ -174,8 +174,9 @@ Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el us
 - Perfil en L abierto (40 x 60, largo 100, t=2) en Alzado: con el espesor del lado que lo pone
   SW, volumen 20 142,478 = SW exacto. DIFERENCIA DE ARRANQUE: SW pone el espesor hacia AFUERA del
   croquis (caja 62 x 42); el fork arranca hacia ADENTRO ("BendSide Inside": el croquis da las
-  medidas de afuera, decisión de la fase 1) y hay que tildar "Invertir dirección" para igualar a
-  SW. PREGUNTA para el usuario: ¿qué lado prefiere de arranque?
+  medidas de afuera, decisión de la fase 1). DECIDIDO por el usuario (2026-10-29): hacia afuera,
+  como SW. Hecho y probado: arranca igual que SW (20 142,478 sin tocar nada); "Invertir
+  dirección" lo pasa adentro. Piezas viejas guardadas con "Inside" no cambian.
 - Desdoblar / Doblar: Desdoblar deja la pieza plana y abre el croquis encima; al salir hace el
   corte y vuelve a plegar. Un círculo grande que cruza el pliegue corta también el pliegue y la
   brida vertical (visto de costado: arco en la brida). Editar con clic derecho > Editar operación
