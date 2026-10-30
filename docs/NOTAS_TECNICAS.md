@@ -385,6 +385,14 @@
   ensamblaje IGNORA una unión contra un plano apoyado (la unión existe, no mueve nada; probado):
   sin apoyo sí lo toma. `Gui.Document.setEdit` sobre un Part::DatumPlane devuelve False en 1.1.4
   (ni saliendo del ensamblaje): editar desde el clic derecho (`dp.OPENERS`).
+- Vértices (2026-10-30): un punto de referencia apoyado en el vértice de ARRIBA de una extrusión
+  queda "?Vertex6" al cambiar la altura (con el Cuerpo, con "Pad." o con la operación: los tres);
+  a veces también una arista vertical ("?Edge5"). Las caras y las aristas de arriba resisten. Las
+  selecciones traen el nombre interno con puntos adentro ("Pad.;#1a:2;:U;XTR;:H1f4:7,V.Vertex6"):
+  el prefijo es lo anterior al primer ";" (`mate_refs.split_sub`), no lo anterior al último punto.
+- Pruebas con el mouse de Claude (computer-use): FreeCAD recibe los clics pero NO el movimiento del
+  mouse (contado con un filtro de eventos: cero MouseMove). Lo que depende de pasar el mouse
+  (resaltado naranja de aristas del modelo, preselección) no se puede probar así.
 - Uniones y renumeración (2026-10-30): `UtilsAssembly.getObject` devuelve el Cuerpo (o el vínculo)
   aunque la referencia diga "Pad.Edge15": el elemento se busca en la forma FINAL del Cuerpo, que
   renumera con cada operación nueva. FreeCAD además actualiza solo los nombres (contra "Pad", no

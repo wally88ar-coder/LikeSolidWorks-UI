@@ -1056,8 +1056,20 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or mrf.cost(hole_, top_) is not None or mrf.cost(hole_, hole_) != 0
             or mrf.split_sub("Pad.Edge15") != ("Pad.", "Edge15") or mrf.split_sub("Pad.?Face5") != ("Pad.", "Face5")
             or mrf.split_sub("Edge3") != ("", "Edge3") or not mrf.is_broken("Pad.?Face5")
+            or mrf.split_sub("Pad.;#1a:2;:U;XTR;:H1f4:7,V.Vertex6") != ("Pad.", "Vertex6")
+            or mrf.split_sub(";#1a:2;:U;XTR;:H1f4:7,V.Vertex6") != ("", "Vertex6")
             or mrf.element_type("Face12") != "Face" or mrf.element_type("Plane") is not None):
         print("  FEHLER: fork: relaciones que no saltan (volver a encontrar la entidad)")
+        return False
+    # Mover/Copiar de un vértice a otro: el vértice se vuelve a encontrar por sus caras
+    mvb = importlib.import_module("swui.fork.move_bodies")
+    plane_ = lambda n, p: {"t": "Face", "g": "plane", "n": n, "p": p, "s": 100.0}
+    corner_ = [plane_([1, 0, 0], [40, 10, 5]), plane_([0, 1, 0], [20, 20, 5]), plane_([0, 0, 1], [20, 10, 10])]
+    up_ = [plane_([1, 0, 0], [40, 10, 7.5]), plane_([0, 1, 0], [20, 20, 7.5]), plane_([0, 0, 1], [20, 10, 15])]
+    down_ = [plane_([1, 0, 0], [40, 10, 7.5]), plane_([0, 1, 0], [20, 20, 7.5]), plane_([0, 0, -1], [20, 10, 0])]
+    if (mvb.vertex_cost(corner_, up_) is None or mvb.vertex_cost(corner_, down_) <= mvb.vertex_cost(corner_, up_)
+            or mvb.vertex_cost(corner_, []) is not None):
+        print("  FEHLER: fork: Mover/Copiar, volver a encontrar el vértice")
         return False
     # Matriz y simetría de componentes (component_patterns): cuentas, expresiones, cinta
     cpt = importlib.import_module("swui.fork.component_patterns")

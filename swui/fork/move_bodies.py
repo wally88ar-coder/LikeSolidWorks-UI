@@ -19,6 +19,9 @@ sólido (material.consumes): lo de antes queda en el original, lo de después va
 De un vértice a otro (dos vértices en Dirección, como SW): un punto de referencia de FreeCAD
 (Part::DatumPoint, MapMode "Vertex", marca SWUI_MoveBodyPoint) en cada vértice y la ecuación
 Placement.Base = giro + i * (A - De) en cada Cuerpo copia: sigue a los vértices si la pieza cambia.
+FreeCAD 1.1.4 pierde el vértice de arriba de una extrusión al cambiar la altura ("?Vertex6"): cada
+punto guarda las caras que se juntan en su vértice (SWUI_FromVertex) y se vuelve a apoyar en el
+vértice con las mismas caras (repair_point, al recalcular).
 
 Marca: SWUI_MoveBody en cada copia vinculada (texto JSON con lo elegido; "op" agrupa las de
 una misma operación). Nombre estable para siempre (docs/ESTADO.md, Decisiones).
@@ -143,6 +146,136 @@ def placement_of(spec, doc):
     line = _line_of(root, sub) if root is not None else None
     move = line[1] * spec["distance"] if line is not None else V(*spec["delta"])
     return FreeCAD.Placement(move, FreeCAD.Rotation()).multiply(rotation_of(spec, doc))
+
+
+VERTEX_PROP = "SWUI_FromVertex"  # en el punto: JSON {"root", "sub", "faces"} (nombre estable)
+
+
+def _vertex_faces(shape, vertex):
+    """Firmas de las caras que se juntan en un vértice (para volver a encontrarlo)."""
+    import Part
+    from swui.fork import mate_refs
+
+    out = []
+    for face in shape.ancestorsOfType(vertex, Part.Face):
+        try:
+            out.append(mate_refs.signature(face))
+        except Exception:
+            pass
+    return out
+
+
+def vertex_cost(want, faces):
+    """Cuánto se parecen las caras de un vértice a las guardadas (None si falta alguna)."""
+    from swui.fork import mate_refs
+
+    if not want or not faces:
+        return None
+    total = 0.0
+    for sig in want:
+        costs = [c for c in (mate_refs.cost(sig, f) for f in faces) if c is not None]
+        if not costs:
+            return None
+        total += min(costs)
+    return total
+
+
+def _root_shape(root, prefix):
+    try:
+        return root.getSubObject(prefix) if prefix else root.Shape
+    except Exception:
+        return None
+
+
+def _attach_at_vertex(pt, root, sub):
+    """
+    Punto de referencia en un vértice. FreeCAD 1.1.4 pierde el vértice de arriba de una extrusión
+    al cambiar la altura (queda "?Vertex6"; y a veces las aristas verticales: probado 2026-10-30):
+    se guardan las caras que se juntan ahí para volver a encontrarlo (repair_points).
+    """
+    from swui.fork import mate_refs
+
+    pt.AttachmentSupport = [(root, sub)]
+    pt.MapMode = "Vertex"
+    prefix, name = mate_refs.split_sub(sub)
+    shape = _root_shape(root, prefix)
+    faces = []
+    try:
+        faces = _vertex_faces(shape, shape.getElement(name))
+    except Exception:
+        pass
+    if not hasattr(pt, VERTEX_PROP):
+        pt.addProperty("App::PropertyString", VERTEX_PROP, "SWUI", "Vértice elegido (fork de LikeSolidWorks UI)")
+        pt.setEditorMode(VERTEX_PROP, 2)
+    setattr(pt, VERTEX_PROP, json.dumps({"root": root.Name, "sub": sub, "faces": faces}, sort_keys=True))
+
+
+def _stored_vertex(pt):
+    try:
+        return json.loads(getattr(pt, VERTEX_PROP, "") or "{}")
+    except ValueError:
+        return {}
+
+
+def repair_point(pt):
+    """Si FreeCAD perdió el vértice de un punto De / A, buscar el que tiene las mismas caras."""
+    from swui.fork import mate_refs
+
+    data = _stored_vertex(pt)
+    support = list(pt.AttachmentSupport or [])
+    if not data.get("faces") or len(support) != 1:
+        return False
+    root, subs = support[0]
+    sub = subs[0] if subs else ""
+    broken = mate_refs.is_broken(sub)
+    if not broken:
+        try:
+            broken = pt.getStatusString() != "Valid"
+        except Exception:
+            broken = False
+    if not broken:
+        return False
+    prefix, _name = mate_refs.split_sub(sub)
+    shape = _root_shape(root, prefix)
+    if shape is None:
+        return False
+    best, best_cost = None, None
+    for i, vertex in enumerate(shape.Vertexes, 1):
+        c = vertex_cost(data["faces"], _vertex_faces(shape, vertex))
+        if c is not None and (best_cost is None or c < best_cost):
+            best, best_cost = i, c
+    if best is None:
+        FreeCAD.Console.PrintWarning("%s: ya no está el vértice elegido.\n" % pt.Label)
+        return False
+    _attach_at_vertex(pt, root, "%sVertex%d" % (prefix, best))
+    return True
+
+
+class _RepairObserver:
+    busy = False
+
+    def slotRecomputedDocument(self, doc):
+        if self.busy:
+            return
+        points = [o for o in doc.Objects if hasattr(o, VERTEX_PROP)]
+        if not points:
+            return
+        self.busy = True
+        try:
+            fixed = False
+            for pt in points:
+                try:
+                    fixed = repair_point(pt) or fixed
+                except Exception:
+                    FreeCAD.Console.PrintLog("[SWUI fork] Punto de Mover/Copiar:\n%s\n" % traceback.format_exc())
+            if fixed:  # adentro del aviso de recálculo FreeCAD no vuelve a recalcular: después
+                name = doc.Name
+                QtCore.QTimer.singleShot(0, lambda: FreeCAD.getDocument(name).recompute())
+        finally:
+            self.busy = False
+
+
+_repair = {"observer": None}
 
 
 def vertex_expression(base, index, start, end):
@@ -504,9 +637,8 @@ class MoveBodiesPanel:
                 setattr(pt, POINT_MARK, json.dumps({"op": self.spec["op"], "role": role}, sort_keys=True))
                 _hide(pt)
                 points[role] = pt
-            if [(o, tuple(subs)) for o, subs in pt.AttachmentSupport] != [(root, (sub,))]:
-                pt.AttachmentSupport = [(root, sub)]
-                pt.MapMode = "Vertex"
+            if _stored_vertex(pt).get("sub") != sub or pt.AttachmentSupport[:1] == []:
+                _attach_at_vertex(pt, root, sub)
             multibody._keep_label(pt, "%s (%s)" % (text, self.spec["op"]))
         self.doc.recompute()
         return points
@@ -732,6 +864,9 @@ class _Command:
 
 
 def install():
+    if _repair["observer"] is None:
+        _repair["observer"] = _RepairObserver()
+        FreeCAD.addDocumentObserver(_repair["observer"])
     if _choose not in dp.CHOOSERS:
         dp.CHOOSERS.append(_choose)
     if (edit_target, open_panel) not in dp.OPENERS:

@@ -344,6 +344,11 @@ Neueste Version oben. / Newest version first.
   relación guarda también cómo era lo elegido (centro, eje, radio, normal) y, cuando la pieza se
   recalcula o se abre el ensamblaje, vuelve a encontrarlo y corrige la referencia. Si lo elegido
   cambió de verdad, toma lo más parecido y avisa en la vista de informe (`swui/fork/mate_refs.py`).
+- Mover/Copiar sólido "de un vértice a otro": al cambiar la pieza (por ejemplo la altura de la
+  extrusión) las copias quedaban congeladas, porque FreeCAD pierde el vértice de arriba. Ahora el
+  punto se vuelve a apoyar solo en el vértice equivalente y las copias siguen a la pieza.
+- Relaciones de posición: también se corrigen las elegidas con el nombre largo que trae la
+  selección de FreeCAD (";#1a:2;...Vertex6").
 - Material: el aviso de "material faltante" al abrir una pieza no salía nunca (FreeCAD 1.1.4 no
   avisa el fin de la carga); ahora sale.
 

@@ -111,12 +111,19 @@ def best_match(want, candidates):
 def split_sub(sub):
     """
     'Pad.Edge15' -> ('Pad.', 'Edge15'); el elemento es lo que va después del último punto. Sin el
-    '?' que FreeCAD antepone cuando da la referencia por perdida ('Pad.?Face5').
+    '?' que FreeCAD antepone cuando da la referencia por perdida ('Pad.?Face5'), y sin el nombre
+    interno que trae la selección ('Pad.;#1a:2;:U;XTR;:H1f4:7,V.Vertex6': también lleva puntos).
     """
     if not sub:
         return "", ""
     i = sub.rfind(".")
-    prefix, name = (sub[:i + 1], sub[i + 1:]) if i >= 0 else ("", sub)
+    name = sub[i + 1:] if i >= 0 else sub
+    mapped = sub.find(";")
+    if mapped >= 0:
+        cut = sub.rfind(".", 0, mapped)
+        prefix = sub[:cut + 1] if cut >= 0 else ""
+    else:
+        prefix = sub[:i + 1] if i >= 0 else ""
     return prefix, name.lstrip("?")
 
 

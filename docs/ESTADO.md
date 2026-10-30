@@ -252,13 +252,13 @@ Commits sin subir a GitHub (pedido del usuario): e70f8a4, 22ce54b, 4d8dc11 y el 
   "debe pertenecer al cuerpo activo". SW no tiene ese concepto: ahora al elegir algo su sólido pasa
   a ser el activo (`swui/fork/auto_body.py`). Además el corte decía "Parámetros de vaciado" (en SW
   Vaciado es otra operación) -> "Parámetros de corte". Commit 4d8dc11.
-- Mover/Copiar sólido: trasladar ΔZ 60 con Copiar y 2 copias -> Sólidos(4). Sin probar hoy: girar
-  y "de un vértice a otro". Eliminar/Conservar: eliminar el original deja las copias (Sólidos(3));
+- Mover/Copiar sólido: trasladar ΔZ 60 con Copiar y 2 copias -> Sólidos(4). Girar y "de un vértice
+  a otro": probados el 30/10 a la tarde (ver abajo). Eliminar/Conservar: eliminar el original deja las copias (Sólidos(3));
   Supr sobre la operación lo devuelve (Sólidos(4)). Diferencia: cada sólido nuevo muestra su
   propio origen en el árbol ("Planta003", "Eje X003"...); SW tiene un solo origen.
 - Chequear carpeta (sin interfaz): pieza buena = OK; pieza con el croquis apoyado en una cara que
   ya no existe = "Croquis2: Perdió la cara donde estaba apoyado (Pad.Face66)".
-- Sin probar: "Sobre entidad" (punto del croquis + arista del modelo), cotas con doble clic sobre
+- "Sobre entidad": probado el 30/10 a la tarde (ver abajo). Sin probar: cotas con doble clic sobre
   una cara de la vista (ya anotado: no las muestra).
 - Fase 5 (con el mouse, conjunto de prueba: base 100x60x10 con agujero Ø6,5, tapa 100x60x5, perno
   Ø6 x 30): insertar (la primera queda fija en el origen, nombres "(f) Base<1>", "Tapa<1>"); panel
@@ -292,6 +292,28 @@ Commits sin subir a GitHub (pedido del usuario): e70f8a4, 22ce54b, 4d8dc11 y el 
 - De paso (2026-10-30): FreeCAD 1.1.4 no llama `slotFinishRestoreDocument` en los observadores de
   Python (ni con interfaz): el aviso de material faltante al abrir nunca salía. Ahora usa
   `slotCreatedDocument` + demora (probado: lo detecta al abrir).
+- Pendientes de los checklists, probados por Claude el 30/10 (tarde) en FreeCAD real con la
+  plantilla de prueba (clics simulados con la misma selección del mouse, salvo "Sobre entidad",
+  con el mouse):
+  - "Sobre entidad": clic en la arista del sólido (entra como "Convertida1"), clic en el punto,
+    el panel ofrece "Sobre entidad", el punto queda sobre la arista. El resaltado naranja al
+    pasar el mouse NO se pudo probar (el mouse de Claude no manda movimiento): lo prueba el usuario.
+  - Franja Sólidos: un Cuerpo con dos bloques sueltos -> "Sólidos(2) ⚠" con la explicación al
+    pasar el mouse; la lista dice "2 sólidos sueltos".
+  - Mover/Copiar girar: con arista como eje, 90° alrededor de la arista vertical (exacto); con
+    centro y ángulo Z 180° (exacto). De un vértice a otro, 2 copias: +(40;20;10) y el doble
+    (exacto). FALLABA al cambiar la pieza (copias congeladas, FreeCAD pierde el vértice):
+    arreglado, ahora siguen (+(40;20;15) con altura 15).
+  - Fase 5: simetría de componentes en la cara x=100 -> perno en x=150; matriz circular de 4 en
+    el agujero de la base -> (20;60), (-10;30), (20;0) exactos; corte de ensamblaje 20x20 Por todo
+    en tapa y base -> "Piezas afectadas" Base<1> y Tapa<1>, saca 4000 y 2000 mm³ exactos; plano de
+    referencia a 25 de la cara de arriba de la base -> z=35 y sigue a la pieza (z=37 con altura
+    12). Eligiendo la cara antes del comando también anda.
+  - Diferencias vistas: en el árbol del ensamblaje quedan a la vista "EjeMatriz" y "PlanoSimetria"
+    (ocultos, pero en SW no aparecen); la relación del croquis se llama "Constraint1" en la lista.
+    Las matrices/simetrías y los planos se apoyan en caras por número: si la pieza renumera
+    pueden saltar como las relaciones (pendiente: usar lo de mate_refs también ahí).
+
 - Otras diferencias vistas en fase 5: textos en inglés "1 inserted" (Insertar), "Preselected:" en
   la barra de estado dentro del ensamblaje, "Sketch Edit"/"Close" en el croquis del taladro; los
   ejes de las relaciones (flechas de colores) quedan a la vista después de cerrar el panel; la
@@ -1105,6 +1127,8 @@ Etapas:
   conflictos al traer novedades de upstream.
 - Lo que sirve a todos va en ramas limpias para PR; antes de abrir PR/issue, consultar al usuario.
 - `SWUI_PlaneSpec` (texto JSON en los planos hechos con el panel SW): nombre estable (2026-10-27).
+- `SWUI_FromVertex` (texto JSON oculto en los puntos De / A de Mover/Copiar sólido: vértice y caras
+  que se juntan ahí, para volver a encontrarlo): nombre estable (2026-10-30).
 - `SWUI_MateGeom` (texto JSON oculto en cada unión del ensamblaje: geometría elegida en cada
   referencia, para volver a encontrarla si la pieza renumera): nombre estable (2026-10-30).
 - **Nombres internos estables (2026-10-25):** el nombre de clase/módulo con que se guarda en el
