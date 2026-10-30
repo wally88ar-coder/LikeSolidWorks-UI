@@ -8,6 +8,8 @@ quedó ahí por decisión del usuario).
   (https://claude.ai/artifact/URHdbLtcw8n3aXAYoYt6U1).
 - Fase 5 en detalle: "Fase 5 — Ensamblaje estilo SW 2018: plan y checklist"
   (https://claude.ai/artifact/YNSyZA5W3hnRB9McFjJGyf).
+- Planos (análisis y plan por etapas, 2026-10-30): "Planos estilo SW 2018: análisis y plan"
+  (https://claude.ai/artifact/VCs12zJs53dygn4xY7RtVD).
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
 
 ## Fase actual
