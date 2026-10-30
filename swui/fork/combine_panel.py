@@ -78,6 +78,9 @@ class CombinePanel(dp.SwPanel):
         self.kind = obj.Type if obj.Type in ("Fuse", "Cut", "Common") else "Fuse"
         self.main = self.host
         self.bodies = ([self.host] + tools) if self.kind != "Cut" else tools
+        if obj.Name in _START_EMPTY:  # nueva sin nada elegido: lista vacía, como SW
+            _START_EMPTY.discard(obj.Name)
+            self.bodies = []
         self.main_active = False
         doc = obj.Document
         self.body_visible = {b.Name: b.Visibility for b in doc.Objects if b.TypeId == "PartDesign::Body"}
@@ -128,8 +131,12 @@ class CombinePanel(dp.SwPanel):
         old = self.kind
         self.kind = kind
         if kind == "Cut" and old != "Cut":  # el primero pasa a ser el principal
-            self.main = self.bodies[0] if self.bodies else self.host
+            self.main = self.bodies[0] if self.bodies else None
             self.bodies = self.bodies[1:]
+            if self.main is None:  # nada elegido todavía: el principal vacío espera el clic, como SW
+                self.main_active = True
+                self._refresh()
+                return
         elif kind != "Cut" and old == "Cut":
             self.bodies = ([self.main] if self.main else []) + [b for b in self.bodies if b is not self.main]
         self.main_active = False
@@ -229,7 +236,8 @@ class CombinePanel(dp.SwPanel):
         return ""
 
     def _ready(self):
-        return bool(split_roles(self.kind, self.bodies, self.main)[1])
+        main, tools = split_roles(self.kind, self.bodies, self.main)
+        return main is not None and bool(tools)
 
     def _nothing(self):
         return not self._ready()
@@ -247,6 +255,10 @@ class CombinePanel(dp.SwPanel):
 
 
 # --- Comando -------------------------------------------------------------------
+
+
+# Combinar nuevas abiertas sin selección (nombre del objeto): el panel arranca con la lista vacía.
+_START_EMPTY = set()
 
 
 def start(doc=None):
@@ -273,6 +285,8 @@ def start(doc=None):
     obj.Type = "Fuse"
     if len(chosen) > 1:
         obj.Group = chosen[1:]
+    if not chosen:
+        _START_EMPTY.add(obj.Name)  # el Cuerpo activo solo aloja la operación: no va a la lista
     multibody._set_tip(host, obj)
     FreeCADGui.Selection.clearSelection()
     FreeCADGui.getDocument(doc.Name).setEdit(obj)  # el panel SW reemplaza al nativo (dress_up_panel)

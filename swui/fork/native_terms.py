@@ -122,6 +122,9 @@ HEADERS = {
     "Section Transformation": "Transformación de la sección",
     "Helix parameters": "Parámetros de hélice",
     "Helix Parameters": "Parámetros de hélice",
+    # FreeCAD traduce Pocket como "vaciado"; en SW Vaciado es otra operación (Shell)
+    "Parámetros de vaciado": "Parámetros de corte",
+    "Pocket parameters": "Parámetros de corte",
 }
 
 

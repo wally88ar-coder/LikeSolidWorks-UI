@@ -332,6 +332,12 @@ Neueste Version oben. / Newest version first.
   antes "Pipe Parameters"/"Section Orientation"); con el perfil elegido, el botón del trayecto
   queda prendido de verdad (antes a veces no) y un clic en el croquis del trayecto alcanza, como
   en SW. La hélice se llama "Hélice1" en el árbol (antes "AdditiveHelix") (`swui/fork/native_terms.py`).
+- Multicuerpo sin "Cuerpo activo", como SW: al elegir un croquis o una cara, su sólido pasa a ser el
+  activo. Antes, con dos sólidos, Extruir pedía en inglés "Cuerpo Activo Requerido" y un croquis de
+  otro sólido daba error (`swui/fork/auto_body.py`). El encabezado del corte decía "Parámetros de
+  vaciado" (en SW Vaciado es otra operación): ahora "Parámetros de corte".
+- Combinar abre con la lista vacía, como SW (antes traía ya el sólido activo y al hacer clic en los
+  dos se sacaba); en Eliminar el "Sólido principal" arranca vacío y esperando el clic.
 
 ## 0.10.0 — 2026-10-18
 
