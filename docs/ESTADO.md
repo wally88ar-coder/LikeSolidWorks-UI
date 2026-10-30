@@ -189,6 +189,19 @@ Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el us
   frente la minimiza (los clics siguientes caen en la otra). SW se colgó una vez abriendo el menú
   Insertar > Chapa metálica rápido: ir despacio, mirando cada submenú.
 
+Fase 4 (Mover cara) contra SW, 2026-10-29:
+- Panel igual al de SW (Equidistanciar / Trasladar / Girar, caras, Invertir, 10 mm de arranque).
+- Bloque 100 x 60 x 20: equidistanciar arriba +5 = 150 000; editar con Invertir = 90 000;
+  trasladar la cara derecha ΔX 10 = 99 000 (CDG +5 en X). STEP sin historia con un agujero:
+  arma el Cuerpo con BaseFeature y equidistancia la cara (con agujero) 10 = 178 492 (correcto).
+- Corregido: SW abre Mover cara en el último modo usado; el fork siempre en Equidistanciar.
+  Ahora lo recuerda (probado: Girar -> se reabre en Girar).
+- Diferencias que quedan: con un STEP (sin Cuerpo) y nada elegido, el fork pide elegir la cara
+  antes (SW abre el panel y espera); SW trae la barrita de selección también en Mover cara; el
+  clic derecho de una "Mover cara" muestra además "Editar Pad" (el nativo que hay debajo).
+- En SW me equivoqué con la barrita de selección (equidistanció todas las caras menos una); se
+  borró. La referencia de SW para el resultado no hacía falta (cuentas exactas).
+
 Fase 3 (Evaluar) contra SW, 2026-10-29:
 - Propiedades físicas de una L (perfil 60 x 40 x 10 de ala, 20 de espesor, mismos ejes que SW):
   masa, volumen, área, CDG, ejes y momentos principales, Lxx..Lzz en el CDG y en el origen:

@@ -79,6 +79,25 @@ def next_label(used):
     return "%s%d" % (LABEL, n)
 
 
+MODE_PARAMS = "User parameter:BaseApp/Preferences/Mod/SWUI/MoveFace"
+
+
+def last_mode():
+    """El último modo usado (SW abre Mover cara en ese); la primera vez, Equidistanciar."""
+    try:
+        mode = FreeCAD.ParamGet(MODE_PARAMS).GetString("Mode", OFFSET)
+    except Exception:
+        return OFFSET
+    return mode if mode in (OFFSET, TRANSLATE, ROTATE) else OFFSET
+
+
+def remember_mode(mode):
+    try:
+        FreeCAD.ParamGet(MODE_PARAMS).SetString("Mode", mode)
+    except Exception:
+        pass
+
+
 def read_spec(text):
     """Lo guardado en SWUI_MoveFace (JSON) con valores por omisión."""
     spec = {"mode": OFFSET, "flip": False, "distance": 10.0, "delta": [0.0, 0.0, 0.0],
@@ -357,6 +376,7 @@ class MoveFacePanel(dp.SwPanel):
         if mode == self.spec["mode"]:
             return
         self.spec["mode"] = mode
+        remember_mode(mode)
         self.active = self.list
         self._refresh()
         self._changed()
@@ -567,6 +587,7 @@ class MoveFacePanel(dp.SwPanel):
         text = json.dumps(self.spec, sort_keys=True)
         if getattr(self.obj, MARK, None) != text:
             setattr(self.obj, MARK, text)
+        remember_mode(self.spec["mode"])
 
     def _ready(self):
         return bool(self.faces) and (self.spec["mode"] != ROTATE or bool(self.hinge))
@@ -657,7 +678,9 @@ def start(doc=None):
         obj = body.newObject(PAD, "Pad")
         obj.addProperty("App::PropertyString", MARK, "SWUI", "Mover cara (fork de LikeSolidWorks UI)")
         obj.setEditorMode(MARK, 2)
-        setattr(obj, MARK, json.dumps(read_spec(""), sort_keys=True))
+        start = read_spec("")
+        start["mode"] = last_mode()  # como SW: abre en el último modo usado
+        setattr(obj, MARK, json.dumps(start, sort_keys=True))
         multibody._keep_label(obj, next_label(set(o.Label for o in doc.Objects)))
         multibody._set_tip(body, obj)
         base = obj.BaseFeature
