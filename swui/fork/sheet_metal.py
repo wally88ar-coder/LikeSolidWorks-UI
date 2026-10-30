@@ -551,8 +551,39 @@ def ensure_flat(body, sketches=True):
         flat.GenerateSketch = want
     if want and not flat.SeparateSketchLayers:
         flat.SeparateSketchLayers = True
-    flat.recompute()
+    with _active(doc):
+        flat.recompute()
     return flat
+
+
+class _active:
+    """
+    SheetMetal arma los croquis del desarrollo en el documento ACTIVO: desde un ensamblaje (DXF
+    por lotes) caían en el ensamblaje y la pieza quedaba sin croquis ("SheetMetal no armó el
+    croquis del desarrollo", visto con el mouse, 2026-10-29). Mientras tanto, activo el de la pieza.
+    """
+
+    def __init__(self, doc):
+        self.doc = doc
+        self.before = None
+
+    def __enter__(self):
+        self.before = FreeCAD.ActiveDocument
+        if self.before is not self.doc:
+            FreeCAD.setActiveDocument(self.doc.Name)
+        return self
+
+    def __exit__(self, *_exc):
+        if self.before is not None and self.before is not self.doc:
+            try:
+                FreeCAD.setActiveDocument(self.before.Name)
+                if FreeCAD.GuiUp:
+                    import FreeCADGui
+
+                    FreeCADGui.setActiveDocument(self.before.Name)
+            except Exception:
+                pass
+        return False
 
 
 def flat_sketches(flat):

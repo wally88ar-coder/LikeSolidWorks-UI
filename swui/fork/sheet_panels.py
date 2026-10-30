@@ -1118,8 +1118,9 @@ def _flat(body, label):
     if new:
         doc.openTransaction(label)
     try:
-        flat = sm.ensure_flat(body, sketches=True)
-        doc.recompute()
+        with sm._active(doc):  # SheetMetal arma los croquis en el documento activo (ver sm._active)
+            flat = sm.ensure_flat(body, sketches=True)
+            doc.recompute()
     except Exception:
         if new and doc.HasPendingTransaction:
             doc.abortTransaction()
@@ -1181,7 +1182,8 @@ def export_all(doc=None):
         path = os.path.join(folder, name)
         try:
             flat = _flat(body, "Desarrollo")
-            sm.write_dxf(body, path)
+            with sm._active(body.Document):
+                sm.write_dxf(body, path)
             _sketches_follow(flat)
             done.append(name)
         except Exception as exc:
