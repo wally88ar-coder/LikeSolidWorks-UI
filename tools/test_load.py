@@ -881,7 +881,9 @@ def _check_feature_tree(commands, mw, layout, hooked):
             or mat.missing_in([("o", copy_, "otro")], set()) != [("o", copy_)]
             or mat.missing_in([("o", copy_, "otro")], {"u1"}) or mat.missing_in([("o", copy_, "u1")], set())
             or 'UUID: "u1"' not in mat.fcmat_text(copy_) or "Density: \"7870.0 kg/m^3\"" not in mat.fcmat_text(copy_)
-            or mat.safe_file_name('Acero "A/B"') != "Acero _A_B_"):
+            or mat.safe_file_name('Acero "A/B"') != "Acero _A_B_"
+            or not mat.material_matches("acero", "Steel-1C22", ["Metales", "Acero"])
+            or mat.material_matches("aluminio", "Steel-1C22", ["Metales", "Acero"])):
         print("  FEHLER: fork: material (categorías, números, copia en la pieza, archivo .FCMat)")
         return False
     res_ = mp.combine([(1000.0, 600.0, (5.0, 5.0, 5.0), [[16666.67, 0, 0], [0, 16666.67, 0], [0, 0, 16666.67]], 1e-6)])

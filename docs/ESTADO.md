@@ -188,6 +188,20 @@ Fase 1 (chapa) contra SW, 2026-10-29 (con aviso de límite de uso semanal; el us
 - Cuidado con el mouse: hacer clic en el ícono de la barra de tareas de la ventana que YA está al
   frente la minimiza (los clics siguientes caen en la otra). SW se colgó una vez abriendo el menú
   Insertar > Chapa metálica rápido: ir despacio, mirando cada submenú.
+
+Fase 3 (Evaluar) contra SW, 2026-10-29:
+- Propiedades físicas de una L (perfil 60 x 40 x 10 de ala, 20 de espesor, mismos ejes que SW):
+  masa, volumen, área, CDG, ejes y momentos principales, Lxx..Lzz en el CDG y en el origen:
+  IDÉNTICOS a SW, incluido el SIGNO de los productos (Lxy = -2000 g·mm², Ixy = +2550). La decisión
+  "productos con el signo de SW" queda verificada. Diferencia: unidades. SW (plantilla MMGS del
+  usuario) informa gramos y g·mm²; el fork kg y kg·mm². PREGUNTA para el usuario.
+- Material: asignar Steel-1C22 no cambia el color; la franja muestra el material; densidad y masa
+  bien. Corregido: el buscador sólo miraba el nombre (en inglés): "acero" no encontraba nada.
+  Ahora busca también en la categoría traducida (Metales / Acero).
+- Ecuaciones: igual que el diálogo de SW (columnas, secciones, comillas). Variable global +
+  ecuación sobre la cota de la extrusión: anda (= "Ancho" / 2 -> 17,5). Detalle: el doble clic en
+  una cota inserta sólo si hay un renglón elegido; si se apretó Escape antes, no hace nada.
+- Medir: no comparado esta vez (usado en el piloto: dos vértices).
 Referencia de SW (para seguir comparando):
 - Brida base plana 100 x 60 en Planta, espesor 2, radio 2, K 0,5 + UNA brida de arista de 40 mm en
   un lado largo (100). SW con las opciones que tiene el usuario (las últimas usadas): longitud

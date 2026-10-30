@@ -78,6 +78,12 @@ _deleted = set()  # UUID borrados en esta sesión (FreeCAD los recuerda hasta re
 # --- Cuentas y textos (sin Qt, probables en el test) --------------------
 
 
+def material_matches(wanted, name, parts):
+    """¿El texto buscado está en el nombre o en alguna carpeta de la categoría? (sin mayúsculas)"""
+    wanted = wanted.lower()
+    return wanted in name.lower() or any(wanted in p.lower() for p in parts)
+
+
 def category_path(directory):
     """'Standard/Metal/Steel' -> ['Metales', 'Acero'] (sin la carpeta 'Standard')."""
     parts = [p for p in (directory or "").replace("\\", "/").split("/") if p]
@@ -760,11 +766,12 @@ class _MaterialDialog(QtWidgets.QDialog):
             self.tree.addTopLevelItem(root)
             roots[key] = (root, {})
         for info in all_materials():
-            if wanted and wanted not in info["name"].lower():
-                continue
             custom = info["library"] != SYSTEM
             root, folders = roots["custom" if custom else "system"]
             parts = [p for p in info["category"].replace("\\", "/").split("/") if p] if custom else category_path(info["category"])
+            # el nombre o la categoría en castellano: "acero" encuentra los "Steel-..." de Metales / Acero
+            if wanted and not material_matches(wanted, info["name"], parts):
+                continue
             parent = root
             path = ()
             for p in parts:
