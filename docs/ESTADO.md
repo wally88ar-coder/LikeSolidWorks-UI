@@ -1,6 +1,7 @@
 # Estado del fork
 
-Última actualización: 2026-10-28 (piloto de pruebas comparadas con SW usando el mouse).
+Última actualización: 2026-10-29 (fases 2 y 1 comparadas con SW 2018 usando el mouse; la fase 1
+quedó ahí por decisión del usuario).
 
 **Checklists compartidos con el usuario** (se tildan ahí; al cerrar algo, tildarlo también):
 - Todas las fases: "Checklists del fork: qué falta en cada fase"
@@ -15,15 +16,17 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
   (etapas A, B y C; la franja Material/Ecuaciones/Sólidos pasó a la fase 3). Detalle y estado
   de pruebas en la sección "Plan: árbol de operaciones" de abajo.
 - **Aristas del modelo dentro del croquis (como SW): terminado y probado por el usuario.**
-- **Fase 1 — Chapa: versiones 1 a 3 hechas (2026-10-27/28); falta que las pruebe el usuario.**
-  Pestaña Chapa con Brida base, Brida de arista, Dobladillo, Extruir corte, Convertir en chapa
-  (STEP), Aplanar, Desdoblar/Doblar y Exportar DXF (también por lotes desde un ensamblaje). Las
-  tres versiones del plan están hechas (ver "Plan: fase 1").
-- **Fase 2 — Flujos de pieza: código completo (2026-10-27); falta que la pruebe el usuario**
-  salvo el redondeo (probado por él: "anda OK"). Todo lo del plan está hecho: redondeo, chaflán,
-  matriz lineal y circular, simetría, asistente para taladro, ángulo de salida, y términos SW en
-  barrido, hélice y referencia; además árbol flotante, paneles SW de plano/eje/punto, y planos
-  En ángulo / Punto medio que siguen a la pieza. Detalle en "Plan: fase 2" > Avance.
+- **Fase 1 — Chapa: versiones 1 a 3 hechas (2026-10-27/28); comparada con SW por Claude con el
+  mouse (2026-10-29); falta que la pruebe el usuario.** Pestaña Chapa con Brida base, Brida de
+  arista, Dobladillo, Extruir corte, Convertir en chapa (STEP), Aplanar, Desdoblar/Doblar y
+  Exportar DXF (también por lotes desde un ensamblaje). Comparado con SW: brida base, bridas de
+  arista (U), aplanar/volver, espesor 2 -> 3, dobladillo, extruir corte, perfil en L,
+  desdoblar/doblar: mismo volumen y mismo desarrollo DXF. Sin comparar (el usuario lo dejó ahí):
+  Convertir en chapa con un STEP suyo y DXF por lotes. Detalle en "Pruebas comparadas con SW".
+- **Fase 2 — Flujos de pieza: código completo (2026-10-27); comparada con SW por Claude con el
+  mouse (2026-10-28), mismo resultado que SW en todo; falta que la pruebe el usuario** (el
+  redondeo ya lo probó: "anda OK"). Sin comparar: términos SW en barrido y hélice. Detalle en
+  "Pruebas comparadas con SW" y "Plan: fase 2" > Avance.
 - **Fase 4 — Mover cara: terminada (2026-10-27)**, con operaciones nativas (Pad / Pocket /
   Draft), sin FeaturePython (aprobado por el usuario). Probado por él: girar cara ("muy bueno");
   falta que pruebe equidistanciar y trasladar.
@@ -32,13 +35,12 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
   Restricciones: descartado por el usuario (ecuaciones a mano si hiciera falta).
   Con esto (y la chapa de la fase 1) está completo el "Alcance" del menú Insertar.
   Detalle de las tres en "Análisis: Mover/Copiar sólido..." > Hecho.
-- **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada). Falta que
-  el usuario pruebe con piezas y conjuntos suyos: fase 1 (chapa, versiones 1 a 3), fase 2 (lista
-  sugerida: chaflán, matriz lineal con Dirección 2, circular alrededor de un agujero, simetría
-  eligiendo el plano en el árbol flotante, taladro refrentado y roscado, ángulo de salida, planos a
-  distancia / en ángulo / punto medio cambiando una cota, eje en un cilindro), fase 3 (y sus
-  decisiones), fase 4 (equidistanciar / trasladar cara), Mover/Copiar y Eliminar/Conservar
-  sólidos, y fase 5 (etapas 2 a 5, checklist en el documento compartido). Después: planos
+- **Próximo paso:** todas las fases tienen el código completo (la 0 está terminada). Las fases 1
+  y 2 ya pasaron por la comparación con SW de Claude; falta que el usuario pruebe con piezas y
+  conjuntos suyos: fase 1 (chapa, sobre todo Convertir en chapa con STEP y DXF por lotes), fase 2,
+  fase 3 (y sus decisiones), fase 4 (equidistanciar / trasladar cara), Mover/Copiar y
+  Eliminar/Conservar sólidos, y fase 5 (etapas 2 a 5, checklist en el documento compartido).
+  Candidatas para el mismo ciclo de comparación con SW: fases 3, 4 y 5. Después: planos
   (TechDraw, ver "Falta") o lo que elija el usuario.
 - **Fase 3 — Evaluar: código completo (2026-10-26), hecha sola a pedido del usuario ("dale con
   toda la fase 3, yo estoy ocupado"); falta que la pruebe él y que revise las decisiones** de

@@ -176,7 +176,12 @@ Neueste Version oben. / Newest version first.
 - **Chapa comparada con SW 2018**: brida base + bridas de arista dan el mismo volumen y el mismo
   desarrollo (DXF) que SW. La brida de arista recuerda cómo se mide y la posición (como SW);
   *Exportar DXF* con la pieza sin guardar propone la última carpeta o Documentos (antes, la del
-  addon).
+  addon). *Extruir corte* de la pestaña Chapa queda vinculado al espesor (antes 5 mm fijos: con
+  chapa más gruesa no atravesaba). La Brida base de un perfil abierto pone el espesor hacia
+  afuera del croquis, como SW (*Invertir dirección* lo pasa adentro). Dobladillo, aplanar,
+  cambio de espesor, perfil en L y desdoblar/doblar con un corte: mismo resultado que SW.
+- **La pieza ya no queda oculta** al aceptar o cancelar la edición de una operación que no es la
+  última (p. ej. cambiar el espesor de la Brida base con bridas después).
 - **Fase 2 comparada a mano con SW 2018** (mismo volumen que SW en todo): el chaflán sigue el
   orden de SW (Tipo, Elementos, Parámetros) con Simétrico/Asimétrico y recuadro de medidas; las
   matrices y la simetría abren con la dirección, el eje o el plano vacíos esperando selección;
