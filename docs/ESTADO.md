@@ -10,6 +10,9 @@ relaciones de posición que ya no saltan; checklists unidos en un solo documento
   aviso arriba, y no se actualiza más.
 - Planos (análisis y plan por etapas, 2026-10-30): "Planos estilo SW 2018: análisis y plan"
   (https://claude.ai/artifact/VCs12zJs53dygn4xY7RtVD).
+- Simulación (análisis, 2026-10-30): "Simulación estilo SW: cómo llevar FEM de FreeCAD al fork"
+  (https://claude.ai/artifact/7DSbVCfT2vjP1oiYfw9Mcd). Pestaña Simulación sobre FEM nativo
+  (CalculiX y Gmsh ya vienen con 1.1.4), plan en etapas 0 a 5, decisiones pendientes del usuario.
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
 
 ## Fase actual
