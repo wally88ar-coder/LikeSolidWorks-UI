@@ -13,6 +13,39 @@ relaciones de posición que ya no saltan; checklists unidos en un solo documento
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
 
 ## Fase actual
+- **30/10, 23 h: resto del checklist comparado con SW, los dos con el mouse** (lo que estaba
+  Parcial o Pendiente para Claude). Resultados:
+  - Chapa: U con brida base + 2 bridas de arista: igual a SW (200×100×30, 61 369,9 mm³) cuando SW
+    usa "Material interior"; SW arranca en "Pliegue exterior" y el fork en "Material interior".
+    DXF: mismo desarrollo (200 × 153,425); el fork separa capas CONTORNO/PLEGADO y SW deja todo en
+    la capa 0; el fork exporta con un clic, SW pide archivo + opciones + limpieza. Dobladillo
+    abierto (10 mm, separación 2): igual a SW (104 de ancho, 65 483,2 mm³). Convertir en chapa un
+    STEP exportado por SW: mismo DXF que SW (163,708 × 200, mismos pliegues). Abrir el DXF en
+    CypCut: el usuario no dio acceso, queda para él (DXF en scratchpad/chapa y
+    C:\SW-AI-Bridge\trabajos\comparar_fase5\U_SW.DXF).
+  - Hallazgos chapa (sin arreglar): "Convertir en chapa" y "Mover cara" sin selección muestran una
+    ventanita de aviso en vez de un panel que espere la cara (SW abre el panel); "Convertir en
+    chapa" propone radio 1 mm en vez de leerlo de la pieza (SW lo detecta) y el cuerpo nuevo se
+    llama "Body"; al aplanar sale un aviso en inglés "Link(s)... out of the allowed scope
+    'Unfold'" y la franja queda en "Sólidos(2)" aunque se vuelva a doblar; la brida base tarda ~5 s
+    en mostrar su panel; el panel de Brida de arista muestra "Radio 1,00" hasta elegir la arista.
+  - Mover cara en un STEP de SW: equidistanciar 3 mm exacto en el fork (120 683,2 mm³); SW da
+    error ("No se pudieron mover las caras") en esa misma cara. Girar cara alrededor de una arista:
+    exacto (225 893,8 mm³, hacia adentro por defecto, con Invertir); en SW no se logró tomar la
+    arista como eje con el mouse y giró alrededor del centro de la cara.
+  - Doble clic sobre una cara: muestra las cotas (en la prueba anterior el clic caía en la mitad
+    derecha, que estaba tapada); el fork marca la última operación que tocó la cara y SW la que la
+    creó.
+  - Material propio nuevo (SAE 1010 prueba, 7870 kg/m³): se crea, guarda y aplica; el color no
+    cambia; Propiedades físicas da 1,778 kg (exacto). Botón "Language" en inglés en Evaluar.
+  - Árbol: suprimir / desactivar supresión, barra de retroceso arrastrada, Ctrl+B / Ctrl+Q y
+    guardar con STEP: como SW. El menú de una cara movida muestra "Editar Draft" (interno).
+  - Diálogo de importación STEP de FreeCAD con opciones en inglés (SW abre directo).
+  - Entorno de prueba: la ventana de Claude queda encima de la mitad derecha de la pantalla y
+    tapa los clics ahí aunque no se vea; trabajar del lado izquierdo.
+  - No se repitieron (ya comparadas con SW con el mouse el 28-30/10): fase 2 completa, perfil en
+    L, espesor 2→3, Desdoblar/Doblar, Chequear carpeta, multicuerpo, Mover/Copiar. Sin probar:
+    DXF por lotes (SW no tiene equivalente directo) y el aviso de material faltante en otra PC.
 - **30/10 (noche): pruebas COMPARATIVAS de la fase 5, FreeCAD y SW con mouse y teclado** (pedido
   del usuario: toda prueba de checklist es comparativa, los dos programas manejados con el mouse;
   guiones solo para preparar piezas o medir). Conjunto: base 100x60x10 con agujero Ø6,5, tapa
