@@ -487,13 +487,24 @@ def detect_thickness(shape, face_name):
 
 
 def detect_radius(shape, thick):
-    """Radio interior de plegado (el cilindro más chico que tiene su par a radio + espesor), o None."""
-    radii = sorted(set(round(f.Surface.Radius, 6) for f in shape.Faces
-                       if type(f.Surface).__name__ == "Cylinder"))
-    for r in radii:
-        if any(abs(o - r - thick) < 1e-3 for o in radii):
-            return r
-    return None
+    """
+    Radio interior de plegado, o None: el de la mayoría de los pliegues (cilindro con su par coaxial
+    a radio + espesor), como SW. Un dobladillo de radio más chico no manda; si empatan, el mayor.
+    """
+    cyls = [f.Surface for f in shape.Faces if type(f.Surface).__name__ == "Cylinder"]
+    count = {}
+    for c in cyls:
+        for o in cyls:
+            if abs(o.Radius - c.Radius - thick) > 1e-3 or abs(abs(o.Axis.dot(c.Axis)) - 1) > 1e-6:
+                continue
+            if (o.Center - c.Center).cross(c.Axis).Length > 1e-3:
+                continue
+            r = round(c.Radius, 6)
+            count[r] = count.get(r, 0) + 1
+            break
+    if not count:
+        return None
+    return max(count, key=lambda r: (count[r], r))
 
 
 def flat_of(body):

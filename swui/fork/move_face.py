@@ -32,7 +32,7 @@ import traceback
 import FreeCAD
 import FreeCADGui
 
-from swui.compat import QtWidgets
+from swui.compat import QtCore, QtWidgets
 from swui.fork import dress_up_panel as dp
 
 COMMAND = "SWUI_MoveFace"
@@ -635,6 +635,9 @@ def _body_for(doc, obj):
     if not solid:
         return None
     body = doc.addObject("PartDesign::Body", "Body")
+    used = set(o.Label for o in doc.Objects)
+    multibody._keep_label(body, multibody.BODY_LABEL if multibody.BODY_LABEL not in used
+                          else multibody.next_body_label(used))
     body.BaseFeature = obj
     body.Placement = obj.Placement  # el Cuerpo toma la forma SIN la ubicación del sólido (1.1.4)
     obj.Visibility = False
@@ -667,6 +670,12 @@ def start(doc=None):
                                           "Cerrá primero el panel que está abierto.")
         return None
     sels = FreeCADGui.Selection.getSelectionEx(doc.Name)
+    if not sels and _active_body(doc) is None:
+        # como SW: el panel se abre y espera la cara (hay varios sólidos, o un sólido suelto)
+        panel = _WaitFacePanel(doc)
+        dp._state["panel"] = panel
+        FreeCADGui.Control.showDialog(panel)
+        return None
     doc.openTransaction(LABEL)
     try:
         body = _body_for(doc, sels[0].Object) if sels else _active_body(doc)
@@ -707,6 +716,62 @@ def start(doc=None):
         if doc.HasPendingTransaction:
             doc.abortTransaction()
         return None
+
+
+class _WaitFacePanel:
+    """Mover cara abierto sin cara elegida: espera la primera cara plana y sigue con el panel de siempre."""
+
+    def __init__(self, doc):
+        self.doc = doc
+        self.busy = False
+        self.form = QtWidgets.QWidget()
+        self.form.setWindowTitle(LABEL)
+        box = QtWidgets.QVBoxLayout(self.form)
+        g = QtWidgets.QGroupBox("Caras a mover")
+        f = QtWidgets.QVBoxLayout(g)
+        self.faces = dp.RefBox(lambda _w: None)
+        self.faces.setPlaceholderText("Clic en una cara plana de la pieza")
+        self.faces.setStyleSheet(dp.ACTIVE_QSS)
+        f.addWidget(self.faces)
+        box.addWidget(g)
+        self.message = QtWidgets.QLabel()
+        self.message.setWordWrap(True)
+        self.message.setStyleSheet("color: %s;" % dp.MISSING_COLOR)
+        self.message.hide()
+        box.addWidget(self.message)
+        box.addStretch(1)
+        self.observer = dp._PickObserver(self)
+        FreeCADGui.Selection.addObserver(self.observer)
+
+    def getStandardButtons(self):
+        return QtWidgets.QDialogButtonBox.Cancel
+
+    def take_selection(self):
+        sels = FreeCADGui.Selection.getSelectionEx(self.doc.Name)
+        faces = [s for s in sels if any(n.split(".")[-1].startswith("Face") for n in s.SubElementNames)]
+        if not faces:
+            self.message.setText("Elegí una cara (no una arista ni un vértice).")
+            self.message.show()
+            self.busy = True
+            try:
+                FreeCADGui.Selection.clearSelection()
+            finally:
+                self.busy = False
+            return
+        self._close()
+        FreeCADGui.Control.closeDialog()
+        QtCore.QTimer.singleShot(0, lambda: start(self.doc))  # la cara sigue elegida: abre el panel
+
+    def _close(self):
+        try:
+            FreeCADGui.Selection.removeObserver(self.observer)
+        except Exception:
+            pass
+        dp._state["panel"] = None
+
+    def reject(self):
+        self._close()
+        return True
 
 
 class _MoveFaceCommand:

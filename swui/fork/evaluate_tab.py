@@ -53,6 +53,7 @@ def install_features():
 
 def install():
     install_features()
+    install_language_button()
     from swui import ribbon_layout
 
     groups = ribbon_layout.EVALUIEREN[1]
@@ -66,3 +67,28 @@ def install():
                     groups.insert(gi + 1, list(GROUP))
                 return
     groups.insert(0, list(GROUP))  # sin Medir en la tabla: al principio
+
+
+# Botón "Language" del original: en inglés en todos los idiomas (para encontrarlo en uno ajeno).
+# Con la interfaz en castellano dice "Idioma" (hallazgo con el mouse, 2026-10-30); "Language" queda
+# en el globo de ayuda.
+LANGUAGE_TEXT = {"es": "Idioma"}
+
+
+def install_language_button():
+    from swui import i18n, ribbon
+
+    make = ribbon._make_language_button
+    if getattr(make, "_swui_fork", False):
+        return
+
+    def wrapped(parent):
+        button = make(parent)
+        text = LANGUAGE_TEXT.get(i18n.current())
+        if text:
+            button.setText(text)
+            button.setToolTip("%s (Language)" % text)
+        return button
+
+    wrapped._swui_fork = True
+    ribbon._make_language_button = wrapped

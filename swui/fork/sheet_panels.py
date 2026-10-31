@@ -515,11 +515,13 @@ class ConvertPanel:
     espesor y el radio salen de la pieza; el factor K se elige. Se guarda en SWUI_Sheet del Cuerpo.
     """
 
-    def __init__(self, body, face=None, created=False):
+    def __init__(self, body, face=None, created=False, doc=None):
+        # body None: se abre vacío y espera la cara, como SW; el Cuerpo sale de esa cara
         self.body = body
-        self.doc = body.Document
+        self.doc = body.Document if body is not None else doc
         self.created = created  # el Cuerpo lo armó este comando (Cancelar lo saca)
-        self.data = dict(sm.spec(body) or {"k": sm.DEFAULT_K})
+        self.hidden = []
+        self.data = dict((sm.spec(body) if body is not None else None) or {"k": sm.DEFAULT_K})
         self.busy = False
         self.face = None
         self.form = QtWidgets.QWidget()
@@ -547,7 +549,9 @@ class ConvertPanel:
         self.message.hide()
         box.addWidget(self.message)
         box.addStretch(1)
-        if self.data.get("face") and self.body.Tip is not None:
+        if body is None:
+            self._say("Elegí la cara fija: una cara grande y plana de la chapa.")
+        elif self.data.get("face") and self.body.Tip is not None:
             face = face or sm.face_at(self.body.Tip.Shape, self.data["face"])
         if face:
             self._take(face)
@@ -585,6 +589,29 @@ class ConvertPanel:
         self.face_box.setText("Cara<1>")
         self._say("" if r else "La pieza no tiene pliegues: va a quedar como una placa.")
 
+    def _pick_body(self, obj, sub):
+        """Primera cara elegida con el panel vacío: el Cuerpo que se convierte (o None)."""
+        body = obj if obj.TypeId == "PartDesign::Body" else sm.body_of(obj)
+        if body is not None and sm.sheet_base(body) is not None:
+            self._say("Esta pieza ya es de chapa (tiene Brida base).")
+            return None
+        from swui.fork import move_face
+
+        created = body is None
+        body = body or move_face._body_for(self.doc, obj)
+        if body is None or body.Tip is None:
+            self._say("Elegí una cara de un sólido.")
+            return None
+        self.body, self.created = body, created
+        if created:
+            self.hidden = [obj]
+            self.data = {"k": self.k.value()}
+            self._take(sub)  # el FeatureBase del Cuerpo nuevo tiene las mismas caras que el sólido
+        else:
+            self.data = dict(sm.spec(body) or {"k": self.k.value()})
+            self._take(sub if obj is body.Tip or obj is body else dp.to_base(obj.Shape, sub, body.Tip.Shape))
+        return body
+
     def take_selection(self):
         for sel in FreeCADGui.Selection.getSelectionEx():
             obj = sel.Object
@@ -592,7 +619,9 @@ class ConvertPanel:
                 sub = sub.split(".")[-1]
                 if not sub.startswith("Face"):
                     continue
-                if obj is self.body.Tip or obj is self.body:
+                if self.body is None:
+                    self._pick_body(obj, sub)
+                elif obj is self.body.Tip or obj is self.body:
                     self._take(sub)
                 elif sm.body_of(obj) is self.body:
                     name = dp.to_base(obj.Shape, sub, self.body.Tip.Shape)
@@ -1007,8 +1036,12 @@ def start_convert():
     doc = FreeCAD.ActiveDocument
     sels = FreeCADGui.Selection.getSelectionEx(doc.Name)
     if not sels:
-        _info("Elegí una cara grande y plana de la pieza a convertir (la cara fija).")
-        return None
+        # como SW: el panel se abre y espera la cara fija
+        doc.openTransaction("Convertir en chapa")
+        panel = ConvertPanel(None, doc=doc)
+        dp._state["panel"] = panel
+        FreeCADGui.Control.showDialog(panel)
+        return panel
     obj = sels[0].Object
     body = obj if obj.TypeId == "PartDesign::Body" else sm.body_of(obj)
     if body is not None and sm.sheet_base(body) is not None:

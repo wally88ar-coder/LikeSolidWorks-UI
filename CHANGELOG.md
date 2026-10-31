@@ -370,6 +370,15 @@ Neueste Version oben. / Newest version first.
   arista terminaban en una ventana de error con el detalle técnico).
 - Corte de ensamblaje "Por todo - ambas direcciones" usa SideType (en 1.1.4 "Midplane" está
   obsoleto y FreeCAD mostraba avisos en inglés).
+- "Convertir en chapa" y "Mover cara" sin nada elegido abren el panel y esperan la cara, como SW
+  (antes, una ventanita de aviso). Mover cara pasa a su panel completo al elegir la primera cara.
+- "Convertir en chapa" propone el radio de la mayoría de los pliegues de la pieza (antes, el
+  cilindro más chico: con un dobladillo de R1 proponía 1 mm aunque los pliegues fueran de 2).
+- El Cuerpo que se arma para un sólido importado se llama "Cuerpo" (antes "Body").
+- Franja "Sólidos(n)": el desarrollo de chapa ya no cuenta como sólido aparte ni "se come" al
+  Cuerpo (daba Sólidos(2) o Sólidos(0) al aplanar; ahora 1, como SW).
+- Pestaña Evaluar: con la interfaz en castellano el botón "Language" dice "Idioma" ("Language"
+  queda en el globo de ayuda).
 
 ## 0.10.0 — 2026-10-18
 

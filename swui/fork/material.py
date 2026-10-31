@@ -445,6 +445,8 @@ def is_part_object(obj):
         return True
     if obj.isDerivedFrom("PartDesign::Feature"):
         return False  # va el del cuerpo
+    if hasattr(obj, "SWUI_FlatOf"):
+        return False  # desarrollo de chapa (sheet_metal.FLAT_PROP): es el mismo sólido, como en SW
     try:
         body = obj.getParentGeoFeatureGroup()
         if body is not None and body.TypeId == "PartDesign::Body":
@@ -486,6 +488,8 @@ def consumes(user, obj):
     - Eliminar sólidos (delete_bodies): el grupo se come lo que tiene adentro.
     """
     kind = getattr(user, "TypeId", "")
+    if hasattr(user, "SWUI_FlatOf"):
+        return False  # el desarrollo de chapa usa la punta del Cuerpo, no se lo come
     if hasattr(user, "SWUI_MoveBody"):
         from swui.fork import move_bodies
 
