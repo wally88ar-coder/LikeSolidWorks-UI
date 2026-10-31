@@ -371,7 +371,8 @@ Neueste Version oben. / Newest version first.
 - Corte de ensamblaje "Por todo - ambas direcciones" usa SideType (en 1.1.4 "Midplane" está
   obsoleto y FreeCAD mostraba avisos en inglés).
 - "Convertir en chapa" y "Mover cara" sin nada elegido abren el panel y esperan la cara, como SW
-  (antes, una ventanita de aviso). Mover cara pasa a su panel completo al elegir la primera cara.
+  (antes, una ventanita de aviso). Mover cara muestra desde el principio Equidistanciar /
+  Trasladar / Girar y sus parámetros, como SW; lo elegido pasa al panel completo con la primera cara.
 - "Convertir en chapa" propone el radio de la mayoría de los pliegues de la pieza (antes, el
   cilindro más chico: con un dobladillo de R1 proponía 1 mm aunque los pliegues fueran de 2).
 - El Cuerpo que se arma para un sólido importado se llama "Cuerpo" (antes "Body").

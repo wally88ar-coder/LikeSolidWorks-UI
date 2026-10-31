@@ -658,7 +658,7 @@ def _active_body(doc):
     return bodies[0] if len(bodies) == 1 else None
 
 
-def start(doc=None):
+def start(doc=None, preset=None):
     """Crear el Mover cara (con las caras ya elegidas, si hay) y abrir el panel."""
     from swui.fork import multibody
 
@@ -689,6 +689,7 @@ def start(doc=None):
         obj.setEditorMode(MARK, 2)
         start = read_spec("")
         start["mode"] = last_mode()  # como SW: abre en el último modo usado
+        start.update(preset or {})  # lo elegido en el panel que esperaba la cara
         setattr(obj, MARK, json.dumps(start, sort_keys=True))
         multibody._keep_label(obj, next_label(set(o.Label for o in doc.Objects)))
         multibody._set_tip(body, obj)
@@ -719,21 +720,55 @@ def start(doc=None):
 
 
 class _WaitFacePanel:
-    """Mover cara abierto sin cara elegida: espera la primera cara plana y sigue con el panel de siempre."""
+    """
+    Mover cara abierto sin cara elegida: como SW, ya muestra los modos y los parámetros (lo que se
+    elija acá pasa al panel de siempre), y espera la primera cara plana.
+    """
 
     def __init__(self, doc):
+        from swui import paths
+        from swui.compat import QtGui
+
         self.doc = doc
         self.busy = False
+        self.spec = read_spec("")
+        self.spec["mode"] = last_mode()
         self.form = QtWidgets.QWidget()
         self.form.setWindowTitle(LABEL)
+        icon = paths.icon("fork/move_face")
+        if icon:
+            self.form.setWindowIcon(QtGui.QIcon(icon))
         box = QtWidgets.QVBoxLayout(self.form)
-        g = QtWidgets.QGroupBox("Caras a mover")
-        f = QtWidgets.QVBoxLayout(g)
-        self.faces = dp.RefBox(lambda _w: None)
-        self.faces.setPlaceholderText("Clic en una cara plana de la pieza")
-        self.faces.setStyleSheet(dp.ACTIVE_QSS)
-        f.addWidget(self.faces)
-        box.addWidget(g)
+        top = QtWidgets.QGroupBox("Mover cara")
+        tl = QtWidgets.QVBoxLayout(top)
+        self.group = QtWidgets.QButtonGroup(self.form)
+        for text, mode in MODES:
+            radio = QtWidgets.QRadioButton(text, top)
+            radio.setChecked(mode == self.spec["mode"])
+            radio.toggled.connect(lambda on, m=mode: self._mode(m) if on else None)
+            self.group.addButton(radio)
+            tl.addWidget(radio)
+        tl.addWidget(QtWidgets.QLabel("Caras (clic en la pieza):"))
+        self.faces = QtWidgets.QListWidget()
+        self.faces.setMaximumHeight(110)
+        self.faces.setStyleSheet("QListWidget { %s }" % dp.ACTIVE_QSS)
+        tl.addWidget(self.faces)
+        box.addWidget(top)
+        params = QtWidgets.QGroupBox("Parámetros")
+        form = QtWidgets.QFormLayout(params)
+        self.flip = QtWidgets.QCheckBox("Invertir dirección")
+        self.distance = dp._spin(float(self.spec["distance"]), " mm", 0.001, 100000.0)
+        self.deltas = [dp._spin(float(v), " mm", -100000.0, 100000.0) for v in self.spec["delta"]]
+        self.angle = dp._spin(float(self.spec["angle"]), "°", 0.01, 89.99)
+        self.rows = {}
+        for key, text, widget in (("flip", "", self.flip), ("distance", "Distancia:", self.distance),
+                                  ("dx", "ΔX:", self.deltas[0]), ("dy", "ΔY:", self.deltas[1]),
+                                  ("dz", "ΔZ:", self.deltas[2]), ("angle", "Ángulo:", self.angle)):
+            label = QtWidgets.QLabel(text)
+            form.addRow(label, widget)
+            self.rows[key] = (label, widget)
+        box.addWidget(params)
+        self._show_rows()
         self.message = QtWidgets.QLabel()
         self.message.setWordWrap(True)
         self.message.setStyleSheet("color: %s;" % dp.MISSING_COLOR)
@@ -745,6 +780,24 @@ class _WaitFacePanel:
 
     def getStandardButtons(self):
         return QtWidgets.QDialogButtonBox.Cancel
+
+    def _mode(self, mode):
+        self.spec["mode"] = mode
+        remember_mode(mode)
+        self._show_rows()
+
+    def _show_rows(self):
+        mode = self.spec["mode"]
+        show = {"flip": True, "distance": mode == OFFSET, "dx": mode == TRANSLATE, "dy": mode == TRANSLATE,
+                "dz": mode == TRANSLATE, "angle": mode == ROTATE}
+        for key, (label, widget) in self.rows.items():
+            label.setVisible(show[key])
+            widget.setVisible(show[key])
+
+    def preset(self):
+        """Lo elegido en este panel, para el Mover cara que se arma con la primera cara."""
+        return {"mode": self.spec["mode"], "flip": self.flip.isChecked(), "distance": self.distance.value(),
+                "delta": [s.value() for s in self.deltas], "angle": self.angle.value()}
 
     def take_selection(self):
         sels = FreeCADGui.Selection.getSelectionEx(self.doc.Name)
@@ -758,9 +811,10 @@ class _WaitFacePanel:
             finally:
                 self.busy = False
             return
+        preset = self.preset()
         self._close()
         FreeCADGui.Control.closeDialog()
-        QtCore.QTimer.singleShot(0, lambda: start(self.doc))  # la cara sigue elegida: abre el panel
+        QtCore.QTimer.singleShot(0, lambda: start(self.doc, preset))  # la cara sigue elegida: abre el panel
 
     def _close(self):
         try:

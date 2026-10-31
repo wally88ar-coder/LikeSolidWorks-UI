@@ -27,12 +27,14 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
     CypCut: el usuario no dio acceso, queda para él (DXF en scratchpad/chapa y
     C:\SW-AI-Bridge\trabajos\comparar_fase5\U_SW.DXF).
   - Hallazgos chapa ARREGLADOS el 31/10 y probados con el mouse en FreeCAD (y SW para Mover cara):
-    "Convertir en chapa" y "Mover cara" sin selección abren el panel y esperan la cara (SW igual;
-    diferencia: SW muestra los modos de Mover cara ya con la lista vacía, el fork después de la
-    primera cara); radio propuesto 2 mm en el STEP de SW (el de la mayoría de los pliegues; el
-    dobladillo es R1); el Cuerpo nuevo se llama "Cuerpo"; la franja da Sólidos(1) al aplanar;
-    Evaluar dice "Idioma". Convertir en chapa en SW no se pudo repetir: SW avisó falta de memoria
-    y recomendó no seguir (había piezas sin guardar), se contestó No.
+    "Convertir en chapa" y "Mover cara" sin selección abren el panel y esperan la cara, como SW;
+    Mover cara muestra los modos y parámetros desde el principio, como SW (lo elegido pasa al panel
+    completo: probado Girar 5°). Radio propuesto 2 mm en el STEP de SW (el de la mayoría de los
+    pliegues; el dobladillo es R1). SW 2018, con el mouse: Convertir en chapa NO lee espesor ni
+    radio de la pieza (deja los últimos usados, 1,20 y 3,40 mm): ahí el fork es mejor que SW (el
+    hallazgo anterior "SW lo detecta" estaba mal). El Cuerpo nuevo se llama "Cuerpo"; la franja da
+    Sólidos(1) al aplanar; Evaluar dice "Idioma". El aviso de memoria de SW se contesta Sí (pedido
+    del usuario).
     El aviso en inglés "Link(s)... out of the allowed scope 'Unfold'" NO se reprodujo (U y STEP,
     aplanar, exportar DXF, desdoblar/doblar, con interfaz): si vuelve a aparecer, anotar qué se hizo.
     Sin arreglar: la brida base tarda ~5 s en mostrar su panel; el panel de Brida de arista
