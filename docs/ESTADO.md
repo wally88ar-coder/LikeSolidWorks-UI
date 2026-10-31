@@ -13,6 +13,52 @@ relaciones de posición que ya no saltan; checklists unidos en un solo documento
 Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o comentó el usuario.
 
 ## Fase actual
+- **30/10 (noche): pruebas COMPARATIVAS de la fase 5, FreeCAD y SW con mouse y teclado** (pedido
+  del usuario: toda prueba de checklist es comparativa, los dos programas manejados con el mouse;
+  guiones solo para preparar piezas o medir). Conjunto: base 100x60x10 con agujero Ø6,5, tapa
+  100x60x5, perno Ø6x30 (FreeCAD: scratchpad de la sesión; SW: C:\SW-AI-Bridge\trabajos\comparar_fase5).
+  - Hecho: insertar y relaciones (coincidente, concéntrica, panel abierto, borrar selecciones con
+    clic derecho) en los dos; taladro de ensamblaje en los dos; en FreeCAD además cambiar la cota
+    del croquis del taladro (80 -> 70: el agujero se mueve en las dos piezas) y editar una
+    relación a Distancia 5 (la tapa se corre y su agujero queda en el lugar del ensamblaje).
+  - Hallazgo grave, ARREGLADO (commit 42077d0): con el perno ya puesto, el taladro de ensamblaje
+    desarmaba el conjunto (base fija girada ~14°). Causas: el perno entraba en "Piezas afectadas"
+    y el agujero se lo comía; las referencias "Extruir1.FaceN" las renombra mal FreeCAD al
+    cambiar la pieza (sin prefijo las sigue bien); eje de la arista nueva al revés. Y el doble
+    clic en una relación dejaba ocultas las piezas taladradas (cancelaba lo pendiente): arreglado.
+  - SW, para comparar: el taladro de ensamblaje viene con "Componentes seleccionados + Selección
+    automática" y SIN "Propagar operaciones a piezas" (el agujero queda solo en el ensamblaje);
+    la selección automática SÍ incluye el perno, pero no le hace nada a su archivo. Ajuste M6 por
+    defecto "Cerrar" (Ø6,4); el fork propone "Normal" (Ø6,6). Flujo SW: tipo primero, posiciones
+    después (el fork: cara y puntos primero). SW insertando con ✓ en el origen deja el componente
+    FIJO; el fork lo deja flotante. SW invierte solo la alineación de otra relación para evitar
+    errores; el fork no.
+  - Otros hallazgos (sin arreglar): guardar el ensamblaje no guarda las piezas tocadas por el
+    taladro (en SW sí); en el croquis del taladro se ven los circulitos internos "R0,5 mm"; aviso
+    "Concéntrica… Revisala" cuando el agujero solo creció en el mismo eje (SW no avisa); al
+    editar una relación, sus dos piezas desaparecen de la vista mientras dura la edición; la cota
+    inteligente con un solo punto acota al origen (FreeCAD); si se cierra un documento justo
+    después de guardarlo, falla la copia STEP automática.
+  - Después, también comparado en los dos: matriz lineal (3 cada 20 mm) y circular (4), simetría
+    misma pieza y versión opuesta, plano a 25 mm de una cara, corte de ensamblaje "Por todo",
+    tangente (cilindro + cara: los dos eligen Tangente solos), Fijar/Flotar y Ver relaciones
+    (FreeCAD). Todo da el mismo resultado. Arreglado (commit 4d2a44f): la casilla "Versión
+    opuesta" no se podía tildar con el mouse; el plano de simetría aceptaba vértices (terminaba
+    en ventana de error); avisos en inglés por "Midplane" en el corte.
+  - SW también rompe una relación con el taladro de ensamblaje: Concéntrica1 quedó con error
+    (X roja) porque el agujero Ø6,6 reemplaza la cara Ø6,5 elegida. El fork la vuelve a encontrar
+    y avisa "Revisala": en esto anda mejor que SW.
+  - Diferencias con SW, sin arreglar: el árbol muestra objetos auxiliares de cada matriz
+    ("DireccionMatriz", los datos, "EjeMatriz", "PlanoSimetria"); SW deja hacer matriz de una
+    matriz; el clic derecho de un componente es el menú largo de FreeCAD (con "Go to Linked
+    Object" en inglés); el panel Plano no deja cambiar ni borrar una referencia ya elegida (SW
+    sí) y la muestra con nombre interno ("Taladro.Face5"); la vista previa del plano se dibuja
+    al costado, no sobre la cara; el corte de SW arranca en "Hasta profundidad 10 mm" y tiene
+    "Plano medio"; al insertar componentes aparece arriba el panel de relaciones del original
+    con la etiqueta vieja "(f)"; seleccionar un croquis del ensamblaje muestra la flecha de
+    arrastre de FreeCAD.
+  - Falta: mover el croquis del taladro en SW (en FreeCAD anduvo) y editar una relación en SW;
+    punto y eje de referencia en el ensamblaje (solo se probó el plano).
 - **Noche 29-30/10: Claude terminó las pruebas de los checklists (fases 1 a 5 y trabajos extra)
   a las 00:37 del 2026-10-30**, con el mouse en FreeCAD de prueba. Resultados, arreglos y un
   hallazgo grave del ensamblaje (relaciones que saltan al cambiar una pieza) en "Pruebas
