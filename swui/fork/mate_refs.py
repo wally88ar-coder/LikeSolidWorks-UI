@@ -131,6 +131,41 @@ def is_broken(sub):
     return "?" in (sub or "")
 
 
+def plain_sub(obj, sub):
+    """
+    'Extruir1.Face5' -> 'Face5' cuando la referencia es de un Cuerpo. El número es de la forma final
+    del Cuerpo, pero con el nombre de la operación adelante FreeCAD sigue a la cara dentro de ESA
+    operación y, al agregar otra al Cuerpo, la renombra mal y resuelve con eso (la base fija
+    quedaba torcida después de un taladro de ensamblaje, 2026-10-30). Sin el prefijo la sigue en la
+    forma del Cuerpo, y bien (probado: Face7 -> Face5 al agujerear).
+    """
+    try:
+        body = obj.getLinkedObject(True) if obj is not None else None
+    except Exception:
+        body = obj
+    if not sub or getattr(body, "TypeId", "") != "PartDesign::Body" or is_broken(sub):
+        return sub
+    prefix, name = split_sub(sub)
+    if not prefix or element_type(name) is None:
+        return sub
+    parts = prefix.rstrip(".").split(".")
+    if not any(o.Name == parts[-1] for o in body.Group):
+        return sub
+    rest = ".".join(parts[:-1])
+    return (rest + "." if rest else "") + name
+
+
+def plain_ref(ref):
+    """La referencia [objeto, [sub, sub]] con plain_sub en cada sub (o la misma si no se puede)."""
+    if not ref or len(ref) != 2 or not ref[1]:
+        return ref
+    try:
+        obj = _target(ref)
+    except Exception:
+        return ref
+    return [ref[0], [plain_sub(obj, s) for s in ref[1]]]
+
+
 def element_type(name):
     for t in ("Face", "Edge", "Vertex"):
         if name.startswith(t) and name[len(t):].isdigit():
@@ -287,6 +322,11 @@ def check(joint):
         ref = getattr(joint, prop, None)
         if not ref or len(ref) != 2 or len(ref[1]) < 1:
             continue
+        plain = plain_ref(ref)
+        if list(plain[1]) != list(ref[1]):  # también las de archivos anteriores (ver plain_sub)
+            setattr(joint, prop, plain)
+            ref = getattr(joint, prop, None)
+            changed = True
         stored = data.get(prop)
         if not stored:
             if not any(is_broken(s) for s in ref[1]):
@@ -297,11 +337,36 @@ def check(joint):
         if new_ref is not None:
             _refresh_link(new_ref)
             setattr(joint, prop, new_ref)  # FreeCAD vuelve a ubicar la unión en el acto
+            if _reversed(stored, sigs):
+                _flip_offset(joint, prop)
             changed = True
     fresh = {k: v for k, v in fresh.items() if v}
     if fresh:
         _write(joint, dict(data, **fresh))
     return changed
+
+
+def _reversed(old, new):
+    """
+    ¿La entidad nueva tiene el eje al revés que la guardada? La comparación lo acepta (un agujero
+    hecho de nuevo puede traer la arista dada vuelta), pero FreeCAD arma el sistema de la unión
+    sobre ese eje: sin compensar, la concéntrica pide dar vuelta la pieza (visto 2026-10-30).
+    """
+    a = old[0] if old else None
+    b = new[0] if new else None
+    if not a or not b or a.get("g") not in ("circle", "cylinder", "cone", "line") or a.get("g") != b.get("g"):
+        return False
+    return _dot(a["d"], b["d"]) < 0
+
+
+def _flip_offset(joint, prop):
+    """Dar vuelta el sistema de la unión de esa referencia (Offset1/Offset2 de la unión nativa)."""
+    name = "Offset1" if prop == "Reference1" else "Offset2"
+    try:
+        flip = FreeCAD.Placement(FreeCAD.Vector(), FreeCAD.Rotation(FreeCAD.Vector(1, 0, 0), 180))
+        setattr(joint, name, getattr(joint, name).multiply(flip))
+    except Exception:
+        FreeCAD.Console.PrintLog("[SWUI fork] Dar vuelta %s:\n%s\n" % (name, traceback.format_exc()))
 
 
 def _refresh_link(ref):
@@ -364,7 +429,7 @@ def _fix_ref(joint, prop, ref, stored):
                   % (_what(want), best))
         else:
             FreeCAD.Console.PrintLog("[SWUI fork] %s: %s -> %s\n" % (joint.Label, name, best))
-        new_subs[i] = prefix + best
+        new_subs[i] = plain_sub(obj, prefix + best)
         sigs.append(dict(dict(candidates)[best], name=best))
     if new_subs == subs:
         return None, sigs
@@ -430,6 +495,7 @@ def check_assemblies(docs=None, assembly_doc=None):
         for asm in list(_assemblies()):
             if assembly_doc is not None and asm.Document.Name != assembly_doc:
                 continue
+            before = _placements(asm)  # antes de tocar nada: corregir una unión ya mueve piezas
             touched = False
             for joint in _joints(asm):
                 if docs is not None and not _uses(joint, docs):
@@ -440,21 +506,64 @@ def check_assemblies(docs=None, assembly_doc=None):
                     FreeCAD.Console.PrintLog("[SWUI fork] Revisar relación %s:\n%s\n"
                                              % (joint.Label, traceback.format_exc()))
             if touched:
-                _solve_later(asm)
+                _solve_later(asm, before)
     finally:
         _state["busy"] = False
 
 
-def _solve_later(asm):
+def _components(asm):
+    return [o for o in asm.Group if o.TypeId == "App::Link"]
+
+
+def _grounded(asm):
+    out = set()
+    for child in asm.Group:
+        if child.TypeId == "Assembly::JointGroup":
+            for j in child.Group:
+                obj = getattr(j, "ObjectToGround", None)
+                if obj is not None:
+                    out.add(obj.Name)
+    return out
+
+
+def _placements(asm):
+    return {o.Name: FreeCAD.Placement(o.Placement) for o in _components(asm)}
+
+
+def _solve_later(asm, before=None):
+    """
+    Resolver con las referencias ya corregidas. Al recalcular, FreeCAD vuelve a ubicar las uniones y
+    resuelve mientras otras todavía apuntan a la numeración vieja: ese intento no converge y deja
+    las piezas torcidas (también la fija), y desde ahí ya no vuelve (probado 2026-10-30 con un
+    taladro de ensamblaje). Si pasa, se vuelve a las posiciones de antes y se resuelve otra vez.
+    """
     doc_name, name = asm.Document.Name, asm.Name
+    before = before if before is not None else _placements(asm)
 
     def run():
         try:
             a = FreeCAD.getDocument(doc_name).getObject(name)
-            if a is not None:
-                a.Document.recompute()  # vínculos y uniones al día antes de resolver
-                a.solve()
-                a.Document.recompute()
+            if a is None:
+                return
+            # uniones al día antes de resolver; sin recalcular el documento, que vuelve a resolver
+            # con los nombres que FreeCAD reasigna solo (los equivocados que se acaban de corregir)
+            for joint in _joints(a):
+                try:
+                    joint.Proxy.updateJCSPlacements(joint)
+                except Exception:
+                    pass
+            result = a.solve()
+            fixed = _grounded(a)
+            moved = [o for o in _components(a) if o.Name in fixed and o.Name in before
+                     and not o.Placement.isSame(before[o.Name], 1e-7)]
+            if result != 0 or moved:
+                for o in _components(a):
+                    if o.Name in before:
+                        o.Placement = before[o.Name]
+                result = a.solve()
+                FreeCAD.Console.PrintLog("[SWUI fork] Resolver ensamblaje desde las posiciones de antes: %s\n"
+                                         % result)
+            a.Document.recompute()
         except Exception:
             FreeCAD.Console.PrintLog("[SWUI fork] Resolver ensamblaje:\n%s\n" % traceback.format_exc())
 

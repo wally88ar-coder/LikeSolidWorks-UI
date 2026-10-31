@@ -351,6 +351,18 @@ Neueste Version oben. / Newest version first.
   selección de FreeCAD (";#1a:2;...Vertex6").
 - Material: el aviso de "material faltante" al abrir una pieza no salía nunca (FreeCAD 1.1.4 no
   avisa el fin de la carga); ahora sale.
+- Taladro de ensamblaje con un perno ya puesto (probado con el mouse, 2026-10-30): el conjunto se
+  desarmaba y hasta la base fija quedaba girada. Tres arreglos:
+  - "Piezas afectadas" ya no suma solo un perno o pasador metido en el eje del agujero (el agujero
+    pasa a cada pieza y se lo comía entero); se puede sumar a mano con un clic.
+  - Las relaciones guardan la cara o arista sin el nombre de la operación ("Face5" en vez de
+    "Extruir1.Face5"): así FreeCAD mismo la sigue bien cuando la pieza cambia. Las relaciones de
+    archivos anteriores se pasan solas al revisarlas.
+  - Si la arista nueva quedó con el eje al revés, se compensa en la relación (si no, la concéntrica
+    pedía dar vuelta el perno); y si al resolver se mueve una pieza fija, se vuelve a las
+    posiciones de antes y se resuelve otra vez.
+- Editar una relación con doble clic después de editar el croquis de un taladro de ensamblaje
+  dejaba ocultas las piezas taladradas: el doble clic cancelaba lo pendiente. Ahora lo confirma.
 
 ## 0.10.0 — 2026-10-18
 

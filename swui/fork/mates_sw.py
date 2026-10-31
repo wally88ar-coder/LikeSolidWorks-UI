@@ -291,7 +291,10 @@ def create_joint(asm, key, refs, value=None, label=None):
         joint.Distance = value
     elif key == "angle" and value is not None:
         joint.Angle = value
-    connectors = [[comp, [sub, sub]] for comp, sub in refs]
+    from swui.fork import mate_refs
+
+    # sin el nombre de la operación: así FreeCAD sigue a la cara cuando la pieza cambia (mate_refs)
+    connectors = [mate_refs.plain_ref([comp, [sub, sub]]) for comp, sub in refs]
     if key == "lock":
         _keep_position(joint, connectors)
     joint.Proxy.setJointConnectors(joint, connectors)
@@ -801,7 +804,10 @@ def _wrap_double_click():
         try:
             joint = vobj.Object
             if key_of(joint) is not None and _in_swui():
-                FreeCAD.closeActiveTransaction(True)
+                # cerrar sin cancelar: cancelar deshacía también lo pendiente de antes (al salir de
+                # un croquis del que dependen piezas, FreeCAD las vuelve a mostrar; cancelando,
+                # quedaban ocultas: visto 2026-10-30 con el croquis de un taladro de ensamblaje)
+                FreeCAD.closeActiveTransaction()
                 asm = joint.Proxy.getAssembly(joint)
                 if asm is not None and active_assembly() != asm:
                     vobj.Document.setEdit(asm)

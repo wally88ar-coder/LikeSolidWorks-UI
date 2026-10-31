@@ -108,19 +108,49 @@ def centers(sk):
 
 
 def hit_by_holes(asm, sk):
-    """Componentes que atraviesan los ejes de los agujeros (hacia adentro de la cara)."""
+    """
+    Componentes que atraviesan los ejes de los agujeros (hacia adentro de la cara). No se suma
+    solo el que está metido en el eje (perno, pasador): el agujero pasa a cada pieza, y en uno de
+    esos se comería el perno entero y sus relaciones quedarían sin caras (en SW el taladro queda en
+    el ensamblaje y no lo rompe). Se puede sumar a mano con un clic.
+    """
     import Part
 
     n = sketch_normal(sk)
-    lines = [Part.LineSegment(c + n * 0.01, c - n * 1e4).toShape() for c in _unique(centers(sk))]
+    points = _unique(centers(sk))
     out = []
     for comp in _components(asm):
         try:
-            if any(line.distToShape(comp.Shape)[0] < 1e-6 for line in lines):
+            shape = comp.Shape
+            hits = [c for c in points
+                    if Part.LineSegment(c + n * 0.01, c - n * 1e4).toShape().distToShape(shape)[0] < 1e-6]
+            if hits and not all(_shaft_on_axis(shape, c, n) for c in hits):
                 out.append(comp)
         except Exception:
             pass
     return out
+
+
+def _shaft_on_axis(shape, center, n, tol=1e-3):
+    """¿La pieza tiene un cilindro EXTERIOR (no un agujero) sobre el eje que pasa por center?"""
+    for face in shape.Faces:
+        surf = face.Surface
+        if type(surf).__name__ != "Cylinder":
+            continue
+        axis = surf.Axis
+        if axis.cross(n).Length > tol:
+            continue
+        gap = center - surf.Center
+        if (gap - axis * gap.dot(axis)).Length > tol:
+            continue
+        u0, u1, v0, v1 = face.ParameterRange
+        u, v = (u0 + u1) / 2, (v0 + v1) / 2
+        p = face.valueAt(u, v)
+        radial = p - surf.Center
+        radial = radial - axis * radial.dot(axis)
+        if face.normalAt(u, v).dot(radial) > 0:  # la normal sale del eje: el sólido está adentro
+            return True
+    return False
 
 
 def _unique(points):
