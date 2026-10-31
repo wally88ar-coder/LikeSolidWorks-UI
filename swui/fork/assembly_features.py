@@ -804,6 +804,20 @@ def make_hole_panel():
 # --- Corte ------------------------------------------------------------------------
 
 
+def _both_sides(feat):
+    """¿El vaciado va a los dos lados? En 1.1 'Midplane' está obsoleto (avisa): se usa SideType."""
+    if hasattr(feat, "SideType"):
+        return feat.SideType == "Symmetric"
+    return bool(getattr(feat, "Midplane", False))
+
+
+def _set_both_sides(feat, both):
+    if hasattr(feat, "SideType"):
+        feat.SideType = "Symmetric" if both else "One side"
+    else:
+        feat.Midplane = both
+
+
 class CutPanel(_Scope):
     """Extruir corte de ensamblaje: condición final, profundidad, piezas afectadas."""
 
@@ -822,7 +836,7 @@ class CutPanel(_Scope):
             self.end.addItem(text, key)
         current = "ThroughAll"
         if first is not None:
-            current = "TwoSides" if first.Type == "ThroughAll" and first.Midplane else first.Type
+            current = "TwoSides" if first.Type == "ThroughAll" and _both_sides(first) else first.Type
         keys = [k for k, _t in self.ENDS]
         self.end.setCurrentIndex(keys.index(current) if current in keys else 0)
         gl.addRow(self.end)
@@ -884,7 +898,7 @@ class CutPanel(_Scope):
         end = self.end.currentData()
         for _l, _b, feat in self.entries:
             feat.Type = "ThroughAll" if end == "TwoSides" else end
-            feat.Midplane = end == "TwoSides"
+            _set_both_sides(feat, end == "TwoSides")
             feat.Length = self.depth.value()
             feat.Reversed = self.flip.isChecked()
 

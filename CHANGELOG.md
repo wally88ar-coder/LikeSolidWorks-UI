@@ -363,6 +363,13 @@ Neueste Version oben. / Newest version first.
     posiciones de antes y se resuelve otra vez.
 - Editar una relación con doble clic después de editar el croquis de un taladro de ensamblaje
   dejaba ocultas las piezas taladradas: el doble clic cancelaba lo pendiente. Ahora lo confirma.
+- Simetría de componentes: la casilla "Versión opuesta" no se podía tildar con el mouse (al hacer
+  clic en la pieza de la lista, la lista se rearmaba y perdía la fila); ahora queda elegida la
+  última pieza agregada y la que se toca. Arregla también Supr en la lista de las matrices.
+- Simetría de componentes: el plano acepta solo caras planas o planos, como SW (un vértice o una
+  arista terminaban en una ventana de error con el detalle técnico).
+- Corte de ensamblaje "Por todo - ambas direcciones" usa SideType (en 1.1.4 "Midplane" está
+  obsoleto y FreeCAD mostraba avisos en inglés).
 
 ## 0.10.0 — 2026-10-18
 

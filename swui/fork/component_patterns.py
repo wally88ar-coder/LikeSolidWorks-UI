@@ -671,10 +671,15 @@ class PatternPanel:
             box.setText(describe(ref) if ref else "")
             box.setStyleSheet(ok_style if self.active == which else "")
         self.list.setStyleSheet(ok_style if self.active == "seeds" else "")
+        row = self.list.currentRow()  # rearmar la lista no debe perder la fila elegida (Versión opuesta)
+        self.list.blockSignals(True)
         self.list.clear()
         for s in self.seeds:
             extra = "  (opuesta)" if s in self.opposite else ""
             self.list.addItem(s.Label + extra)
+        if self.seeds:
+            self.list.setCurrentRow(row if 0 <= row < len(self.seeds) else len(self.seeds) - 1)
+        self.list.blockSignals(False)
         if self.kind == "mirror":
             self._show_opposite()
         if self.problem:
@@ -728,6 +733,11 @@ class PatternPanel:
             obj, _sub, kind = ref
             if obj in own:
                 continue
+            if self.kind == "mirror" and kind not in ("part", "plane", "datum_plane"):
+                # el plano de simetría es una cara plana o un plano (SW no toma vértices ni aristas)
+                self.problem = "Para el plano de simetría elegí una cara plana o un plano."
+                self._refresh()
+                return
             if self.active in ("dir1", "dir2") and kind != "part":
                 setattr(self, self.active, ref)
                 self.active = "seeds"
@@ -773,7 +783,8 @@ class PatternPanel:
                 self.data = self._create(label)
             self.doc.recompute()
         except Exception:
-            FreeCAD.Console.PrintError("[SWUI fork] %s:\n%s\n" % (LABELS[self.kind], traceback.format_exc()))
+            # el panel ya lo dice en castellano: el detalle va al registro, no a una ventana de error
+            FreeCAD.Console.PrintLog("[SWUI fork] %s:\n%s\n" % (LABELS[self.kind], traceback.format_exc()))
             self.problem = "FreeCAD no pudo armar la operación con esas referencias."
         finally:
             self.busy = False
