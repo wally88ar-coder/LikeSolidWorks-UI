@@ -19,6 +19,11 @@
   - Simular el mouse: `QApplication.sendEvent(viewport, QMouseEvent(...))` sobre
     `QGraphicsView.viewport()` de la vista `Gui::View3DInventor`.
 - El usuario puede tener su FreeCAD abierto (proceso sin argumentos): no tocarlo.
+- Pruebas de checklist: siempre comparativas, FreeCAD y SW 2018 manejados los dos con el mouse y
+  el teclado (pedido del usuario); los guiones solo preparan piezas o miden.
+- Teclas del fork dentro de LikeSolidWorks UI (como el SW del usuario): **barra espaciadora =
+  Medir** (no alterna visibilidad: para ocultar, el ojo del árbol o clic derecho), N = normal a,
+  F = ajustar, Ctrl+B / Ctrl+Q = reconstruir, 0/1/5 = isométrica/frontal/inferior.
 - Medir colores de capturas del usuario: `QImage(...).pixelColor(x, y)` con el Python de FreeCAD.
 
 ## FreeCAD 1.1.4 en Windows: hallazgos
