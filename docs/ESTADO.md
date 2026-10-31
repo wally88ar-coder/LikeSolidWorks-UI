@@ -57,8 +57,15 @@ Al empezar una sesión, leerlos (docs tools, `read`) para ver qué tildó o come
     "Plano medio"; al insertar componentes aparece arriba el panel de relaciones del original
     con la etiqueta vieja "(f)"; seleccionar un croquis del ensamblaje muestra la flecha de
     arrastre de FreeCAD.
-  - Falta: mover el croquis del taladro en SW (en FreeCAD anduvo) y editar una relación en SW;
-    punto y eje de referencia en el ensamblaje (solo se probó el plano).
+  - Probado después con el mouse, ya sin pendientes de la fase 5: plano de simetría con un
+    vértice (no lo toma y lo dice en el panel, sin ventana de error); Supr en la lista de la
+    matriz (saca la pieza y actualiza la vista previa); corte "Por todo" y "ambas direcciones" sin
+    avisos en inglés; eje (cilindro de un perno) y punto (centro de la arista de un agujero) en
+    FreeCAD y en SW: mismos cinco modos y mismo resultado. En SW: mover el punto del croquis del
+    taladro (sacarle la relación y X = 70) y editar una relación (Coincidente -> Distancia 5,
+    pasa a llamarse "Distancia1", igual que el fork). Diferencias: al editar una relación SW deja
+    las dos piezas transparentes (el fork las saca de la vista); el panel Eje del fork escribe
+    "Arista (Perno<2>)" aunque se eligió la cara cilíndrica.
 - **Noche 29-30/10: Claude terminó las pruebas de los checklists (fases 1 a 5 y trabajos extra)
   a las 00:37 del 2026-10-30**, con el mouse en FreeCAD de prueba. Resultados, arreglos y un
   hallazgo grave del ensamblaje (relaciones que saltan al cambiar una pieza) en "Pruebas
